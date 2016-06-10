@@ -4,7 +4,8 @@
   "description": "Service for Bitcore for MongoDB backed Bitcoin wallets",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "NODE_ENV=test ./node_modules/.bin/mocha test/** --recursive",
+    "coverage": "NODE_ENV=test ./node_modules/.bin/istanbul cover -x 'lib/logger.js' -x 'config/index.js' ./node_modules/.bin/_mocha -- --recursive"
   },
   "repository": {
     "type": "git",
@@ -25,6 +26,7 @@
   "dependencies": {
     "async": "^2.0.0-rc.5",
     "bitcore-lib": "^0.13.16",
+    "lodash": "^4.13.1",
     "mongodb": "^2.1.21"
   },
   "devDependencies": {

@@ -2,12 +2,14 @@
 
 var inherits = require('util').inherits;
 var EventEmitter = require('events').EventEmitter;
+
 var MongoClient = require('mongodb').MongoClient;
 var bitcore = require('bitcore-lib');
+var async = require('async');
 var Block = bitcore.Block;
 var BufferUtil = bitcore.util.buffer;
-var async = require('async');
-var $ = bitcore.util.preconditions;
+
+var BlockHandler = require('./lib/blockHandler');
 
 function MongoWallet(options) {
   EventEmitter.call(this);
@@ -15,6 +17,7 @@ function MongoWallet(options) {
   this.databaseURL = options.databaseURL;
   this.db = null;
   this.tip = null;
+  this.blockHandler = null;
 }
 inherits(MongoWallet, EventEmitter);
 
@@ -33,6 +36,8 @@ MongoWallet.prototype._connectMongo = function(callback) {
 
 MongoWallet.prototype.start = function(callback) {
   var self = this;
+
+  self.blockHandler = new BlockHandler({}); // pass in network and db
 
   async.series([
     function(next) {
@@ -67,8 +72,28 @@ MongoWallet.prototype.stop = function(callback) {
   setImmediate(callback);
 };
 
-MongoWallet.prototype._connectBlock = function(callback) {
-  setImmediate(callback);
+MongoWallet.prototype._connectBlock = function(block, callback) {
+  var self = this;
+
+  startRemovingBlock(block.height, function(err) {//storage method
+    if (err) {
+      return calback(err);
+    }
+
+    self.blockHandler.handleRemoveBlock({height: block.height}, function(err) {
+      if (err) {
+        return callback(err);
+      }
+
+      finishBlock(block.height, self.network, function(err) {//storage method
+        if (err) {
+          return callback(err);
+        }
+
+        deleteBlock(block.height, self.network, callback);//storage method
+      });
+    });
+  });
 };
 
 MongoWallet.prototype._disconnectTip = function(callback) {
