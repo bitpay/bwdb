@@ -1,42 +1,61 @@
 'use strict';
 
 var inherits = require('util').inherits;
+var path = require('path');
 var EventEmitter = require('events').EventEmitter;
-var MongoClient = require('mongodb').MongoClient;
 var bitcore = require('bitcore-lib');
+var leveldown = require('leveldown');
 var Block = bitcore.Block;
 var BufferUtil = bitcore.util.buffer;
 var async = require('async');
 var $ = bitcore.util.preconditions;
 
-function MongoWallet(options) {
+function BitcoinWallet(options) {
   EventEmitter.call(this);
   this.node = options.node;
-  this.databaseURL = options.databaseURL;
   this.db = null;
   this.tip = null;
 }
-inherits(MongoWallet, EventEmitter);
+inherits(BitcoinWallet, EventEmitter);
 
-MongoWallet.dependencies = ['bitcoind'];
+BitcoinWallet.dependencies = ['bitcoind'];
 
-MongoWallet.prototype._connectMongo = function(callback) {
-  var self = this;
-  MongoClient.connect(self.databaseURL, function(err, db) {
-    if (err) {
-      return callback(err);
-    }
-    self.db = db;
-    callback();
-  });
+BitcoinWallet.prototype._getApplicationDir = function() {
+  var appPath = path.resolve(process.env.HOME, './.bwsv2');
+  return appPath;
 };
 
-MongoWallet.prototype.start = function(callback) {
+BitcoinWallet.prototype._getDatabasePath = function() {
+  var appPath = this._getApplicationDir();
+  if (this.node.network === bitcore.Networks.livenet) {
+    this.dataPath = path.resolve(appPath, './wallet-livenet.db');
+  } else if (this.node.network === bitcore.Networks.testnet) {
+    if (this.node.network.regtestEnabled) {
+      this.dataPath = path.resolve(appPath, './wallet-regtest.db');
+    } else {
+      this.dataPath = path.resolve(appPath, '/wallet-testnet3.db');
+    }
+  } else {
+    throw new Error('Unknown network: ' + this.network);
+  }
+};
+
+
+BitcoinWallet.prototype._setupDatabase = function(callback) {
+  var self = this;
+  var path = self._getDatabasePath();
+  this.db = leveldown(path);
+  this.db.open({
+    createIfMissing: true
+  }, callback);
+};
+
+BitcoinWallet.prototype.start = function(callback) {
   var self = this;
 
   async.series([
     function(next) {
-      self._connectMongo(next);
+      self._setupDatabase(next);
     },
     function(next) {
       self._initializeTip(next);
@@ -47,7 +66,7 @@ MongoWallet.prototype.start = function(callback) {
     }
 
     self.emit('ready');
-    self.log.info('Mongo Wallet Ready');
+    self.log.info('Wallet Ready');
     self.sync();
 
     self.node.services.bitcoind.on('tip', function() {
@@ -60,30 +79,30 @@ MongoWallet.prototype.start = function(callback) {
 
 };
 
-MongoWallet.prototype.stop = function(callback) {
+BitcoinWallet.prototype.stop = function(callback) {
   if (this.db) {
     this.db.close();
   }
   setImmediate(callback);
 };
 
-MongoWallet.prototype._connectBlock = function(callback) {
+BitcoinWallet.prototype._connectBlock = function(callback) {
   setImmediate(callback);
 };
 
-MongoWallet.prototype._disconnectTip = function(callback) {
+BitcoinWallet.prototype._disconnectTip = function(callback) {
   setImmediate(callback);
 };
 
-MongoWallet.prototype._initializeTip = function(callback) {
+BitcoinWallet.prototype._initializeTip = function(callback) {
   setImmediate(callback);
 };
 
-MongoWallet.prototype._initialSync = function(callback) {
+BitcoinWallet.prototype._initialSync = function(callback) {
   setImmediate(callback);
 };
 
-MongoWallet.prototype._activeSync = function(callback) {
+BitcoinWallet.prototype._activeSync = function(callback) {
   var self = this;
   var height;
   async.whilst(function() {
@@ -138,11 +157,11 @@ MongoWallet.prototype._activeSync = function(callback) {
   }, callback);
 };
 
-MongoWallet.prototype.isSynced = function() {
+BitcoinWallet.prototype.isSynced = function() {
   return (this.tip.__height === this.node.services.bitcoind.height);
 };
 
-MongoWallet.prototype.sync = function() {
+BitcoinWallet.prototype.sync = function() {
   var self = this;
 
   if (self.bitcoindSyncing || self.node.stopping || !self.tip) {
@@ -180,12 +199,12 @@ MongoWallet.prototype.sync = function() {
   });
 };
 
-MongoWallet.prototype.getAPIMethods = function() {
+BitcoinWallet.prototype.getAPIMethods = function() {
   return [];
 };
 
-MongoWallet.prototype.getPublishEvents = function() {
+BitcoinWallet.prototype.getPublishEvents = function() {
   return [];
 };
 
-module.exports = MongoWallet;
+module.exports = BitcoinWallet;

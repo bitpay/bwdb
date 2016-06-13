@@ -1,14 +1,14 @@
 {
-  "name": "bitcore-mongowallet",
+  "name": "bwsv2",
   "version": "1.0.0",
-  "description": "Service for Bitcore for MongoDB backed Bitcoin wallets",
+  "description": "Experimental",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bitpay/bitcore-mongowallet.git"
+    "url": "git+https://github.com/bitpay/bwsv2.git"
   },
   "keywords": [
     "mongodb",
@@ -19,17 +19,20 @@
   "author": "BitPay, Inc.",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/bitpay/bitcore-mongowallet/issues"
+    "url": "https://github.com/bitpay/bwsv2/issues"
   },
-  "homepage": "https://github.com/bitpay/bitcore-mongowallet#readme",
+  "homepage": "https://github.com/bitpay/bwsv2#readme",
   "dependencies": {
-    "async": "^2.0.0-rc.5",
+    "async": "^2.0.0-rc.6",
     "bitcore-lib": "^0.13.16",
-    "mongodb": "^2.1.21"
+    "bson": "^0.4.23",
+    "leveldown": "^1.4.6",
+    "mkdirp": "^0.5.1"
   },
   "devDependencies": {
     "chai": "^3.5.0",
     "mocha": "^2.5.3",
     "sinon": "^1.17.4"
-  }
+  },
+  "private": true
 }
