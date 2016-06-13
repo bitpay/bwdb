@@ -1,1 +1,1 @@
-# Bitcore MongoWallet
+# bwsv2
