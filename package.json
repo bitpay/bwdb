@@ -26,6 +26,7 @@
   "dependencies": {
     "async": "^2.0.0-rc.6",
     "bitcore-lib": "^0.13.16",
+    "bloom-filter": "braydonf/bloom-filter#28a473273e276d3293f465308d6b7442167cbf0f",
     "lodash": "^4.13.1",
     "bson": "^0.4.23",
     "leveldown": "^1.4.6",
