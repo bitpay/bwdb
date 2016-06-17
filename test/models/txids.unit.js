@@ -170,4 +170,20 @@ describe('Wallet Txids Model', function() {
       ]);
     });
   });
+  describe('#clone', function() {
+    it('will not create references', function() {
+      var zero = new Buffer('0000000100000001b28de096a33491363e091bb320173f1958c1bcc58a213f50420e4aa5b11660a5', 'hex');
+      var one = new Buffer('0000000100000002874025c809708fd20e5c5ac6f98c8f515f3786d02031192a45168ffd95ed9b5e', 'hex');
+      var two = new Buffer('000000010000000350b402252930c8fef2be3c2d4d5e8e32be8edb336305b753a3e63c6bf61d6b7e', 'hex');
+      var walletTxids = new WalletTxids({data: [zero, one, two]});
+      var walletTxids2 = walletTxids.clone();
+      walletTxids._data = [];
+      walletTxids2._data[0].should.not.equal(zero);
+      walletTxids2._data[0].should.deep.equal(zero);
+      walletTxids2._data[1].should.not.equal(one);
+      walletTxids2._data[1].should.deep.equal(one);
+      walletTxids2._data[2].should.not.equal(two);
+      walletTxids2._data[2].should.deep.equal(two);
+    });
+  });
 });

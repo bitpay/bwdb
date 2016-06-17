@@ -15,7 +15,7 @@ describe('Wallet Model', function() {
         height: 100,
         blockHash: blockHash,
         addressFilter: {
-          vData: [],
+          vData: new Array([0, 1]),
           nHashFuncs: 3,
           nTweak: false,
           nFlags: 0,
@@ -69,7 +69,7 @@ describe('Wallet Model', function() {
     });
   });
   describe('#clone', function() {
-    it('will clone a wallet', function() {
+    it('will have the same height and address filter', function() {
       var wallet = new Wallet({
         height: 100,
         blockHash: new Buffer('000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f', 'hex')
@@ -80,6 +80,16 @@ describe('Wallet Model', function() {
       var wallet2 = wallet.clone();
       wallet2.height.should.equal(100);
       wallet2.addressFilter.contains(new Buffer('abcdef', 'hex')).should.equal(true);
+    });
+    it('will not create references', function() {
+      var blockHash = new Buffer('000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f', 'hex');
+      var wallet = new Wallet({
+        height: 100,
+        blockHash: blockHash
+      });
+      var wallet2 = wallet.clone();
+      should.equal(wallet2.blockHash === blockHash, false);
+      wallet2.blockHash.should.deep.equal(blockHash);
     });
   });
 });
