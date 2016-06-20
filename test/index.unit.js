@@ -1,10 +1,12 @@
 'use strict';
 
+var EventEmitter = require('events').EventEmitter;
 var chai = require('chai');
 var should = chai.should();
 var sinon = require('sinon');
 
 var Wallet = require('../lib/index');
+var blockData = require('./data/blocks.json');
 
 describe('Wallet', function() {
   var node = {};
@@ -120,39 +122,219 @@ describe('Wallet', function() {
       });
     });
     describe('#_updateTip', function() {
-      it('will get raw block or the next block height', function() {
+      it('will get raw block or the next block height', function(done) {
+        var testNode = {
+          getRawBlock: function(height, callback) {
+            height.should.equal(1);
+            callback(null, new Buffer(blockData[0], 'hex'));
+          }
+        };
+        var wallet = new Wallet({node: testNode});
+        wallet.walletData = {
+          blockHash: new Buffer('000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943', 'hex')
+        };
+        wallet._connectBlock = sinon.stub().callsArg(1);
+        wallet._updateTip(0, function(err) {
+          if (err) {
+            return done(err);
+          }
+          wallet._connectBlock.callCount.should.equal(1);
+          wallet._connectBlock.args[0][0].__height.should.equal(1);
+          done();
+        });
       });
-      it('will handle error from getting block', function() {
+      it('will handle error from getting block', function(done) {
+        var testNode = {
+          getRawBlock: sinon.stub().callsArgWith(1, new Error('test'))
+        };
+        var wallet = new Wallet({node: testNode});
+        wallet._updateTip(100, function(err) {
+          err.should.be.instanceOf(Error);
+          err.message.should.equal('test');
+          done();
+        });
       });
-      it('will set block height', function() {
+      it('will handle error while connecting block', function(done) {
+        var testNode = {
+          getRawBlock: function(height, callback) {
+            height.should.equal(1);
+            callback(null, new Buffer(blockData[0], 'hex'));
+          }
+        };
+        var wallet = new Wallet({node: testNode});
+        wallet.walletData = {
+          blockHash: new Buffer('000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943', 'hex')
+        };
+        wallet._connectBlock = sinon.stub().callsArgWith(1, new Error('test'));
+        wallet._updateTip(0, function(err) {
+          err.should.be.instanceOf(Error);
+          wallet._connectBlock.callCount.should.equal(1);
+          done();
+        });
       });
-      it('will connect block if next block advances chain', function() {
+      it('will disconnect block if block does not advance chain', function(done) {
+        var testNode = {
+          log: {
+            warn: sinon.stub()
+          },
+          getRawBlock: function(height, callback) {
+            height.should.equal(1);
+            callback(null, new Buffer(blockData[0], 'hex'));
+          }
+        };
+        var wallet = new Wallet({node: testNode});
+        wallet.walletData = {
+          blockHash: new Buffer('000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4941', 'hex')
+        };
+        wallet._connectBlock = sinon.stub().callsArg(1);
+        wallet._disconnectTip = sinon.stub().callsArg(0);
+        wallet._updateTip(0, function(err) {
+          if (err) {
+            return done(err);
+          }
+          wallet._disconnectTip.callCount.should.equal(1);
+          wallet._connectBlock.callCount.should.equal(0);
+          done();
+        });
       });
-      it('will handle error while connecting block', function() {
-      });
-      it('will disconnect block if block does not advance chain', function() {
-      });
-      it('will handle error while disconnecting block', function() {
+      it('will handle error while disconnecting block', function(done) {
+        var testNode = {
+          log: {
+            warn: sinon.stub()
+          },
+          getRawBlock: function(height, callback) {
+            height.should.equal(1);
+            callback(null, new Buffer(blockData[0], 'hex'));
+          }
+        };
+        var wallet = new Wallet({node: testNode});
+        wallet.walletData = {
+          blockHash: new Buffer('000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4941', 'hex')
+        };
+        wallet._connectBlock = sinon.stub().callsArg(1);
+        wallet._disconnectTip = sinon.stub().callsArgWith(0, new Error('test'));
+        wallet._updateTip(0, function(err) {
+          err.should.be.instanceOf(Error);
+          err.message.should.equal('test');
+          wallet._disconnectTip.callCount.should.equal(1);
+          wallet._connectBlock.callCount.should.equal(0);
+          done();
+        });
       });
     });
     describe('#sync', function() {
       it('will bail out if already syncing', function() {
+        var wallet = new Wallet({node: node});
+        wallet.syncing = true;
+        var started = wallet.sync();
+        started.should.equal(false);
       });
       it('will bail out if node is stopping', function() {
+        var testNode = {};
+        var wallet = new Wallet({node: testNode});
+        wallet.node.stopping = true;
+        var started = wallet.sync();
+        started.should.equal(false);
       });
       it('will bail out if walletData is not available', function() {
+        var wallet = new Wallet({node: node});
+        wallet.walletData = null;
+        var started = wallet.sync();
+        started.should.equal(false);
       });
       it('will bail out if walletTxids is not available', function() {
-      });
-      it('will set synced until finished', function() {
-      });
-      it('will bail out if node is stopping while syncing', function() {
-      });
-      it('will update tip until height matches', function() {
+        var wallet = new Wallet({node: node});
+        wallet.walletTxids = null;
+        var started = wallet.sync();
+        started.should.equal(false);
       });
       it('will emit synced when height matches', function() {
+        var wallet = new Wallet({node: node});
+        wallet.walletTxids = null;
+        var started = wallet.sync();
+        started.should.equal(false);
       });
-      it('will bail out while stopping and finished syncing', function() {
+      it('will update wallet height until it matches bitcoind height', function(done) {
+        var testNode = {};
+        testNode.stopping = false;
+        testNode.services = {
+          bitcoind: {
+            height: 200
+          }
+        };
+        var wallet = new Wallet({node: testNode});
+        wallet.walletData = {};
+        wallet.walletData.height = 100;
+        wallet.walletTxids = {};
+        wallet._updateTip = function(height, callback) {
+          wallet.walletData.height += 1;
+          setImmediate(callback);
+        };
+        sinon.spy(wallet, '_updateTip');
+        wallet.once('synced', function() {
+          wallet._updateTip.callCount.should.equal(100);
+          wallet.walletData.height.should.equal(200);
+          wallet.syncing.should.equal(false);
+          done();
+        });
+        var started = wallet.sync();
+        started.should.equal(true);
+      });
+      it('will bail out if node is stopping while syncing', function(done) {
+        var testNode = {};
+        testNode.stopping = false;
+        testNode.services = {
+          bitcoind: {
+            height: 200
+          }
+        };
+        var wallet = new Wallet({node: testNode});
+        wallet.walletData = {};
+        wallet.walletData.height = 100;
+        wallet.walletTxids = {};
+        wallet._updateTip = function(height, callback) {
+          wallet.walletData.height += 1;
+          wallet.node.stopping = true;
+          setImmediate(callback);
+        };
+        sinon.spy(wallet, '_updateTip');
+        wallet.once('synced', function() {
+          throw new Error('Sync should not be called');
+        });
+        var started = wallet.sync();
+        setImmediate(function() {
+          started.should.equal(true);
+          wallet._updateTip.callCount.should.equal(1);
+          wallet.walletData.height.should.equal(101);
+          wallet.syncing.should.equal(false);
+          done();
+        });
+      });
+      it('will emit error while syncing', function(done) {
+        var testNode = {};
+        testNode.stopping = false;
+        testNode.services = {
+          bitcoind: {
+            height: 200
+          }
+        };
+        var wallet = new Wallet({node: testNode});
+        wallet.walletData = {};
+        wallet.walletData.height = 100;
+        wallet.walletTxids = {};
+        wallet._updateTip = sinon.stub().callsArgWith(1, new Error('test'));
+        wallet.once('synced', function() {
+          throw new Error('Sync should not be called');
+        });
+        wallet.once('error', function(err) {
+          err.should.be.instanceOf(Error);
+          wallet.syncing.should.equal(false);
+          wallet._updateTip.callCount.should.equal(1);
+          wallet.walletData.height.should.equal(100);
+          done();
+        });
+        var started = wallet.sync();
+        started.should.equal(true);
       });
     });
   });
