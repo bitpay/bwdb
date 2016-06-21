@@ -92,23 +92,138 @@ describe('Wallet', function() {
       });
     });
     describe('#_connectBlockCommit', function() {
-      it('will update walletData with block hash and height', function() {
+      it('will batch and update wallet data references', function(done) {
+        var testNode = {
+          log: {
+            info: sinon.stub()
+          }
+        };
+        var wallet = new Wallet({node: testNode});
+        wallet.db = {
+          batch: sinon.stub().callsArg(1)
+        };
+        var walletTxids = {
+          toBuffer: sinon.stub().returns(new Buffer('abcdef', 'hex')),
+        };
+        var walletData = {
+          toBuffer: sinon.stub().returns(new Buffer('fedcba', 'hex')),
+        };
+        var block = {
+          hash: '0000000000253b76babed6f36b68b79a0c232f89e6756bd7a848c63b83ca53a4'
+        };
+        wallet._connectBlockCommit(walletTxids, walletData, block, function(err) {
+          if (err) {
+            return done(err);
+          }
+          wallet.db.batch.callCount.should.equal(1);
+          wallet.db.batch.args[0][0].should.deep.equal([
+            {
+              type: 'put',
+              key: new Buffer('1000', 'hex'),
+              value: new Buffer('fedcba', 'hex')
+            },
+            {
+              type: 'put',
+              key: new Buffer('1001', 'hex'),
+              value: new Buffer('abcdef', 'hex')
+            }
+          ]);
+          wallet.walletData.should.equal(walletData);
+          wallet.walletTxids.should.equal(walletTxids);
+          done();
+        });
       });
-      it('will create two batch operations for walletTxids and walletData', function() {
-      });
-      it('will give error from batch', function() {
-      });
-      it('will batch ops to the database', function() {
-      });
-      it('will update wallet walletTxids and walletData references', function() {
+      it('will give error from batch', function(done) {
+        var testNode = {};
+        var wallet = new Wallet({node: testNode});
+        wallet.db = {
+          batch: sinon.stub().callsArgWith(1, new Error('test'))
+        };
+        var walletTxids = {
+          toBuffer: sinon.stub().returns(new Buffer('abcdef', 'hex')),
+        };
+        var walletData = {
+          toBuffer: sinon.stub().returns(new Buffer('fedcba', 'hex')),
+        };
+        var block = {
+          hash: '0000000000253b76babed6f36b68b79a0c232f89e6756bd7a848c63b83ca53a4'
+        };
+        wallet._connectBlockCommit(walletTxids, walletData, block, function(err) {
+          err.should.be.instanceOf(Error);
+          err.message.should.equal('test');
+          done();
+        });
       });
     });
     describe('#_connectBlock', function() {
-      it('will get address deltas from block handler', function() {
+      it('will get address deltas from block handler', function(done) {
+        var testNode = {};
+        var wallet = new Wallet({node: testNode});
+        wallet._connectBlockAddressDeltas = sinon.stub().callsArg(3);
+        wallet._connectBlockCommit = sinon.stub().callsArg(3);
+        wallet.blockHandler = {
+          buildAddressDeltaList: sinon.stub().returns({
+            'address1': [],
+            'address2': []
+          })
+        };
+        var walletDataClone = {};
+        wallet.walletData = {
+          clone: sinon.stub().returns(walletDataClone)
+        };
+        var walletTxidsClone = {};
+        wallet.walletTxids = {
+          clone: sinon.stub().returns(walletTxidsClone)
+        };
+        var block = {
+          __height: 100
+        };
+        wallet._connectBlock(block, function(err) {
+          if (err) {
+            return done(err);
+          }
+          wallet._connectBlockAddressDeltas.callCount.should.equal(2);
+          wallet._connectBlockAddressDeltas.args[0][0].should.equal(walletTxidsClone);
+          wallet._connectBlockAddressDeltas.args[0][1].should.equal(walletDataClone);
+          wallet._connectBlockAddressDeltas.args[0][2].should.deep.equal({
+            address: 'address1',
+            deltas: [],
+            blockHeight: 100
+          });
+          wallet._connectBlockCommit.callCount.should.equal(1);
+          wallet._connectBlockCommit.args[0][0].should.equal(walletTxidsClone);
+          wallet._connectBlockCommit.args[0][1].should.equal(walletDataClone);
+          wallet._connectBlockCommit.args[0][2].should.equal(block);
+          done();
+        });
       });
-      it('will give error from connecting block address deltas', function() {
-      });
-      it('will commit block', function() {
+      it('will give error from connecting block address deltas', function(done) {
+        var testNode = {};
+        var wallet = new Wallet({node: testNode});
+        wallet._connectBlockAddressDeltas = sinon.stub().callsArgWith(3, new Error('test'));
+        wallet._connectBlockCommit = sinon.stub().callsArg(3);
+        wallet.blockHandler = {
+          buildAddressDeltaList: sinon.stub().returns({
+            'address1': [],
+            'address2': []
+          })
+        };
+        var walletDataClone = {};
+        wallet.walletData = {
+          clone: sinon.stub().returns(walletDataClone)
+        };
+        var walletTxidsClone = {};
+        wallet.walletTxids = {
+          clone: sinon.stub().returns(walletTxidsClone)
+        };
+        var block = {
+          __height: 100
+        };
+        wallet._connectBlock(block, function(err) {
+          err.should.be.instanceOf(Error);
+          err.message.should.equal('test');
+          done();
+        });
       });
     });
     describe.skip('#_disconnectTip', function() {
@@ -117,8 +232,24 @@ describe('Wallet', function() {
     });
     describe('#_isSynced', function() {
       it('will return true if wallet data height matches bitcoin height', function() {
+        var testNode = {};
+        testNode.services = {};
+        testNode.services.bitcoind = {};
+        testNode.services.bitcoind.height = 100;
+        var wallet = new Wallet({node: testNode});
+        wallet.walletData = {};
+        wallet.walletData.height = 100;
+        wallet._isSynced().should.equal(true);
       });
       it('will return false if wallet data height does not match bitcoin height', function() {
+        var testNode = {};
+        testNode.services = {};
+        testNode.services.bitcoind = {};
+        testNode.services.bitcoind.height = 100;
+        var wallet = new Wallet({node: testNode});
+        wallet.walletData = {};
+        wallet.walletData.height = 99;
+        wallet._isSynced().should.equal(false);
       });
     });
     describe('#_updateTip', function() {
