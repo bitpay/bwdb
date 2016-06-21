@@ -4,8 +4,8 @@
   "description": "Experimental",
   "main": "lib/index.js",
   "scripts": {
-    "test": "NODE_ENV=test ./node_modules/.bin/mocha test/** --recursive",
-    "coverage": "NODE_ENV=test ./node_modules/.bin/istanbul cover -x 'lib/logger.js' -x 'config/index.js' ./node_modules/.bin/_mocha -- --recursive"
+    "test": "mocha -R spec --recursive",
+    "coverage": "istanbul cover _mocha -- --recursive"
   },
   "repository": {
     "type": "git",
