@@ -157,6 +157,48 @@ describe('Wallet Block Handler', function() {
         ]
       });
     });
+    it('will not add output', function() {
+      var handler = new BlockHandler({
+        network: bitcore.Networks.testnet,
+        addressFilter: BloomFilter.create(100, 0.1)
+      });
+      handler.getAddressFromOutput = sinon.stub().returns(false);
+      var tx = {
+        hash: '2891a13dfff64169e90dfb3c46b8551ff2f842adc4aa502c7c716d97aed0486f',
+        outputs: [{}]
+      };
+      var deltas = handler.getAddressDeltasFromOutputs(tx, 29);
+      deltas.should.deep.equal({});
+    });
+    it('will group multiple outputs by address', function() {
+      var address = bitcore.Address('2MvjMzX36nATqcb1TdAF4Qh6pBS4cxcJM8d');
+      var handler = new BlockHandler({
+        network: bitcore.Networks.testnet,
+        addressFilter: BloomFilter.create(100, 0.1)
+      });
+      handler.getAddressFromOutput = sinon.stub().returns(address);
+      var tx = {
+        hash: '2891a13dfff64169e90dfb3c46b8551ff2f842adc4aa502c7c716d97aed0486f',
+        outputs: [{}, {}]
+      };
+      var deltas = handler.getAddressDeltasFromOutputs(tx, 29);
+      deltas.should.deep.equal({
+        '2MvjMzX36nATqcb1TdAF4Qh6pBS4cxcJM8d': [
+          {
+            txid: '2891a13dfff64169e90dfb3c46b8551ff2f842adc4aa502c7c716d97aed0486f',
+            receiving: true,
+            index: 0,
+            blockIndex: 29
+          },
+          {
+            txid: '2891a13dfff64169e90dfb3c46b8551ff2f842adc4aa502c7c716d97aed0486f',
+            receiving: true,
+            index: 1,
+            blockIndex: 29
+          }
+        ]
+      });
+    });
   });
   describe('#getAddressDeltasFromInputs', function() {
     it('will iterate over inputs of a transaction and build delta info', function() {
@@ -182,6 +224,48 @@ describe('Wallet Block Handler', function() {
         ]
       });
     });
+    it('will not add input', function() {
+      var handler = new BlockHandler({
+        network: bitcore.Networks.testnet,
+        addressFilter: BloomFilter.create(100, 0.1)
+      });
+      handler.getAddressFromInput = sinon.stub().returns(false);
+      var tx = {
+        hash: '0efbf7716b2b683bb2134d19fd13108a239dd6154d0aee260e0f5ce5c85be27c',
+        inputs: [{}]
+      };
+      var deltas = handler.getAddressDeltasFromInputs(tx, 27);
+      deltas.should.deep.equal({});
+    });
+    it('will group by address for multiple inputs', function() {
+      var address = bitcore.Address('2MvjMzX36nATqcb1TdAF4Qh6pBS4cxcJM8d');
+      var handler = new BlockHandler({
+        network: bitcore.Networks.testnet,
+        addressFilter: BloomFilter.create(100, 0.1)
+      });
+      handler.getAddressFromInput = sinon.stub().returns(address);
+      var tx = {
+        hash: '0efbf7716b2b683bb2134d19fd13108a239dd6154d0aee260e0f5ce5c85be27c',
+        inputs: [{}, {}]
+      };
+      var deltas = handler.getAddressDeltasFromInputs(tx, 27);
+      deltas.should.deep.equal({
+        '2MvjMzX36nATqcb1TdAF4Qh6pBS4cxcJM8d': [
+          {
+            txid: '0efbf7716b2b683bb2134d19fd13108a239dd6154d0aee260e0f5ce5c85be27c',
+            receiving: false,
+            index: 0,
+            blockIndex: 27
+          },
+          {
+            txid: '0efbf7716b2b683bb2134d19fd13108a239dd6154d0aee260e0f5ce5c85be27c',
+            receiving: false,
+            index: 1,
+            blockIndex: 27
+          }
+        ]
+      });
+    });
   });
   describe('#buildAddressDeltaList', function() {
     it('will build array grouped by address', function() {
@@ -201,6 +285,12 @@ describe('Wallet Block Handler', function() {
             receiving: true,
             index: 0,
             blockIndex: 29
+          },
+          {
+            txid: '2891a13dfff64169e90dfb3c46b8551ff2f842adc4aa502c7c716d97aed0486f',
+            receiving: true,
+            index: 1,
+            blockIndex: 29
           }
         ]
       });
@@ -210,12 +300,34 @@ describe('Wallet Block Handler', function() {
             txid: '0efbf7716b2b683bb2134d19fd13108a239dd6154d0aee260e0f5ce5c85be27c',
             receiving: false,
             index: 0,
-            blockIndex: 27
+            blockIndex: 29
+          },
+          {
+            txid: '0efbf7716b2b683bb2134d19fd13108a239dd6154d0aee260e0f5ce5c85be27c',
+            receiving: false,
+            index: 1,
+            blockIndex: 29
+          }
+        ],
+        '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r': [
+          {
+            txid: '2891a13dfff64169e90dfb3c46b8551ff2f842adc4aa502c7c716d97aed0486f',
+            receiving: false,
+            index: 0,
+            blockIndex: 29
           }
         ]
       });
       var deltas = handler.buildAddressDeltaList(block);
       deltas.should.deep.equal({
+        '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r': [
+          {
+            txid: '2891a13dfff64169e90dfb3c46b8551ff2f842adc4aa502c7c716d97aed0486f',
+            receiving: false,
+            index: 0,
+            blockIndex: 29
+          }
+        ],
         '2MvjMzX36nATqcb1TdAF4Qh6pBS4cxcJM8d': [
           {
             txid: '2891a13dfff64169e90dfb3c46b8551ff2f842adc4aa502c7c716d97aed0486f',
@@ -224,10 +336,22 @@ describe('Wallet Block Handler', function() {
             blockIndex: 29
           },
           {
+            txid: '2891a13dfff64169e90dfb3c46b8551ff2f842adc4aa502c7c716d97aed0486f',
+            receiving: true,
+            index: 1,
+            blockIndex: 29
+          },
+          {
             txid: '0efbf7716b2b683bb2134d19fd13108a239dd6154d0aee260e0f5ce5c85be27c',
             receiving: false,
             index: 0,
-            blockIndex: 27
+            blockIndex: 29
+          },
+          {
+            txid: '0efbf7716b2b683bb2134d19fd13108a239dd6154d0aee260e0f5ce5c85be27c',
+            receiving: false,
+            index: 1,
+            blockIndex: 29
           }
         ]
       });

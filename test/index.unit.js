@@ -543,8 +543,11 @@ describe('Wallet', function() {
         });
       });
     });
-    describe.skip('#_disconnectTip', function() {
-      it('', function() {
+    describe('#_disconnectTip', function() {
+      it('will call callback', function(done) {
+        var testNode = {};
+        var wallet = new Wallet({node: testNode});
+        wallet._disconnectTip(done);
       });
     });
     describe('#_updateTip', function() {
