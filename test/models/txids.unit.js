@@ -176,6 +176,10 @@ describe('Wallet Txids Model', function() {
       ]);
     });
   });
+  describe.skip('#getBlockHeightRange', function() {
+    it('will start and end iteration and return txids', function() {
+    });
+  });
   describe('#clone', function() {
     it('will not create references', function() {
       var zero = new Buffer('0000000100000001b28de096a33491363e091bb320173f1958c1bcc58a213f50420e4aa5b11660a5', 'hex');

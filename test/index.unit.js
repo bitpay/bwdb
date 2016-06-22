@@ -1203,6 +1203,34 @@ describe('Wallet', function() {
         });
       });
     });
+    describe.skip('getting wallet transactions', function() {
+      describe('#_validateStartAndEnd', function() {
+        it('will throw error if start is not a number', function() {
+        });
+        it('will throw error if end is not a number ', function() {
+        });
+        it('will throw error if end is less than start', function() {
+        });
+        it('will throw error if the range exceeds the max', function() {
+        });
+      });
+      describe('#_importTransaction', function() {
+        it('will get detailed transaction from bitcoind and save to database', function() {
+        });
+        it('will handle error from bitcoind', function() {
+        });
+      });
+      describe('#getWalletTransactions', function() {
+        it('will set default start and end options', function() {
+        });
+        it('will validate start and end options', function() {
+        });
+        it('will map over txids and get wallet transactions', function() {
+        });
+        it('will map over txids and import transactions that are missing', function() {
+        });
+      });
+    });
     describe('#getAPIMethods', function() {
       it('will return expected methods', function() {
         var wallet = new Wallet({node: node});
