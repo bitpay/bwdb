@@ -1,0 +1,44 @@
+#!/usr/bin/env node
+
+'use strict';
+
+process.title = 'walletd';
+
+var version = require('../package.json').version;
+var program = require('commander');
+
+var Server = require('../lib/server');
+
+program
+  .version(version)
+  .description('Bitcoin Wallet Daemon')
+  .option('-c, --config <dir>', 'Specify the data directory that has the configuration file.')
+  .option('-t, --testnet', 'Use testnet network')
+  .option('-r, --regtest', 'Use regtest network');
+
+program.parse(process.argv);
+
+var network = 'livenet';
+if (program.testnet) {
+  network = 'testnet';
+} else if (program.regtest) {
+  network = 'regtest';
+}
+
+var server = new Server({network: network, configPath: program.config});
+server.start(function(err) {
+  if (err) {
+    console.error(err.stack);
+    process.exit();
+  }
+});
+
+process.on('SIGINT', function() {
+  server.stop(function(err) {
+    if (err) {
+      console.error('Failed to stop services: ' + err);
+      return process.exit(1);
+    }
+    process.exit(0);
+  });
+});

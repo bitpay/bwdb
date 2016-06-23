@@ -2,8 +2,14 @@
   "name": "bwsv2",
   "version": "1.0.0",
   "description": "Experimental",
+  "bitcoreNode": "lib/wallet.js",
   "main": "lib/index.js",
+  "bin": {
+    "walletd": "./bin/walletd",
+    "wallet-cli": "./bin/wallet-cli"
+  },
   "scripts": {
+    "start": "./bin/walletd",
     "test": "mocha -R spec --recursive",
     "coverage": "istanbul cover _mocha -- --recursive"
   },
@@ -12,7 +18,6 @@
     "url": "git+https://github.com/bitpay/bwsv2.git"
   },
   "keywords": [
-    "mongodb",
     "bitcoin",
     "wallet",
     "bitcore"
@@ -26,11 +31,15 @@
   "dependencies": {
     "async": "^2.0.0-rc.6",
     "bitcore-lib": "^0.13.16",
+    "bitcore-node": "^3.0.2",
     "bloom-filter": "braydonf/bloom-filter#28a473273e276d3293f465308d6b7442167cbf0f",
+    "body-parser": "^1.15.2",
     "bson": "^0.4.23",
-    "fast-future": "^1.0.1",
+    "commander": "^2.9.0",
+    "compression": "^1.6.2",
     "lodash": "^4.13.1",
     "mkdirp": "^0.5.1",
+    "morgan": "^1.7.0",
     "node-lmdb": "^0.4.1"
   },
   "devDependencies": {

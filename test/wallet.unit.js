@@ -1,6 +1,5 @@
 'use strict';
 
-var proxyquire = require('proxyquire');
 var EventEmitter = require('events').EventEmitter;
 var chai = require('chai');
 var should = chai.should();
@@ -8,7 +7,8 @@ var sinon = require('sinon');
 var bitcore = require('bitcore-lib');
 var BloomFilter = require('bloom-filter');
 
-var Wallet = require('../lib/index');
+var utils = require('../lib/utils');
+var Wallet = require('../lib/wallet');
 var BlockHandler = require('../lib/block-handler');
 var models = require('../lib/models');
 var blockData = require('./data/blocks.json');
@@ -17,7 +17,8 @@ describe('Wallet', function() {
   var node = {
     services: {
       bitcoind: {}
-    }
+    },
+    network: 'testnet'
   };
   describe('@constructor', function() {
     it('will set node', function() {
@@ -26,126 +27,10 @@ describe('Wallet', function() {
     });
   });
   describe('starting service', function() {
-    describe('#_getApplicationDir', function() {
-      it('will resolve application path based on home directory', function() {
-        var wallet = new Wallet({node: node});
-        var appPath = wallet._getApplicationDir();
-        appPath.should.equal(process.env.HOME + '/.bwsv2');
-      });
-    });
-    describe('#_setupDirectory', function() {
-      it('will make directory if the application directory does not exist', function(done) {
-        var mkdirp = sinon.stub().callsArg(1);
-        var enoentError = new Error();
-        enoentError.code = 'ENOENT';
-        var access = sinon.stub().callsArgWith(1, enoentError);
-        var TestWallet = proxyquire('../lib/index', {
-          'fs': {
-            access: access
-          },
-          'mkdirp': mkdirp
-        });
-        var wallet = new TestWallet({node: node});
-        wallet._setupDirectory('/tmp/bwsv2-directory', function(err) {
-          if (err) {
-            return done(err);
-          }
-          mkdirp.callCount.should.equal(1);
-          access.callCount.should.equal(1);
-          done();
-        });
-      });
-      it('will give unhandled error while trying to access application directory', function(done) {
-        var mkdirp = sinon.stub().callsArg(1);
-        var access = sinon.stub().callsArgWith(1, new Error('test'));
-        var TestWallet = proxyquire('../lib/index', {
-          'fs': {
-            access: access
-          },
-          'mkdirp': mkdirp
-        });
-        var wallet = new TestWallet({node: node});
-        wallet._setupDirectory('/tmp/bwsv2-directory', function(err) {
-          err.should.be.instanceOf(Error);
-          err.message.should.equal('test');
-          mkdirp.callCount.should.equal(0);
-          done();
-        });
-      });
-      it('will continue if application directory already exists', function(done) {
-        var mkdirp = sinon.stub().callsArg(1);
-        var access = sinon.stub().callsArg(1);
-        var TestWallet = proxyquire('../lib/index', {
-          'fs': {
-            access: access
-          },
-          'mkdirp': mkdirp
-        });
-        var wallet = new TestWallet({node: node});
-        wallet._setupDirectory('/tmp/bwsv2-directory', function(err) {
-          if (err) {
-            return done(err);
-          }
-          mkdirp.callCount.should.equal(0);
-          access.callCount.should.equal(1);
-          done();
-        });
-      });
-    });
-    describe('#_getDatabasePath', function() {
-      afterEach(function() {
-        bitcore.Networks.disableRegtest();
-      });
-      it('will give database path for livenet', function() {
-        var testNode = {
-          network: bitcore.Networks.livenet,
-          services: {
-            bitcoind: {}
-          }
-        };
-        var wallet = new Wallet({node: testNode});
-        var dbPath = wallet._getDatabasePath();
-        dbPath.should.equal(process.env.HOME + '/.bwsv2/wallet-livenet.lmdb');
-      });
-      it('will give database path for regtest', function() {
-        var testNode = {
-          network: bitcore.Networks.testnet,
-          services: {
-            bitcoind: {}
-          }
-        };
-        bitcore.Networks.enableRegtest();
-        var wallet = new Wallet({node: testNode});
-        var dbPath = wallet._getDatabasePath();
-        dbPath.should.equal(process.env.HOME + '/.bwsv2/wallet-regtest.lmdb');
-      });
-      it('will give database path for testnet', function() {
-        var testNode = {
-          network: bitcore.Networks.testnet,
-          services: {
-            bitcoind: {}
-          }
-        };
-        var wallet = new Wallet({node: testNode});
-        var dbPath = wallet._getDatabasePath();
-        dbPath.should.equal(process.env.HOME + '/.bwsv2/wallet-testnet3.lmdb');
-      });
-      it('will give error with unknown network', function() {
-        var testNode = {
-          network: 'unknown',
-          services: {
-            bitcoind: {}
-          }
-        };
-        var wallet = new Wallet({node: testNode});
-        (function() {
-          wallet._getDatabasePath();
-        }).should.throw(TypeError);
-      });
-    });
     describe('#_setupDatabase', function() {
       it('will open database from path', function(done) {
         var testNode = {
+          network: 'testnet',
           bitcoind: {},
           services: {
             bitcoind: {}
@@ -164,7 +49,9 @@ describe('Wallet', function() {
     });
     describe('#_loadWalletData', function() {
       it('will create new wallet at current height if wallet not found', function(done) {
-        var testNode = {};
+        var testNode = {
+          network: 'testnet'
+        };
         var wallet = new Wallet({node: testNode});
         wallet.bitcoind = {
           height: 100,
@@ -208,6 +95,13 @@ describe('Wallet', function() {
       });
     });
     describe('#start', function() {
+      var sandbox;
+      beforeEach(function() {
+        sandbox = sinon.sandbox.create();
+      });
+      afterEach(function() {
+        sandbox.restore();
+      });
       it('will setup database, load wallet, block handler and register sync events', function(done) {
         var bitcoind = new EventEmitter();
         var testNode = {
@@ -224,7 +118,6 @@ describe('Wallet', function() {
         var walletData = {
           addressFilter: BloomFilter.create(1000, 0.1)
         };
-        wallet._setupDirectory = sinon.stub().callsArg(1);
         wallet._setupDatabase = sinon.stub().callsArg(0);
         sinon.stub(wallet, '_loadWalletData', function(callback) {
           wallet.walletData = walletData;
@@ -235,7 +128,6 @@ describe('Wallet', function() {
             return done(err);
           }
           // init wallet data
-          wallet._setupDirectory.callCount.should.equal(1);
           wallet._setupDatabase.callCount.should.equal(1);
           wallet._loadWalletData.callCount.should.equal(1);
 
@@ -267,10 +159,11 @@ describe('Wallet', function() {
         var testNode = {
           services: {
             bitcoind: {}
-          }
+          },
+          network: 'testnet'
         };
         var wallet  = new Wallet({node: testNode});
-        wallet._setupDirectory = sinon.stub().callsArgWith(1, new Error('test'));
+        sandbox.stub(utils, 'setupDirectory').callsArgWith(1, new Error('test'));
         wallet.start(function(err) {
           err.should.be.instanceOf(Error);
           err.message.should.equal('test');
@@ -309,6 +202,9 @@ describe('Wallet', function() {
     });
   });
   describe('syncing', function() {
+    var testNode = {
+      network: 'testnet'
+    };
     describe('#_connectBlockAddressDeltas', function() {
       var deltaData = {
         blockHeight: 10,
@@ -321,7 +217,6 @@ describe('Wallet', function() {
         ],
       };
       it('will get database key for address', function(done) {
-        var testNode = {};
         var wallet = new Wallet({node: testNode});
         var txidsDbi = {};
         wallet.db = {
@@ -345,7 +240,6 @@ describe('Wallet', function() {
         });
       });
       it('will skip if address does not exist', function(done) {
-        var testNode = {};
         var wallet = new Wallet({node: testNode});
         var txidsDbi = {};
         wallet.db = {
@@ -369,12 +263,13 @@ describe('Wallet', function() {
     });
     describe('#_connectBlockCommit', function() {
       it('will batch and update wallet data references', function(done) {
-        var testNode = {
+        var testNode2 = {
           log: {
             info: sinon.stub()
-          }
+          },
+          network: 'testnet'
         };
-        var wallet = new Wallet({node: testNode});
+        var wallet = new Wallet({node: testNode2});
         var walletDbi = {};
         wallet.db = {
           wallet: walletDbi,
@@ -406,7 +301,6 @@ describe('Wallet', function() {
         });
       });
       it('will give error from sync', function(done) {
-        var testNode = {};
         var wallet = new Wallet({node: testNode});
         wallet.db = {
           env: {
@@ -431,8 +325,10 @@ describe('Wallet', function() {
       });
     });
     describe('#_connectBlock', function() {
+      var testNode = {
+        network: 'testnet'
+      };
       it('will get address deltas from block handler', function(done) {
-        var testNode = {};
         var wallet = new Wallet({node: testNode});
         var txn = {};
         wallet.db = {
@@ -479,7 +375,6 @@ describe('Wallet', function() {
         });
       });
       it('will give error from connecting block address deltas', function(done) {
-        var testNode = {};
         var wallet = new Wallet({node: testNode});
         var txn = {};
         wallet.db = {
@@ -515,7 +410,9 @@ describe('Wallet', function() {
     });
     describe('#_disconnectTip', function() {
       it('will call callback', function(done) {
-        var testNode = {};
+        var testNode = {
+          network: 'testnet'
+        };
         var wallet = new Wallet({node: testNode});
         wallet._disconnectTip(done);
       });
@@ -526,7 +423,8 @@ describe('Wallet', function() {
           getRawBlock: function(height, callback) {
             height.should.equal(1);
             callback(null, new Buffer(blockData[0], 'hex'));
-          }
+          },
+          network: 'testnet'
         };
         var wallet = new Wallet({node: testNode});
         wallet.walletData = {
@@ -544,7 +442,8 @@ describe('Wallet', function() {
       });
       it('will handle error from getting block', function(done) {
         var testNode = {
-          getRawBlock: sinon.stub().callsArgWith(1, new Error('test'))
+          getRawBlock: sinon.stub().callsArgWith(1, new Error('test')),
+          network: 'testnet'
         };
         var wallet = new Wallet({node: testNode});
         wallet._updateTip(100, function(err) {
@@ -558,7 +457,8 @@ describe('Wallet', function() {
           getRawBlock: function(height, callback) {
             height.should.equal(1);
             callback(null, new Buffer(blockData[0], 'hex'));
-          }
+          },
+          network: 'testnet'
         };
         var wallet = new Wallet({node: testNode});
         wallet.walletData = {
@@ -579,7 +479,8 @@ describe('Wallet', function() {
           getRawBlock: function(height, callback) {
             height.should.equal(1);
             callback(null, new Buffer(blockData[0], 'hex'));
-          }
+          },
+          network: 'testnet'
         };
         var wallet = new Wallet({node: testNode});
         wallet.walletData = {
@@ -604,7 +505,8 @@ describe('Wallet', function() {
           getRawBlock: function(height, callback) {
             height.should.equal(1);
             callback(null, new Buffer(blockData[0], 'hex'));
-          }
+          },
+          network: 'testnet'
         };
         var wallet = new Wallet({node: testNode});
         wallet.walletData = {
@@ -629,7 +531,9 @@ describe('Wallet', function() {
         started.should.equal(false);
       });
       it('will bail out if node is stopping', function() {
-        var testNode = {};
+        var testNode = {
+          network: 'testnet'
+        };
         var wallet = new Wallet({node: testNode});
         wallet.node.stopping = true;
         var started = wallet.sync();
@@ -654,7 +558,9 @@ describe('Wallet', function() {
         started.should.equal(false);
       });
       it('will update wallet height until it matches bitcoind height', function(done) {
-        var testNode = {};
+        var testNode = {
+          network: 'testnet'
+        };
         testNode.stopping = false;
         var wallet = new Wallet({node: testNode});
         wallet.walletData = {};
@@ -678,7 +584,9 @@ describe('Wallet', function() {
         started.should.equal(true);
       });
       it('will bail out if node is stopping while syncing', function(done) {
-        var testNode = {};
+        var testNode = {
+          network: 'testnet'
+        };
         testNode.stopping = false;
         var wallet = new Wallet({node: testNode});
         wallet.walletData = {};
@@ -706,7 +614,9 @@ describe('Wallet', function() {
         });
       });
       it('will emit error while syncing', function(done) {
-        var testNode = {};
+        var testNode = {
+          network: 'testnet'
+        };
         testNode.stopping = false;
         var wallet = new Wallet({node: testNode});
         wallet.walletData = {};
@@ -769,7 +679,9 @@ describe('Wallet', function() {
       });
       describe('#_addKeyToWallet', function() {
         it('will handle error from client query', function(done) {
-          var node = {};
+          var node = {
+            network: 'livenet'
+          };
           var wallet = new Wallet({node: node});
           wallet.bitcoind = {
             client: {
@@ -801,7 +713,9 @@ describe('Wallet', function() {
             blockindex: 12,
             txid: '90e262c7baaf4a5a8eb910d075e945d5a27f856f71a06ff8681128115a07441a'
           }];
-          var node = {};
+          var node = {
+            network: 'livenet'
+          };
           var wallet = new Wallet({node: node});
           var txidsDbi = {};
           wallet.db = {

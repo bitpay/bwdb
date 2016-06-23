@@ -1,0 +1,45 @@
+#!/usr/bin/env node
+
+'use strict';
+
+process.title = 'wallet-cli';
+
+var version = require('../package.json').version;
+var program = require('commander');
+
+var Client = require('../lib/client');
+
+program
+  .version(version)
+  .description('Bitcoin Wallet CLI');
+
+program
+  .command('importKey <wallet> <address>')
+  .description('Import a new address')
+  .action(function() {
+    // TODO
+  });
+
+program
+  .command('getTransactions <wallet>')
+  .description('View transactions for a wallet')
+  .option('-s, --start <start>', 'The starting block height')
+  .option('-e, --end <end>', 'The ending block height')
+  .action(function() {
+    // TODO
+  });
+
+program
+  .command('getTxids <wallet>')
+  .description('View transactions for a wallet')
+  .option('-f, --from <from>', 'The starting range index')
+  .option('-t, --to <to>', 'The ending range index')
+  .action(function() {
+    // TODO
+  });
+
+program.parse(process.argv);
+
+if (process.argv.length === 2) {
+  program.help();
+}
