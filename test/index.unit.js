@@ -33,7 +33,7 @@ describe('Wallet', function() {
         appPath.should.equal(process.env.HOME + '/.bwsv2');
       });
     });
-    describe('#_setupApplicationDirectory', function() {
+    describe('#_setupDirectory', function() {
       it('will make directory if the application directory does not exist', function(done) {
         var mkdirp = sinon.stub().callsArg(1);
         var enoentError = new Error();
@@ -46,7 +46,7 @@ describe('Wallet', function() {
           'mkdirp': mkdirp
         });
         var wallet = new TestWallet({node: node});
-        wallet._setupApplicationDirectory(function(err) {
+        wallet._setupDirectory('/tmp/bwsv2-directory', function(err) {
           if (err) {
             return done(err);
           }
@@ -65,7 +65,7 @@ describe('Wallet', function() {
           'mkdirp': mkdirp
         });
         var wallet = new TestWallet({node: node});
-        wallet._setupApplicationDirectory(function(err) {
+        wallet._setupDirectory('/tmp/bwsv2-directory', function(err) {
           err.should.be.instanceOf(Error);
           err.message.should.equal('test');
           mkdirp.callCount.should.equal(0);
@@ -82,7 +82,7 @@ describe('Wallet', function() {
           'mkdirp': mkdirp
         });
         var wallet = new TestWallet({node: node});
-        wallet._setupApplicationDirectory(function(err) {
+        wallet._setupDirectory('/tmp/bwsv2-directory', function(err) {
           if (err) {
             return done(err);
           }
@@ -105,7 +105,7 @@ describe('Wallet', function() {
         };
         var wallet = new Wallet({node: testNode});
         var dbPath = wallet._getDatabasePath();
-        dbPath.should.equal(process.env.HOME + '/.bwsv2/wallet-livenet.db');
+        dbPath.should.equal(process.env.HOME + '/.bwsv2/wallet-livenet.lmdb');
       });
       it('will give database path for regtest', function() {
         var testNode = {
@@ -117,7 +117,7 @@ describe('Wallet', function() {
         bitcore.Networks.enableRegtest();
         var wallet = new Wallet({node: testNode});
         var dbPath = wallet._getDatabasePath();
-        dbPath.should.equal(process.env.HOME + '/.bwsv2/wallet-regtest.db');
+        dbPath.should.equal(process.env.HOME + '/.bwsv2/wallet-regtest.lmdb');
       });
       it('will give database path for testnet', function() {
         var testNode = {
@@ -128,7 +128,7 @@ describe('Wallet', function() {
         };
         var wallet = new Wallet({node: testNode});
         var dbPath = wallet._getDatabasePath();
-        dbPath.should.equal(process.env.HOME + '/.bwsv2/wallet-testnet3.db');
+        dbPath.should.equal(process.env.HOME + '/.bwsv2/wallet-testnet3.lmdb');
       });
       it('will give error with unknown network', function() {
         var testNode = {
@@ -144,30 +144,21 @@ describe('Wallet', function() {
       });
     });
     describe('#_setupDatabase', function() {
-      it('will open database from path', function() {
+      it('will open database from path', function(done) {
         var testNode = {
           bitcoind: {},
           services: {
             bitcoind: {}
           }
         };
-        var db = {
-          open: sinon.stub()
-        };
-        var leveldown = sinon.stub().returns(db);
-        var TestWallet = proxyquire('../lib/index', {
-          'leveldown': leveldown
-        });
+        // This will attempt to actually create the directory and database
         var wallet = new Wallet({node: testNode});
-        wallet._getDatabasePath = sinon.stub().returns('/tmp/dbpath');
+        wallet._getDatabasePath = sinon.stub().returns('/tmp/bwsv2-test.lmdb');
         wallet._setupDatabase(function(err) {
           if (err) {
             return done(err);
           }
-          leveldown.callCount.should.equal(1);
-          leveldown.args[0][0].should.equal('/tmp/dbpath');
-          db.open.callCount.should.eqaul(1);
-          db.open.args[0][0].should.deep.equal({createIfMissing: true});
+          done();
         });
       });
     });
@@ -180,7 +171,12 @@ describe('Wallet', function() {
           tiphash: '000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4941'
         };
         wallet.db = {
-          get: sinon.stub().callsArgWith(1, new Error('NotFound'))
+          env: {
+            beginTxn: sinon.stub().returns({
+              getBinary: sinon.stub().returns(null),
+              abort: sinon.stub()
+            })
+          }
         };
         wallet._loadWalletData(function(err) {
           if (err) {
@@ -190,84 +186,23 @@ describe('Wallet', function() {
           done();
         });
       });
-      it('will give unhandled error for getting wallet data', function(done) {
-        var wallet = new Wallet({node: node});
-        wallet.db = {
-          get: sinon.stub().callsArgWith(1, new Error('test'))
-        };
-        wallet._loadWalletData(function(err) {
-          err.should.be.instanceOf(Error);
-          err.message.should.equal('test');
-          done();
-        });
-      });
       it('will set the wallet reference to wallet data', function(done) {
         var blockHash = new Buffer('000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4941', 'hex');
         var walletData = models.Wallet.create({height: 100, blockHash: blockHash});
         var wallet = new Wallet({node: node});
         wallet.db = {
-          get: sinon.stub().callsArgWith(1, null, walletData.toBuffer())
+          env: {
+            beginTxn: sinon.stub().returns({
+              getBinary: sinon.stub().returns(walletData.toBuffer()),
+              abort: sinon.stub()
+            })
+          }
         };
         wallet._loadWalletData(function(err) {
           if (err) {
             return done(err);
           }
           wallet.walletData.should.deep.equal(walletData);
-          done();
-        });
-      });
-    });
-    describe('#_loadWalletTxids', function() {
-      it('will create new wallet txids if not found', function(done) {
-        var wallet = new Wallet({node: node});
-        wallet.db = {
-          get: sinon.stub().callsArgWith(1, new Error('NotFound'))
-        };
-        wallet._loadWalletTxids(function(err) {
-          if (err) {
-            return done(err);
-          }
-          should.exist(wallet.walletTxids);
-          done();
-        });
-      });
-      it('will give unhandled error for getting wallet txids', function(done) {
-        var wallet = new Wallet({node: node});
-        wallet.db = {
-          get: sinon.stub().callsArgWith(1, new Error('test'))
-        };
-        wallet._loadWalletTxids(function(err) {
-          err.should.be.instanceOf(Error);
-          err.message.should.equal('test');
-          done();
-        });
-      });
-      it('will set the wallet refernce to wallet txids', function(done) {
-        var walletTxids = models.WalletTxids.create();
-        var wallet = new Wallet({node: node});
-        wallet.db = {
-          get: sinon.stub().callsArgWith(1, null, walletTxids.toBuffer())
-        };
-        wallet._loadWalletTxids(function(err) {
-          if (err) {
-            return done(err);
-          }
-          wallet.walletTxids.should.deep.equal(walletTxids);
-          done();
-        });
-      });
-    });
-    describe('#_loadWalletDataAll', function() {
-      it('will call all methods in series', function(done) {
-        var wallet = new Wallet({node: node});
-        wallet._loadWalletData = sinon.stub().callsArg(0);
-        wallet._loadWalletTxids = sinon.stub().callsArg(0);
-        wallet._loadWalletDataAll(function(err) {
-          if (err) {
-            return done(err);
-          }
-          wallet._loadWalletData.callCount.should.equal(1);
-          wallet._loadWalletTxids.callCount.should.equal(1);
           done();
         });
       });
@@ -289,9 +224,9 @@ describe('Wallet', function() {
         var walletData = {
           addressFilter: BloomFilter.create(1000, 0.1)
         };
-        wallet._setupApplicationDirectory = sinon.stub().callsArg(0);
+        wallet._setupDirectory = sinon.stub().callsArg(1);
         wallet._setupDatabase = sinon.stub().callsArg(0);
-        sinon.stub(wallet, '_loadWalletDataAll', function(callback) {
+        sinon.stub(wallet, '_loadWalletData', function(callback) {
           wallet.walletData = walletData;
           callback();
         });
@@ -300,9 +235,9 @@ describe('Wallet', function() {
             return done(err);
           }
           // init wallet data
-          wallet._setupApplicationDirectory.callCount.should.equal(1);
+          wallet._setupDirectory.callCount.should.equal(1);
           wallet._setupDatabase.callCount.should.equal(1);
-          wallet._loadWalletDataAll.callCount.should.equal(1);
+          wallet._loadWalletData.callCount.should.equal(1);
 
           // set the block handler
           wallet.blockHandler.should.be.instanceOf(BlockHandler);
@@ -335,7 +270,7 @@ describe('Wallet', function() {
           }
         };
         var wallet  = new Wallet({node: testNode});
-        wallet._setupApplicationDirectory = sinon.stub().callsArgWith(0, new Error('test'));
+        wallet._setupDirectory = sinon.stub().callsArgWith(1, new Error('test'));
         wallet.start(function(err) {
           err.should.be.instanceOf(Error);
           err.message.should.equal('test');
@@ -349,7 +284,21 @@ describe('Wallet', function() {
       it('will call db close if defined', function(done) {
         var wallet = new Wallet({node: node});
         wallet.db = {
-          close: sinon.stub().callsArg(0)
+          env: {
+            close: sinon.stub()
+          },
+          keys: {
+            close: sinon.stub()
+          },
+          wallet: {
+            close: sinon.stub()
+          },
+          txids: {
+            close: sinon.stub()
+          },
+          txs: {
+            close: sinon.stub()
+          }
         };
         wallet.stop(done);
       });
@@ -374,56 +323,44 @@ describe('Wallet', function() {
       it('will get database key for address', function(done) {
         var testNode = {};
         var wallet = new Wallet({node: testNode});
+        var txidsDbi = {};
         wallet.db = {
-          get: sinon.stub().callsArgWith(1, null)
+          txids: txidsDbi
         };
-        var walletTxids = {
-          insert: sinon.stub()
+        var txn = {
+          getBinary: sinon.stub().returns(true),
+          putBinary: sinon.stub()
         };
         var walletData = {};
-        wallet._connectBlockAddressDeltas(walletTxids, walletData, deltaData, function(err) {
+        wallet._connectBlockAddressDeltas(txn, walletData, deltaData, function(err) {
           if (err) {
             return done(err);
           }
-          walletTxids.insert.callCount.should.equal(1);
-          walletTxids.insert.args[0][0].should.equal(10);
-          walletTxids.insert.args[0][1].should.equal(2);
-          walletTxids.insert.args[0][2].should.be.instanceOf(Buffer);
-          walletTxids.insert.args[0][2].toString('hex').should.equal(deltaData.deltas[0].txid);
+          txn.putBinary.callCount.should.equal(1);
+          txn.putBinary.args[0][0].should.equal(txidsDbi);
+          txn.putBinary.args[0][1].should.equal('0000000a00000002');
+          txn.putBinary.args[0][2].should.be.instanceOf(Buffer);
+          txn.putBinary.args[0][2].toString('hex').should.equal(deltaData.deltas[0].txid);
           done();
         });
       });
       it('will skip if address does not exist', function(done) {
         var testNode = {};
         var wallet = new Wallet({node: testNode});
+        var txidsDbi = {};
         wallet.db = {
-          get: sinon.stub().callsArgWith(1, new Error('NotFound'))
+          txids: txidsDbi
         };
-        var walletTxids = {
-          insert: sinon.stub()
+        var txn = {
+          getBinary: sinon.stub().returns(false),
+          putBinary: sinon.stub()
         };
         var walletData = {};
-        wallet._connectBlockAddressDeltas(walletTxids, walletData, deltaData, function(err) {
+        wallet._connectBlockAddressDeltas(txn, walletData, deltaData, function(err) {
           if (err) {
             return done(err);
           }
-          walletTxids.insert.callCount.should.equal(0);
-          done();
-        });
-      });
-      it('will give error during address database lookup', function(done) {
-        var testNode = {};
-        var wallet = new Wallet({node: testNode});
-        wallet.db = {
-          get: sinon.stub().callsArgWith(1, new Error('unexpected'))
-        };
-        var walletTxids = {
-          insert: sinon.stub()
-        };
-        var walletData = {};
-        wallet._connectBlockAddressDeltas(walletTxids, walletData, deltaData, function(err) {
-          err.should.be.instanceOf(Error);
-          err.message.should.equal('unexpected');
+          txn.putBinary.callCount.should.equal(0);
           done();
         });
       });
@@ -438,11 +375,12 @@ describe('Wallet', function() {
           }
         };
         var wallet = new Wallet({node: testNode});
+        var walletDbi = {};
         wallet.db = {
-          batch: sinon.stub().callsArg(1)
-        };
-        var walletTxids = {
-          toBuffer: sinon.stub().returns(new Buffer('abcdef', 'hex')),
+          wallet: walletDbi,
+          env: {
+            sync: sinon.stub().callsArg(0)
+          }
         };
         var walletData = {
           toBuffer: sinon.stub().returns(new Buffer('fedcba', 'hex')),
@@ -450,36 +388,30 @@ describe('Wallet', function() {
         var block = {
           hash: '0000000000253b76babed6f36b68b79a0c232f89e6756bd7a848c63b83ca53a4'
         };
-        wallet._connectBlockCommit(walletTxids, walletData, block, function(err) {
+        var txn = {
+          putBinary: sinon.stub(),
+          commit: sinon.stub()
+        };
+        wallet._connectBlockCommit(txn, walletData, block, function(err) {
           if (err) {
             return done(err);
           }
-          wallet.db.batch.callCount.should.equal(1);
-          wallet.db.batch.args[0][0].should.deep.equal([
-            {
-              type: 'put',
-              key: new Buffer('1000', 'hex'),
-              value: new Buffer('fedcba', 'hex')
-            },
-            {
-              type: 'put',
-              key: new Buffer('1001', 'hex'),
-              value: new Buffer('abcdef', 'hex')
-            }
-          ]);
+          txn.commit.callCount.should.equal(1);
+          txn.putBinary.callCount.should.equal(1);
+          txn.putBinary.args[0][0].should.equal(walletDbi);
+          txn.putBinary.args[0][1].should.equal('1000');
+          txn.putBinary.args[0][2].should.deep.equal(new Buffer('fedcba', 'hex'));
           wallet.walletData.should.equal(walletData);
-          wallet.walletTxids.should.equal(walletTxids);
           done();
         });
       });
-      it('will give error from batch', function(done) {
+      it('will give error from sync', function(done) {
         var testNode = {};
         var wallet = new Wallet({node: testNode});
         wallet.db = {
-          batch: sinon.stub().callsArgWith(1, new Error('test'))
-        };
-        var walletTxids = {
-          toBuffer: sinon.stub().returns(new Buffer('abcdef', 'hex')),
+          env: {
+            sync: sinon.stub().callsArgWith(0, new Error('test'))
+          }
         };
         var walletData = {
           toBuffer: sinon.stub().returns(new Buffer('fedcba', 'hex')),
@@ -487,7 +419,11 @@ describe('Wallet', function() {
         var block = {
           hash: '0000000000253b76babed6f36b68b79a0c232f89e6756bd7a848c63b83ca53a4'
         };
-        wallet._connectBlockCommit(walletTxids, walletData, block, function(err) {
+        var txn = {
+          putBinary: sinon.stub(),
+          commit: sinon.stub()
+        };
+        wallet._connectBlockCommit(txn, walletData, block, function(err) {
           err.should.be.instanceOf(Error);
           err.message.should.equal('test');
           done();
@@ -498,6 +434,12 @@ describe('Wallet', function() {
       it('will get address deltas from block handler', function(done) {
         var testNode = {};
         var wallet = new Wallet({node: testNode});
+        var txn = {};
+        wallet.db = {
+          env: {
+            beginTxn: sinon.stub().returns(txn)
+          }
+        };
         wallet._connectBlockAddressDeltas = sinon.stub().callsArg(3);
         wallet._connectBlockCommit = sinon.stub().callsArg(3);
         wallet.blockHandler = {
@@ -522,7 +464,7 @@ describe('Wallet', function() {
             return done(err);
           }
           wallet._connectBlockAddressDeltas.callCount.should.equal(2);
-          wallet._connectBlockAddressDeltas.args[0][0].should.equal(walletTxidsClone);
+          wallet._connectBlockAddressDeltas.args[0][0].should.equal(txn);
           wallet._connectBlockAddressDeltas.args[0][1].should.equal(walletDataClone);
           wallet._connectBlockAddressDeltas.args[0][2].should.deep.equal({
             address: 'address1',
@@ -530,7 +472,7 @@ describe('Wallet', function() {
             blockHeight: 100
           });
           wallet._connectBlockCommit.callCount.should.equal(1);
-          wallet._connectBlockCommit.args[0][0].should.equal(walletTxidsClone);
+          wallet._connectBlockCommit.args[0][0].should.equal(txn);
           wallet._connectBlockCommit.args[0][1].should.equal(walletDataClone);
           wallet._connectBlockCommit.args[0][2].should.equal(block);
           done();
@@ -539,6 +481,12 @@ describe('Wallet', function() {
       it('will give error from connecting block address deltas', function(done) {
         var testNode = {};
         var wallet = new Wallet({node: testNode});
+        var txn = {};
+        wallet.db = {
+          env: {
+            beginTxn: sinon.stub().returns(txn)
+          }
+        };
         wallet._connectBlockAddressDeltas = sinon.stub().callsArgWith(3, new Error('test'));
         wallet._connectBlockCommit = sinon.stub().callsArg(3);
         wallet.blockHandler = {
@@ -789,37 +737,32 @@ describe('Wallet', function() {
         it('it will continue if key is not found', function(done) {
           var wallet = new Wallet({node: node});
           wallet.db = {
-            get: sinon.stub().callsArgWith(1, new Error('NotFound'))
+            keys: {}
           };
           var key = {
             address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'
           };
-          wallet._checkKeyImported(key, done);
-        });
-        it('it will give unexpected error', function(done) {
-          var wallet = new Wallet({node: node});
-          wallet.db = {
-            get: sinon.stub().callsArgWith(1, new Error('test'))
+          var txn = {
+            getBinary: sinon.stub().returns(false)
           };
-          var key = {
-            address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'
-          };
-          wallet._checkKeyImported(key, function(err) {
-            err.should.be.instanceOf(Error);
-            done();
-          });
+          wallet._checkKeyImported(txn, key, done);
         });
         it('will give error if key already exists', function(done) {
           var wallet = new Wallet({node: node});
           wallet.db = {
-            get: sinon.stub().callsArgWith(1, null, new Buffer(new Array(0)))
+            keys: {}
           };
           var key = {
             address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'
           };
-          wallet._checkKeyImported(key, function(err) {
+          var txn = {
+            getBinary: sinon.stub().returns(true),
+            abort: sinon.stub()
+          };
+          wallet._checkKeyImported(txn, key, function(err) {
             err.should.be.instanceOf(Error);
             err.message.should.equal('Key already imported');
+            txn.abort.callCount.should.equal(1);
             done();
           });
         });
@@ -860,15 +803,16 @@ describe('Wallet', function() {
           }];
           var node = {};
           var wallet = new Wallet({node: node});
+          var txidsDbi = {};
+          wallet.db = {
+            txids: txidsDbi
+          };
           wallet.bitcoind = {
             client: {
               getAddressDeltas: sinon.stub().callsArgWith(1, null, {
                 result: deltas
               })
             }
-          };
-          var walletTxids = {
-            insert: sinon.stub()
           };
           var walletData = {
             addressFilter: {
@@ -880,15 +824,18 @@ describe('Wallet', function() {
           var keyData = {
             address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'
           };
-          wallet._addKeyToWallet(walletTxids, walletData, keyData, function(err) {
+          var txn = {
+            putBinary: sinon.stub()
+          };
+          wallet._addKeyToWallet(txn, walletData, keyData, function(err) {
             var getAddressDeltas = wallet.bitcoind.client.getAddressDeltas;
             getAddressDeltas.callCount.should.equal(1);
             var query = getAddressDeltas.args[0][0];
             query.should.deep.equal({addresses: ['16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'], start: 1, end: 200});
-            walletTxids.insert.callCount.should.equal(1);
-            walletTxids.insert.args[0][0].should.equal(198);
-            walletTxids.insert.args[0][1].should.equal(12);
-            walletTxids.insert.args[0][2].should.deep.equal(
+            txn.putBinary.callCount.should.equal(1);
+            txn.putBinary.args[0][0].should.equal(txidsDbi);
+            txn.putBinary.args[0][1].should.equal('000000c60000000c');
+            txn.putBinary.args[0][2].should.deep.equal(
               new Buffer('90e262c7baaf4a5a8eb910d075e945d5a27f856f71a06ff8681128115a07441a', 'hex')
             );
             walletData.addressFilter.insert.callCount.should.equal(1);
@@ -902,10 +849,14 @@ describe('Wallet', function() {
       describe('#_commitWalletKey', function() {
         it('will send expected operations to batch command', function(done) {
           var wallet = new Wallet({node: node});
-          wallet.db = {};
-          wallet.db.batch = sinon.stub().callsArg(1);
-          var walletTxids = {
-            toBuffer: sinon.stub().returns(new Buffer('01', 'hex'))
+          var walletDbi = {};
+          var keysDbi = {};
+          wallet.db = {
+            wallet: walletDbi,
+            keys: keysDbi,
+            env: {
+              sync: sinon.stub().callsArg(0)
+            }
           };
           var walletData = {
             toBuffer: sinon.stub().returns(new Buffer('02', 'hex'))
@@ -914,29 +865,24 @@ describe('Wallet', function() {
             getKey: sinon.stub().returns(new Buffer('03', 'hex')),
             getValue: sinon.stub().returns(new Buffer('04', 'hex'))
           };
-          wallet._commitWalletKey(walletTxids, walletData, keyData, function(err) {
+          var txn = {
+            putBinary: sinon.stub(),
+            commit: sinon.stub()
+          };
+          wallet._commitWalletKey(txn, walletData, keyData, function(err) {
             if (err) {
               return done(err);
             }
-            wallet.db.batch.callCount.should.equal(1);
-            var ops = wallet.db.batch.args[0][0];
-            ops.should.deep.equal([
-              {
-                type: 'put',
-                key: new Buffer('1000', 'hex'),
-                value: new Buffer('02', 'hex')
-              },
-              {
-                type: 'put',
-                key: new Buffer('1001', 'hex'),
-                value: new Buffer('01', 'hex')
-              },
-              {
-                type: 'put',
-                key: new Buffer('03', 'hex'),
-                value: new Buffer('04', 'hex')
-              }
-            ]);
+            txn.commit.callCount.should.equal(1);
+
+            txn.putBinary.callCount.should.equal(2);
+            txn.putBinary.args[0][0].should.equal(walletDbi);
+            txn.putBinary.args[0][1].should.equal('1000');
+            txn.putBinary.args[0][2].should.deep.equal(new Buffer('02', 'hex'));
+
+            txn.putBinary.args[1][0].should.equal(keysDbi);
+            txn.putBinary.args[1][1].should.equal('03');
+            txn.putBinary.args[1][2].should.deep.equal(new Buffer('04', 'hex'));
             done();
           });
         });
@@ -944,44 +890,59 @@ describe('Wallet', function() {
           var wallet = new Wallet({node: node});
           wallet.walletTxids = null;
           wallet.walletData = null;
-          wallet.db = {};
-          wallet.db.batch = sinon.stub().callsArgWith(1, new Error('test'));
-          var walletTxids = {
-            toBuffer: sinon.stub()
+          var walletDbi = {};
+          var keysDbi = {};
+          wallet.db = {
+            wallet: walletDbi,
+            keys: keysDbi,
+            env: {
+              sync: sinon.stub().callsArgWith(0, new Error('test'))
+            }
           };
           var walletData = {
             toBuffer: sinon.stub()
           };
           var keyData = {
-            getKey: sinon.stub(),
+            getKey: sinon.stub().returns(new Buffer('03', 'hex')),
             getValue: sinon.stub()
           };
-          wallet._commitWalletKey(walletTxids, walletData, keyData, function(err) {
+          var txn = {
+            putBinary: sinon.stub(),
+            commit: sinon.stub()
+          };
+          wallet._commitWalletKey(txn, walletData, keyData, function(err) {
             err.should.be.instanceOf(Error);
-            should.equal(wallet.walletTxids, null);
+            err.message.should.equal('test');
             should.equal(wallet.walletData, null);
             done();
           });
         });
         it('will update wallet references with updated data', function(done) {
           var wallet = new Wallet({node: node});
-          wallet.db = {};
-          wallet.db.batch = sinon.stub().callsArg(1);
-          var walletTxids = {
-            toBuffer: sinon.stub()
+          var walletDbi = {};
+          var keysDbi = {};
+          wallet.db = {
+            wallet: walletDbi,
+            keys: keysDbi,
+            env: {
+              sync: sinon.stub().callsArg(0)
+            }
           };
           var walletData = {
             toBuffer: sinon.stub()
           };
           var keyData = {
-            getKey: sinon.stub(),
+            getKey: sinon.stub().returns(new Buffer('03', 'hex')),
             getValue: sinon.stub()
           };
-          wallet._commitWalletKey(walletTxids, walletData, keyData, function(err) {
+          var txn = {
+            putBinary: sinon.stub(),
+            commit: sinon.stub()
+          };
+          wallet._commitWalletKey(txn, walletData, keyData, function(err) {
             if (err) {
               return done(err);
             }
-            wallet.walletTxids.should.equal(walletTxids);
             wallet.walletData.should.equal(walletData);
             done();
           });
@@ -998,13 +959,15 @@ describe('Wallet', function() {
         });
         it('will set syncing until there is an error', function(done) {
           var wallet = new Wallet({node: node});
+          wallet.db = {
+            env: {
+              beginTxn: sinon.stub()
+            }
+          };
           wallet.walletData = {
             clone: sinon.stub()
           };
-          wallet.walletTxids = {
-            clone: sinon.stub()
-          };
-          wallet._checkKeyImported = function(key, callback) {
+          wallet._checkKeyImported = function(txn, key, callback) {
             wallet.syncing.should.equal(true);
             callback(new Error('test'));
           };
@@ -1016,21 +979,23 @@ describe('Wallet', function() {
         });
         it('will set syncing until finished', function(done) {
           var wallet = new Wallet({node: node});
+          wallet.db = {
+            env: {
+              beginTxn: sinon.stub()
+            }
+          };
           wallet.walletData = {
             clone: sinon.stub()
           };
-          wallet.walletTxids = {
-            clone: sinon.stub()
-          };
-          wallet._checkKeyImported = function(key, callback) {
+          wallet._checkKeyImported = function(txn, key, callback) {
             wallet.syncing.should.equal(true);
             callback();
           };
-          wallet._addKeyToWallet = function(walletTxids, walletData, keyData, callback) {
+          wallet._addKeyToWallet = function(txn, walletData, keyData, callback) {
             wallet.syncing.should.equal(true);
             callback();
           };
-          wallet._commitWalletKey = function(walletTxids, walletData, keydata, callback) {
+          wallet._commitWalletKey = function(txn, walletData, keydata, callback) {
             wallet.syncing.should.equal(true);
             callback();
           };
@@ -1044,13 +1009,15 @@ describe('Wallet', function() {
         });
         it('will check that key is not imported', function(done) {
           var wallet = new Wallet({node: node});
+          wallet.db = {
+            env: {
+              beginTxn: sinon.stub()
+            }
+          };
           wallet.walletData = {
             clone: sinon.stub()
           };
-          wallet.walletTxids = {
-            clone: sinon.stub()
-          };
-          wallet._checkKeyImported = sinon.stub().callsArgWith(1, new Error('Key already imported'));
+          wallet._checkKeyImported = sinon.stub().callsArgWith(2, new Error('Key already imported'));
           wallet.importWalletKey({address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'}, function(err) {
             err.should.be.instanceOf(Error);
             err.message.should.equal('Key already imported');
@@ -1061,35 +1028,39 @@ describe('Wallet', function() {
         it('will add key to cloned wallet and commit changes', function(done) {
           var wallet = new Wallet({node: node});
           var walletDataClone = {};
-          var walletTxidsClone = {};
+          var txn = {};
+          wallet.db = {
+            env: {
+              beginTxn: sinon.stub().returns(txn)
+            }
+          };
           wallet.walletData = {
             clone: sinon.stub().returns(walletDataClone)
           };
-          wallet.walletTxids = {
-            clone: sinon.stub().returns(walletTxidsClone)
-          };
-          wallet._checkKeyImported = sinon.stub().callsArgWith(1);
+          wallet._checkKeyImported = sinon.stub().callsArgWith(2);
           wallet._addKeyToWallet = sinon.stub().callsArgWith(3);
           wallet._commitWalletKey = sinon.stub().callsArgWith(3);
           wallet.importWalletKey({address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'}, function(err) {
             wallet._addKeyToWallet.callCount.should.equal(1);
-            wallet._addKeyToWallet.args[0][0].should.equal(walletTxidsClone);
+            wallet._addKeyToWallet.args[0][0].should.equal(txn);
             wallet._addKeyToWallet.args[0][1].should.equal(walletDataClone);
             wallet._commitWalletKey.callCount.should.equal(1);
-            wallet._commitWalletKey.args[0][0].should.equal(walletTxidsClone);
+            wallet._commitWalletKey.args[0][0].should.equal(txn);
             wallet._commitWalletKey.args[0][1].should.equal(walletDataClone);
             done();
           });
         });
         it('will give error from updating wallet and set syncing to false', function(done) {
           var wallet = new Wallet({node: node});
+          wallet.db = {
+            env: {
+              beginTxn: sinon.stub()
+            }
+          };
           wallet.walletData = {
             clone: sinon.stub()
           };
-          wallet.walletTxids = {
-            clone: sinon.stub()
-          };
-          wallet._checkKeyImported = sinon.stub().callsArg(1);
+          wallet._checkKeyImported = sinon.stub().callsArg(2);
           wallet._addKeyToWallet = sinon.stub().callsArgWith(3, new Error('test'));
           wallet.importWalletKey({address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'}, function(err) {
             err.should.be.instanceOf(Error);
@@ -1098,13 +1069,15 @@ describe('Wallet', function() {
         });
         it('will give error from commiting changes to wallet and set syncing to false', function(done) {
           var wallet = new Wallet({node: node});
+          wallet.db = {
+            env: {
+              beginTxn: sinon.stub()
+            }
+          };
           wallet.walletData = {
             clone: sinon.stub()
           };
-          wallet.walletTxids = {
-            clone: sinon.stub()
-          };
-          wallet._checkKeyImported = sinon.stub().callsArg(1);
+          wallet._checkKeyImported = sinon.stub().callsArg(2);
           wallet._addKeyToWallet = sinon.stub().callsArg(3);
           wallet._commitWalletKey = sinon.stub().callsArgWith(3, new Error('test'));
           wallet.importWalletKey({address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'}, function(err) {
@@ -1114,93 +1087,54 @@ describe('Wallet', function() {
         });
       });
     });
-    describe('#_validateFromAndTo', function() {
-      function testValidate(options) {
-        var wallet = new Wallet({node: node});
-        (function() {
-          wallet._validateFromAndTo(options);
-        }).should.throw(Error);
-      }
-      it('will throw error if "from" or "to" is not a number', function() {
-        testValidate({from: 0.1});
-        testValidate({to: 0.1});
-      });
-      it('will throw if "from" is greater than "to"', function() {
-        testValidate({from: 10, to: 0});
-      });
-      it('will throw if range exceeds maximum', function() {
-        testValidate({from: 0, to: 10000});
-      });
-      it('will not throw error', function() {
-        var wallet = new Wallet({node: node});
-        wallet._validateFromAndTo({from: 0, to: 10});
-      });
-    });
-    describe('#getWalletTxids', function() {
+    describe('#_checkTxidsQuery', function() {
       function testDefaultOptions(options, callback) {
         var wallet = new Wallet({node: node});
+        wallet.bitcoind = {
+          height: 100
+        };
         wallet.walletTxids = {};
         wallet.walletTxids.getLatest = sinon.stub().returns([]);
-        wallet.getWalletTxids(options, function(err) {
-          if (err) {
-            return callback(err);
-          }
-          wallet.walletTxids.getLatest.callCount.should.equal(1);
-          wallet.walletTxids.getLatest.args[0][0].should.equal(0);
-          wallet.walletTxids.getLatest.args[0][1].should.equal(10);
-          callback();
-        });
+        var query = wallet._checkTxidsQuery(options);
+        query.limit.should.equal(10);
+        query.height.should.equal(100);
+        query.index.should.equal(0);
+        callback();
       }
       it('will set default options', function(done) {
         testDefaultOptions(null, done);
       });
-      it('will set default options if missing "from" and "to"', function(done) {
+      it('will set default options if missing "height" and "index"', function(done) {
         testDefaultOptions({}, done);
       });
-      it('will set default options if missing "from"', function(done) {
-        testDefaultOptions({to: 100}, done);
+      it('will set default options if missing "height"', function(done) {
+        testDefaultOptions({height: 100}, done);
       });
-      it('will set default options if missing "to"', function(done) {
-        testDefaultOptions({from: 100}, done);
+      it('will set default options if missing "index"', function(done) {
+        testDefaultOptions({index: 0}, done);
       });
-      it('will set "from" and "to" options', function(done) {
+      it('will set "height" and "index" options', function(done) {
         var wallet = new Wallet({node: node});
         wallet.walletTxids = {};
         wallet.walletTxids.getLatest = sinon.stub().returns([]);
-        wallet.getWalletTxids({from: 3, to: 20}, function() {
-          wallet.walletTxids.getLatest.callCount.should.equal(1);
-          wallet.walletTxids.getLatest.args[0][0].should.equal(3);
-          wallet.walletTxids.getLatest.args[0][1].should.equal(20);
-          done();
-        });
+        var query = wallet._checkTxidsQuery({height: 3, index: 20});
+        query.height.should.equal(3);
+        query.index.should.equal(20);
+        done();
       });
+    });
+    describe('#getWalletTxid', function() {
       it('will give error if options are invalid', function(done) {
         var wallet = new Wallet({node: node});
-        wallet._validateFromAndTo = sinon.stub().throws(new Error('test'));
+        wallet._checkTxidsQuery = sinon.stub().throws(new Error('test'));
         wallet.getWalletTxids({}, function(err) {
           err.should.be.instanceOf(Error);
           done();
         });
       });
-      it('will give buffers if option is set', function(done) {
-        var wallet = new Wallet({node: node});
-        var txid = new Buffer(new Array(0));
-        wallet.walletTxids = {};
-        wallet.walletTxids.getLatest = sinon.stub().returns([txid]);
-        wallet.getWalletTxids({buffers: true}, function(err, txids) {
-          txids[0].should.be.instanceOf(Buffer);
-          done();
-        });
+      it.skip('will give buffers if option is set', function() {
       });
-      it('will give hex strings if option buffer is not set', function(done) {
-        var wallet = new Wallet({node: node});
-        var txid = new Buffer(new Array(0));
-        wallet.walletTxids = {};
-        wallet.walletTxids.getLatest = sinon.stub().returns([txid]);
-        wallet.getWalletTxids({buffers: false}, function(err, txids) {
-          txids[0].should.be.a('string');
-          done();
-        });
+      it.skip('will give hex strings if option buffer is not set', function() {
       });
     });
     describe.skip('getting wallet transactions', function() {

@@ -27,10 +27,11 @@
     "async": "^2.0.0-rc.6",
     "bitcore-lib": "^0.13.16",
     "bloom-filter": "braydonf/bloom-filter#28a473273e276d3293f465308d6b7442167cbf0f",
-    "lodash": "^4.13.1",
     "bson": "^0.4.23",
-    "leveldown": "^1.4.6",
-    "mkdirp": "^0.5.1"
+    "fast-future": "^1.0.1",
+    "lodash": "^4.13.1",
+    "mkdirp": "^0.5.1",
+    "node-lmdb": "^0.4.1"
   },
   "devDependencies": {
     "chai": "^3.5.0",
