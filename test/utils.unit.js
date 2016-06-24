@@ -5,6 +5,8 @@ var should = chai.should();
 var sinon = require('sinon');
 var proxyquire = require('proxyquire');
 
+var utils = require('../lib/utils');
+
 describe('Wallet Utils', function() {
   describe('#setupDirectory', function() {
     it('will make directory if the application directory does not exist', function(done) {
@@ -60,6 +62,20 @@ describe('Wallet Utils', function() {
         access.callCount.should.equal(1);
         done();
       });
+    });
+  });
+  describe('#splitRange', function() {
+    it('will split 1 to 10 by sections of 3', function() {
+      var range = utils.splitRange(1, 10, 3);
+      range.should.deep.equal([[1, 3], [4, 6], [7, 9], [10, 10]]);
+    });
+    it('will split 1 to 417769 by sections of 100000', function() {
+      var range = utils.splitRange(1, 417769, 100000);
+      range.should.deep.equal([[1, 100000], [100001, 200000], [200001, 300000], [300001, 400000], [400001, 417769]]);
+    });
+    it('will split 1 to 2 by sections of 3 (leaving unchanged)', function() {
+      var range = utils.splitRange(1, 2, 3);
+      range.should.deep.equal([[1, 2]]);
     });
   });
 });
