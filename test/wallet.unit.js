@@ -1040,9 +1040,18 @@ describe('Wallet', function() {
     describe('#getWalletTxid', function() {
       it('will give error if options are invalid', function(done) {
         var wallet = new Wallet({node: node});
+        var txn = {
+          abort: sinon.stub()
+        };
+        wallet.db = {
+          env: {
+            beginTxn: sinon.stub().returns(txn)
+          }
+        };
         wallet._checkTxidsQuery = sinon.stub().throws(new Error('test'));
         wallet.getWalletTxids({}, function(err) {
           err.should.be.instanceOf(Error);
+          txn.abort.callCount.should.equal(1);
           done();
         });
       });
