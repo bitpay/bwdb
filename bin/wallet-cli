@@ -13,6 +13,7 @@ var Config = require('../lib/config');
 program
   .version(version)
   .description('Bitcoin Wallet CLI')
+  .option('-u, --url <url>', 'Specify the URL for the wallet server.')
   .option('-c, --config <dir>', 'Specify the data directory that has the configuration file.')
   .option('-t, --testnet', 'Use testnet network')
   .option('-r, --regtest', 'Use regtest network')
@@ -24,9 +25,17 @@ if (program.testnet) {
 } else if (program.regtest) {
   network = 'regtest';
 }
-var config = new Config({network: network});
-var url = config.getURLSync();
-var client = new Client({network: network, url: url});
+
+var client;
+if (program.config && program.url) {
+  throw new Error('--config and --url are mutually exclusive, please use one or the other.');
+} else if (program.config) {
+  var config = new Config({network: network});
+  var url = config.getURLSync();
+  client = new Client({network: network, url: url});
+} else if (program.url) {
+  client = new Client({network: network, url: program.url});
+}
 
 program
   .command('importKey <address>')
