@@ -4,11 +4,14 @@
 
 process.title = 'wallet-cli';
 
-var version = require('../package.json').version;
+var async = require('async');
 var program = require('commander');
+var ProgressBar = require('progress');
 
+var version = require('../package.json').version;
 var Client = require('../lib/client');
 var Config = require('../lib/config');
+var utils = require('../lib/utils');
 
 program
   .version(version)
@@ -29,12 +32,12 @@ if (program.testnet) {
 var client;
 if (program.config && program.url) {
   throw new Error('--config and --url are mutually exclusive, please use one or the other.');
-} else if (program.config) {
+} else if (program.url) {
+  client = new Client({network: network, url: program.url});
+} else {
   var config = new Config({network: network});
   var url = config.getURLSync();
   client = new Client({network: network, url: url});
-} else if (program.url) {
-  client = new Client({network: network, url: program.url});
 }
 
 program
@@ -46,6 +49,37 @@ program
         throw err;
       }
       console.log(body);
+    });
+  });
+
+program
+  .command('importKeyFile <filepath>')
+  .description('Import a new addresses from JSON file')
+  .action(function(filepath) {
+    // TODO If the JSON file becomes too large use stream-json module
+    // to read as a stream, ~3 million addresses works currently
+    utils.readJSONFile(filepath, function(err, addresses) {
+      if (err) {
+        throw err;
+      }
+      var total = addresses.length;
+      var count = 0;
+      var progress = new ProgressBar('Importing addresses [:bar] :percent :current/:total', {
+        complete: '=',
+        incomplete: ' ',
+        width: 20,
+        total: total
+      });
+      async.eachSeries(addresses, function(address, next) {
+        client.importKey(address, function(err, body) {
+          if (err) {
+            throw err;
+          }
+          progress.tick(1);
+          count++;
+          next();
+        });
+      });
     });
   });
 
