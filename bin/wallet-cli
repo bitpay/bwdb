@@ -41,10 +41,10 @@ if (program.config && program.url) {
 }
 
 program
-  .command('importKey <address>')
+  .command('importAddress <address>')
   .description('Import a new address')
   .action(function(address) {
-    client.importKey(address, function(err, body) {
+    client.importAddress(address, function(err, body) {
       if (err) {
         throw err;
       }
@@ -53,7 +53,7 @@ program
   });
 
 program
-  .command('importKeyFile <filepath>')
+  .command('importAddresses <filepath>')
   .description('Import a new addresses from JSON file')
   .action(function(filepath) {
     // TODO If the JSON file becomes too large use stream-json module
@@ -63,20 +63,21 @@ program
         throw err;
       }
       var total = addresses.length;
-      var count = 0;
       var progress = new ProgressBar('Importing addresses [:bar] :percent :current/:total', {
         complete: '=',
         incomplete: ' ',
         width: 20,
         total: total
       });
-      async.eachSeries(addresses, function(address, next) {
-        client.importKey(address, function(err, body) {
+
+      var chunkSize = 2000;
+      var chunks = utils.splitArray(addresses, chunkSize);
+      async.eachSeries(chunks, function(chunk, next) {
+        client.importAddresses(chunk, function(err, body) {
           if (err) {
             throw err;
           }
-          progress.tick(1);
-          count++;
+          progress.tick(chunkSize);
           next();
         });
       });
