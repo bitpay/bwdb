@@ -85,13 +85,16 @@ program
   });
 
 program
-  .command('getTransactions [start] [end]')
+  .command('getTransactions [start] [limit]')
   .description('View latest transactions for a wallet')
-  .action(function(start, end) {
+  .action(function(start, limit) {
     var options = {};
     if (start) {
       options.height = start;
       options.index = 0;
+    }
+    if (limit) {
+      options.limit = limit;
     }
     client.getTransactions(options, function(err, body) {
       if (err) {
@@ -102,19 +105,54 @@ program
   });
 
 program
-  .command('getTxids [start] [end]')
-  .description('View latest txids for a wallet')
-  .action(function(start, end) {
+  .command('getTransactionsStream [start]')
+  .description('View continuous stream of latest transactions for a wallet')
+  .action(function(start) {
     var options = {};
     if (start) {
       options.height = start;
       options.index = 0;
+    }
+    options.limit = 10;
+    var stream = client.getTransactionsStream(options);
+    stream.on('data', function(transactions) {
+      console.log(transactions);
+    });
+  });
+
+program
+  .command('getTxids [start] [limit]')
+  .description('View latest txids for a wallet')
+  .action(function(start, limit) {
+    var options = {};
+    if (start) {
+      options.height = start;
+      options.index = 0;
+    }
+    if (limit) {
+      options.limit = limit;
     }
     client.getTxids(options, function(err, body) {
       if (err) {
         throw err;
       }
       console.log(body);
+    });
+  });
+
+program
+  .command('getTxidsStream [start]')
+  .description('View continuous stream of latest txids for a wallet')
+  .action(function(start) {
+    var options = {};
+    if (start) {
+      options.height = start;
+      options.index = 0;
+    }
+    options.limit = 500;
+    var stream = client.getTxidsStream(options);
+    stream.on('data', function(txids) {
+      console.log(txids);
     });
   });
 
