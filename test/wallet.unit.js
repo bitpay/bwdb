@@ -1001,7 +1001,7 @@ describe('Wallet', function() {
         });
       });
     });
-    describe('#_checkTxidsQuery', function() {
+    describe.skip('#_checkTxidsQuery', function() {
       function testDefaultOptions(options, callback) {
         var wallet = new Wallet({node: node});
         wallet.bitcoind = {

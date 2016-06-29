@@ -85,10 +85,15 @@ program
   });
 
 program
-  .command('getTransactions')
+  .command('getTransactions [start] [end]')
   .description('View latest transactions for a wallet')
-  .action(function() {
-    client.getTransactions(function(err, body) {
+  .action(function(start, end) {
+    var options = {};
+    if (start) {
+      options.height = start;
+      options.index = 0;
+    }
+    client.getTransactions(options, function(err, body) {
       if (err) {
         throw err;
       }
@@ -97,10 +102,15 @@ program
   });
 
 program
-  .command('getTxids')
+  .command('getTxids [start] [end]')
   .description('View latest txids for a wallet')
-  .action(function() {
-    client.getTxids(function(err, body) {
+  .action(function(start, end) {
+    var options = {};
+    if (start) {
+      options.height = start;
+      options.index = 0;
+    }
+    client.getTxids(options, function(err, body) {
       if (err) {
         throw err;
       }
