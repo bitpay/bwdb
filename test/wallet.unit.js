@@ -26,7 +26,7 @@ describe('Wallet', function() {
       wallet.node.should.equal(node);
     });
   });
-  describe('starting service', function() {
+  describe.skip('starting service', function() {
     describe('#_setupDatabase', function() {
       it('will open database from path', function(done) {
         var testNode = {
@@ -201,7 +201,7 @@ describe('Wallet', function() {
       });
     });
   });
-  describe('syncing', function() {
+  describe.skip('syncing', function() {
     var testNode = {
       network: 'testnet'
     };

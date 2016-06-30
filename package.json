@@ -30,6 +30,7 @@
   "homepage": "https://github.com/bitpay/bwsv2#readme",
   "dependencies": {
     "async": "^2.0.0-rc.6",
+    "bitcoind-rpc": "^0.6.0",
     "bitcore-lib": "^0.13.16",
     "bitcore-node": "^3.0.2",
     "bloom-filter": "braydonf/bloom-filter#28a473273e276d3293f465308d6b7442167cbf0f",
