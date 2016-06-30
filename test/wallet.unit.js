@@ -1037,7 +1037,7 @@ describe('Wallet', function() {
         done();
       });
     });
-    describe('#getWalletTxid', function() {
+    describe.skip('#getWalletTxid', function() {
       it('will give error if options are invalid', function(done) {
         var wallet = new Wallet({node: node});
         var txn = {
@@ -1088,7 +1088,7 @@ describe('Wallet', function() {
         });
       });
     });
-    describe('#getAPIMethods', function() {
+    describe.skip('#getAPIMethods', function() {
       it('will return expected methods', function() {
         var wallet = new Wallet({node: node});
         wallet.getAPIMethods().length.should.equal(3);
