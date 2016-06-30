@@ -78,4 +78,49 @@ describe('Wallet Utils', function() {
       range.should.deep.equal([[1, 2]]);
     });
   });
+  describe('#readJSONFile', function() {
+    it('', function() {
+    });
+  });
+  describe('#splitArray', function() {
+    it('', function() {
+    });
+  });
+  describe('#getRemoteAddress', function() {
+    it('', function() {
+    });
+  });
+  describe('#enableCORS', function() {
+    it('', function() {
+    });
+  });
+  describe('#sendError', function() {
+    it('', function() {
+    });
+  });
+  describe('#createLogStream', function() {
+    it('', function() {
+    });
+  });
+  describe('#getTaskId', function() {
+    it('', function() {
+    });
+  });
+  describe('#getClients', function() {
+    it('', function() {
+    });
+  });
+  describe('#setClients', function() {
+    it('', function() {
+    });
+  });
+  describe('#tryAllClients', function() {
+    it('', function() {
+    });
+  });
+  describe('#wrapRPCError', function() {
+    it('', function() {
+    });
+  });
+
 });

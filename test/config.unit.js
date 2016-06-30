@@ -7,7 +7,17 @@ var sinon = require('sinon');
 
 var Config = require('../lib/config');
 
-describe('Wallet Config', function() {
+describe.skip('Wallet Config', function() {
+
+  describe('#getWriterSocketPath', function() {
+    it('', function() {
+    });
+  });
+
+  describe('#getNetworkName', function() {
+    it('', function() {
+    });
+  });
 
   describe('#getDatabasePath', function() {
     afterEach(function() {
@@ -35,6 +45,26 @@ describe('Wallet Config', function() {
       (function() {
         config.getDatabasePath();
       }).should.throw(TypeError);
+    });
+  });
+
+  describe('#getConfigFilePath', function() {
+    it('', function() {
+    });
+  });
+
+  describe('#writeDefaultConfig', function() {
+    it('', function() {
+    });
+  });
+
+  describe('#setupConfig', function() {
+    it('', function() {
+    });
+  });
+
+  describe('#getURLSync', function() {
+    it('', function() {
     });
   });
 
