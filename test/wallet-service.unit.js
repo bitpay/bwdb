@@ -8,11 +8,10 @@ var bitcore = require('bitcore-lib');
 var BloomFilter = require('bloom-filter');
 
 var utils = require('../lib/utils');
-var Wallet = require('../lib/wallet');
+var Wallet = require('../lib/wallet-service');
 var BlockHandler = require('../lib/block-handler');
-var models = require('../lib/models');
 
-describe.skip('Wallet', function() {
+describe.skip('Wallet Service', function() {
   var node = {
     services: {
       bitcoind: {}

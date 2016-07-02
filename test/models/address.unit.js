@@ -6,7 +6,7 @@ var should = chai.should();
 var models = require('../../lib/models');
 var WalletAddress = models.WalletAddress;
 
-describe('Wallet Address Model', function() {
+describe.skip('Wallet Address Model', function() {
   describe('@constructor', function() {
     it('will throw error without address', function() {
       (function() {

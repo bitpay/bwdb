@@ -41,10 +41,10 @@ if (program.config && program.url) {
 }
 
 program
-  .command('importAddress <address>')
-  .description('Import a new address')
-  .action(function(address) {
-    client.importAddress(address, function(err, body) {
+  .command('createWallet <walletId>')
+  .description('Create a new wallet')
+  .action(function(walletId) {
+    client.createWallet(walletId, function(err, body) {
       if (err) {
         throw err;
       }
@@ -53,9 +53,21 @@ program
   });
 
 program
-  .command('importAddresses <filepath>')
+  .command('importAddress <walletId> <address>')
+  .description('Import a new address')
+  .action(function(walletId, address) {
+    client.importAddress(walletId, address, function(err, body) {
+      if (err) {
+        throw err;
+      }
+      console.log(body);
+    });
+  });
+
+program
+  .command('importAddresses <walletId> <filepath>')
   .description('Import a new addresses from JSON file')
-  .action(function(filepath) {
+  .action(function(walletId, filepath) {
     // TODO If the JSON file becomes too large use stream-json module
     // to read as a stream, ~3 million addresses works currently
     utils.readJSONFile(filepath, function(err, addresses) {
@@ -73,7 +85,7 @@ program
       var chunkSize = 2000;
       var chunks = utils.splitArray(addresses, chunkSize);
       async.eachSeries(chunks, function(chunk, next) {
-        client.importAddresses(chunk, function(err, body) {
+        client.importAddresses(walletId, chunk, function(err, body) {
           if (err) {
             throw err;
           }
@@ -85,9 +97,9 @@ program
   });
 
 program
-  .command('getTransactions [start] [limit]')
+  .command('getTransactions <walletId> [start] [limit]')
   .description('View latest transactions for a wallet')
-  .action(function(start, limit) {
+  .action(function(walletId, start, limit) {
     var options = {};
     if (start) {
       options.height = start;
@@ -96,7 +108,7 @@ program
     if (limit) {
       options.limit = limit;
     }
-    client.getTransactions(options, function(err, body) {
+    client.getTransactions(walletId, options, function(err, body) {
       if (err) {
         throw err;
       }
@@ -105,25 +117,25 @@ program
   });
 
 program
-  .command('getTransactionsStream [start]')
+  .command('getTransactionsStream <walletId> [start]')
   .description('View continuous stream of latest transactions for a wallet')
-  .action(function(start) {
+  .action(function(walletId, start) {
     var options = {};
     if (start) {
       options.height = start;
       options.index = 0;
     }
     options.limit = 10;
-    var stream = client.getTransactionsStream(options);
+    var stream = client.getTransactionsStream(walletId, options);
     stream.on('data', function(transactions) {
       console.log(transactions);
     });
   });
 
 program
-  .command('getTxids [start] [limit]')
+  .command('getTxids <walletId> [start] [limit]')
   .description('View latest txids for a wallet')
-  .action(function(start, limit) {
+  .action(function(walletId, start, limit) {
     var options = {};
     if (start) {
       options.height = start;
@@ -132,7 +144,7 @@ program
     if (limit) {
       options.limit = limit;
     }
-    client.getTxids(options, function(err, body) {
+    client.getTxids(walletId, options, function(err, body) {
       if (err) {
         throw err;
       }
@@ -141,16 +153,16 @@ program
   });
 
 program
-  .command('getTxidsStream [start]')
+  .command('getTxidsStream <walletId> [start]')
   .description('View continuous stream of latest txids for a wallet')
-  .action(function(start) {
+  .action(function(walletId, start) {
     var options = {};
     if (start) {
       options.height = start;
       options.index = 0;
     }
     options.limit = 500;
-    var stream = client.getTxidsStream(options);
+    var stream = client.getTxidsStream(walletId, options);
     stream.on('data', function(txids) {
       console.log(txids);
     });

@@ -6,7 +6,7 @@ var should = chai.should();
 var models = require('../../lib/models');
 var WalletTransaction = models.WalletTransaction;
 
-describe('Wallet Transaction Model', function() {
+describe.skip('Wallet Transaction Model', function() {
   // Response format from getDetailedTransaction
   // see: https://github.com/bitpay/bitcore-node/blob/master/lib/services/bitcoind.js
   var detailedData = {

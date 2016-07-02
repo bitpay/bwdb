@@ -7,7 +7,7 @@ var models = require('../../lib/models');
 var BloomFilter = require('bloom-filter');
 var Wallet = models.Wallet;
 
-describe('Wallet Data Model', function() {
+describe.skip('Wallet Data Model', function() {
   describe('@constructor', function() {
     it('will set properties', function() {
       var blockHash = new Buffer('000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f', 'hex');
