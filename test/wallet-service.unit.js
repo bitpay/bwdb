@@ -9,7 +9,7 @@ var BloomFilter = require('bloom-filter');
 
 var utils = require('../lib/utils');
 var Wallet = require('../lib/wallet-service');
-var BlockHandler = require('../lib/block-handler');
+var BlockFilter = require('../lib/block-filter');
 
 describe.skip('Wallet Service', function() {
   var node = {
@@ -86,9 +86,9 @@ describe.skip('Wallet Service', function() {
         wallet._loadWalletData.callCount.should.equal(1);
 
         // set the block handler
-        wallet.blockHandler.should.be.instanceOf(BlockHandler);
-        wallet.blockHandler.addressFilter.should.be.instanceOf(BloomFilter);
-        wallet.blockHandler.network.should.equal(bitcore.Networks.testnet);
+        wallet.blockFilter.should.be.instanceOf(BlockFilter);
+        wallet.blockFilter.addressFilter.should.be.instanceOf(BloomFilter);
+        wallet.blockFilter.network.should.equal(bitcore.Networks.testnet);
 
         // will call sync
         wallet.sync.callCount.should.equal(1);
