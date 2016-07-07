@@ -1,0 +1,11 @@
+{
+  "bitcoind": {
+    "spawn": {
+      "datadir": "./bitcoin",
+      "exec": "../../node_modules/.bin/bitcoind"
+    }
+  },
+  "wallet": {
+    "port": 3002
+  }
+}

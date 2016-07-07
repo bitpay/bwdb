@@ -1,4 +1,3 @@
 !.gitignore
 *.sock
-config.json
 bitcoin/regtest
