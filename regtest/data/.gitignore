@@ -1,3 +1,4 @@
 !.gitignore
 *.sock
 bitcoin/regtest
+regtest.lmdb

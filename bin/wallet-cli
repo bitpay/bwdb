@@ -53,6 +53,18 @@ program
   });
 
 program
+  .command('getBalance <walletId>')
+  .description('Get the balance of the wallet')
+  .action(function(walletId) {
+    client.getBalance(walletId, function(err, body) {
+      if (err) {
+        throw err;
+      }
+      console.log(body);
+    });
+  });
+
+program
   .command('importAddress <walletId> <address>')
   .description('Import a new address')
   .action(function(walletId, address) {
