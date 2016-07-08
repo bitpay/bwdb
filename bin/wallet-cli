@@ -78,11 +78,9 @@ program
 
 program
   .command('importAddresses <walletId> <filepath>')
-  .description('Import a new addresses from JSON file')
+  .description('Import new addresses from a JSON or Bitcoin wallet.dat file')
   .action(function(walletId, filepath) {
-    // TODO If the JSON file becomes too large use stream-json module
-    // to read as a stream, ~3 million addresses works currently
-    utils.readJSONFile(filepath, function(err, addresses) {
+    utils.readWalletFile(filepath, network, function(err, addresses) {
       if (err) {
         throw err;
       }
