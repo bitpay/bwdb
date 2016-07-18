@@ -122,7 +122,7 @@ program
       if (err) {
         throw err;
       }
-      console.log(body);
+      console.log(JSON.stringify(body, null, 2));
     });
   });
 
@@ -140,6 +140,20 @@ program
     stream.on('data', function(transactions) {
       console.log(transactions);
     });
+  });
+
+program
+  .command('getTransactionsCSV <walletId> <start> <end>')
+  .description('View transaction CSV history within block height range')
+  .action(function(walletId, start, end) {
+    var options = {
+      height: start,
+      index: 0,
+      limit: 10,
+      end: end
+    };
+    var stream = client.getTransactionsCSVStream(walletId, options);
+    stream.pipe(process.stdout);
   });
 
 program
