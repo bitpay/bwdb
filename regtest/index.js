@@ -172,7 +172,7 @@ describe('Wallet Server & Client', function() {
           return done(err);
         }
         result.transactions.length.should.equal(1);
-        result.transactions[0].txid.should.equal(expected.txid);
+        result.transactions[0].hash.should.equal(expected.txid);
         done();
       });
     });
