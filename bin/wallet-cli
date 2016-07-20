@@ -157,6 +157,20 @@ program
   });
 
 program
+  .command('getTransactionsList <walletId> <start> <end>')
+  .description('View transaction list history within block height range')
+  .action(function(walletId, start, end) {
+    var options = {
+      height: start,
+      index: 0,
+      limit: 10,
+      end: end
+    };
+    var stream = client.getTransactionsListStream(walletId, options);
+    stream.pipe(process.stdout);
+  });
+
+program
   .command('getTxids <walletId> [start] [limit]')
   .description('View latest txids for a wallet')
   .action(function(walletId, start, limit) {
