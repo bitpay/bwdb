@@ -14,7 +14,7 @@
   "maxdepth": 4,
   "maxerr": 99999, // so that jshint doesn't give up on a file with tons of errors
   "maxlen": 120,
-  "maxparams": 4,
+  "maxparams": 5,
   "maxstatements": 15,
   "mocha": true,
   "newcap": true,
