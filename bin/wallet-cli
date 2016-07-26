@@ -127,6 +127,19 @@ program
   });
 
 program
+  .command('getUTXOs <walletId>')
+  .description('View utxos for a wallet')
+  .action(function(walletId) {
+    var options = {};
+    client.getUTXOs(walletId, options, function(err, body) {
+      if (err) {
+        throw err;
+      }
+      console.log(JSON.stringify(body, null, 2));
+    });
+  });
+
+program
   .command('getTransactionsStream <walletId> [start]')
   .description('View continuous stream of latest transactions for a wallet')
   .action(function(walletId, start) {
