@@ -6,62 +6,143 @@ var should = chai.should();
 var models = require('../../lib/models');
 var WalletTransaction = models.WalletTransaction;
 
-describe.skip('Wallet Transaction Model', function() {
-  // Response format from getDetailedTransaction
-  // see: https://github.com/bitpay/bitcore-node/blob/master/lib/services/bitcoind.js
+describe('Wallet Transaction Model', function() {
+  function checkTransaction(tx) {
+    tx.walletId.toString('hex').should.equal('b4f97411dadf3882296997ade99f4a0891b07e768a76898b837ac41d2c2622e7');
+    tx.value.blockHash.should.equal('000000000000000006035200f6e6aa8b59751291d5c704c2f94acd3b04a67cb4');
+    tx.value.inputs[0].prevTxId.should.equal('ffa9b1388c3ec2a05d57117bc053d07bda6284c9732672d69cdf21bb8b9c293c');
+    tx.value.inputs[0].outputIndex.should.equal(0);
+    tx.value.outputs[0].satoshis.should.equal(382504);
+    tx.value.feeSatoshis.should.equal(10000);
+    tx.value.inputSatoshis.should.equal(50000000);
+    tx.value.outputSatoshis.should.equal(49990000);
+  }
+  var walletId = new Buffer('b4f97411dadf3882296997ade99f4a0891b07e768a76898b837ac41d2c2622e7', 'hex');
   var detailedData = {
-    blockHash: '000000000000000002cd0ba6e8fae058747d2344929ed857a18d3484156c9250',
-    height: 411462,
-    blockTimestamp: 1463070382,
+    blockHash: '000000000000000006035200f6e6aa8b59751291d5c704c2f94acd3b04a67cb4',
+    blockIndex: 179,
+    height: 348346,
+    blockTimestamp: 1426812067,
     version: 1,
-    hash: 'de184cc227f6d1dc0316c7484aa68b58186a18f89d853bb2428b02040c394479',
-    locktime: 411451,
-    coinbase: true,
+    hash: '477a1b4a632187319bfdf78675555ef18af554d2d7caa86b27a3a5230f7c6e98',
+    locktime: 0,
+    inputSatoshis: 50000000,
+    outputSatoshis: 49990000,
     inputs: [
       {
-        prevTxId: '3d003413c13eec3fa8ea1fe8bbff6f40718c66facffe2544d7516c9e2900cac2',
+        wallet: false,
+        satoshis: 50000000,
+        address: '17gaaSEKNyrsnx5zq2yNUC6giZYykXLqr6',
+        prevTxId: 'ffa9b1388c3ec2a05d57117bc053d07bda6284c9732672d69cdf21bb8b9c293c',
         outputIndex: 0,
-        sequence: 123456789,
-        script: '47304402204ba4aac20e3486885218d8232575a6714bc2e57fdb2d71521703516ecd32be1902207977f3817abcd2e1fcf83d3c91fd611da329592422579ff80dca4045a2e5d1300121026521032dab9ee35e84b4fe46dce6e442a2423a80c1a5c68f8ebdf156b91c171c',
-        scriptAsm: '304402204ba4aac20e3486885218d8232575a6714bc2e57fdb2d71521703516ecd32be1902207977f3817abcd2e1fcf83d3c91fd611da329592422579ff80dca4045a2e5d130[ALL] 026521032dab9ee35e84b4fe46dce6e442a2423a80c1a5c68f8ebdf156b91c171c',
-        address: '1LCTmj15p7sSXv3jmrPfA6KGs6iuepBiiG',
-        satoshis: 771146
+        sequence: 4294967295
       }
     ],
     outputs: [
       {
-        satoshis: 811146,
-        script: '76a914d2955017f4e3d6510c57b427cf45ae29c372c99088ac',
-        scriptAsm: 'OP_DUP OP_HASH160 d2955017f4e3d6510c57b427cf45ae29c372c990 OP_EQUALVERIFY OP_CHECKSIG',
-        address: '1LCTmj15p7sSXv3jmrPfA6KGs6iuepBiiG',
-        spentTxId: '4316b98e7504073acd19308b4b8c9f4eeb5e811455c54c0ebfe276c0b1eb6315',
-        spentIndex: 1,
-        spentHeight: 100
+        script: '76a914d8a01e1a7e81d3003005cf162694fff1c41dfc2f88ac',
+        satoshis: 382504,
+        address: '1LkQmbqhf34BS8RuV6nq4BjUVtEgrVCcRW',
+        wallet: false
+      },
+      {
+        script: '76a9142b0b59f889a580d29d0ac07af6d6cef0970e429988ac',
+        satoshis: 49607496,
+        address: '14vbexkRxksaicBQUu8CVHwpPeDiJesRXy',
+        wallet: true
       }
     ],
-    inputSatoshis: 771146,
-    outputSatoshis: 811146,
-    feeSatoshis: 40000
+    feeSatoshis: 10000
   };
-
   describe('@constructor', function() {
     it('will construct from detailed transaction', function() {
-      var tx = new WalletTransaction(detailedData);
+      var tx = new WalletTransaction(walletId, detailedData);
       should.exist(tx);
-      tx.blockHash.should.equal('000000000000000002cd0ba6e8fae058747d2344929ed857a18d3484156c9250');
-      tx.inputs[0].prevTxId.should.equal('3d003413c13eec3fa8ea1fe8bbff6f40718c66facffe2544d7516c9e2900cac2');
-      tx.outputs[0].satoshis.should.equal(811146);
-      tx.feeSatoshis.should.equal(40000);
+      checkTransaction(tx);
     });
   });
-  describe('#toBuffer/#fromBuffer', function() {
+  describe('#getValue/#fromBuffer', function() {
     it('roundtrip', function() {
-      var tx = new WalletTransaction(detailedData);
-      var tx2 = WalletTransaction.fromBuffer(tx.toBuffer());
-      tx2.blockHash.should.equal('000000000000000002cd0ba6e8fae058747d2344929ed857a18d3484156c9250');
-      tx2.inputs[0].prevTxId.should.equal('3d003413c13eec3fa8ea1fe8bbff6f40718c66facffe2544d7516c9e2900cac2');
-      tx2.outputs[0].satoshis.should.equal(811146);
-      tx2.feeSatoshis.should.equal(40000);
+      var tx = new WalletTransaction(walletId, detailedData);
+      var value = tx.getValue();
+      var tx2 = WalletTransaction.fromBuffer(walletId, value);
+      checkTransaction(tx2);
+    });
+  });
+  describe('@getDelta', function() {
+    it('will return wallet delta for the transaction', function() {
+      var tx = {
+        inputs: [{wallet: true, satoshis: 150}, {wallet: false, satoshis: 200}],
+        outputs: [{wallet: true, satoshis: 100}, {wallet: false, satoshis: 150}]
+      };
+      WalletTransaction.getDelta(tx).should.equal(-50);
+    });
+  });
+  describe('@getInputSatoshis', function() {
+    it('will return sum of inputs for this wallet', function() {
+      var tx = {
+        inputs: [{wallet: true, satoshis: 150}, {wallet: false, satoshis: 200}, {wallet: true, satoshis: 100}],
+        outputs: []
+      };
+      WalletTransaction.getInputSatoshis(tx).should.equal(250);
+    });
+    it('will not return an amount if transaction is coinbase', function() {
+      var tx = {
+        coinbase: true,
+        inputs: [],
+        outputs: [{wallet: true, satoshis: 1250000000}]
+      };
+      WalletTransaction.getInputSatoshis(tx).should.equal(0);
+    });
+  });
+  describe('@getOutputSatoshis', function() {
+    it('will return sum of outputs for this wallet', function() {
+      var tx = {
+        inputs: [],
+        outputs: [{wallet: true, satoshis: 150}, {wallet: false, satoshis: 200}, {wallet: true, satoshis: 100}]
+      };
+      WalletTransaction.getOutputSatoshis(tx).should.equal(250);
+    });
+  });
+  describe('@classify', function() {
+    it('it will return "send"', function() {
+      var tx = {
+        inputs: [{wallet: true}, {wallet: true}]
+      };
+      var delta = -100000;
+      WalletTransaction.classify(tx, delta).should.equal('send');
+    });
+    it('it will return "join"', function() {
+      var tx = {
+        inputs: [{wallet: true}, {wallet: false}]
+      };
+      var delta = -100000;
+      WalletTransaction.classify(tx, delta).should.equal('join');
+    });
+    it('it will return "receive"', function() {
+      var tx = {
+        inputs: [{wallet: false}, {wallet: false}],
+        outputs: [{wallet: true}, {wallet: false}]
+      };
+      var delta = 100000;
+      WalletTransaction.classify(tx, delta).should.equal('receive');
+    });
+    it('it will return "coinbase"', function() {
+      var tx = {
+        coinbase: true,
+        inputs: [],
+        outputs: [{wallet: true}]
+      };
+      var delta = 100000;
+      WalletTransaction.classify(tx, delta).should.equal('coinbase');
+    });
+    it('it will return "move"', function() {
+      var tx = {
+        inputs: [{wallet: true}],
+        outputs: [{wallet: true}]
+      };
+      var delta = 0;
+      WalletTransaction.classify(tx, delta).should.equal('move');
     });
   });
 });
