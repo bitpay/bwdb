@@ -37,4 +37,39 @@ describe('Wallet Address Map Model', function() {
       checkMap(map);
     });
   });
+  describe('@fromBuffer', function() {
+    it('will parse buffer', function() {
+      var keyString = '02'; // address type
+      keyString += '6349a418fc4578d10a372b54b45c280cc8c4382f'; // address hash
+      var value = Buffer.concat([walletId1, walletId2]); // wallet ids
+      var map = WalletAddressMap.fromBuffer(keyString, value, bitcore.Networks.testnet);
+      map.address.toString().should.equal('2N2JD6wb56AfK4tfmM6PwdVmoYk2dCKf4Br');
+      map.walletIds[0].compare(walletId1).should.equal(0);
+      map.walletIds[1].compare(walletId2).should.equal(0);
+    });
+  });
+  describe('@getKey', function() {
+    it('will get the key', function() {
+      var key = WalletAddressMap.getKey(address, 'hex', bitcore.Networks.testnet);
+      var expectedKey = '02'; // address type
+      expectedKey += '6349a418fc4578d10a372b54b45c280cc8c4382f'; // address hash
+      key.should.equal(expectedKey);
+    });
+  });
+  describe('#getKey', function() {
+    it('will get the key from instance', function() {
+      var map = WalletAddressMap.create(address, walletIds, bitcore.Networks.testnet);
+      var expectedKey = '02'; // address type
+      expectedKey += '6349a418fc4578d10a372b54b45c280cc8c4382f'; // address hash
+      map.getKey('hex').should.equal(expectedKey);
+    });
+  });
+  describe('#insert', function() {
+    it('will insert new wallet id', function() {
+      var map = WalletAddressMap.create(address, [walletId1], bitcore.Networks.testnet);
+      map.insert(walletId2);
+      map.walletIds[0].compare(walletId1).should.equal(0);
+      map.walletIds[1].compare(walletId2).should.equal(0);
+    });
+  });
 });
