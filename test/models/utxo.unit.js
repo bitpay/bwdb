@@ -7,7 +7,7 @@ var bitcore = require('bitcore-lib');
 var models = require('../../lib/models');
 var WalletUTXO = models.WalletUTXO;
 
-describe('Wallet UTXO', function() {
+describe('Wallet UTXO Model', function() {
   function checkUTXO(utxo) {
     should.exist(utxo);
     utxo.address.toString().should.equal('mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc');

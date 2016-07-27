@@ -7,13 +7,11 @@ var models = require('../../lib/models');
 var BloomFilter = require('bloom-filter');
 var Wallet = models.Wallet;
 
-describe.skip('Wallet Data Model', function() {
+describe('Wallet Data Model', function() {
+  var walletId = new Buffer('7e5a548623edccd9e18c4e515ba5e7380307f28463b4b90ea863aa34efa22a6d', 'hex');
   describe('@constructor', function() {
     it('will set properties', function() {
-      var blockHash = new Buffer('000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f', 'hex');
-      var wallet = new Wallet({
-        height: 100,
-        blockHash: blockHash,
+      var wallet = new Wallet(walletId, {
         addressFilter: {
           vData: new Array([0, 1]),
           nHashFuncs: 3,
@@ -23,19 +21,22 @@ describe.skip('Wallet Data Model', function() {
         },
         balance: 100000000
       });
-      wallet.height.should.equal(100);
       wallet.addressFilter.should.be.instanceOf(BloomFilter);
 
-      wallet.blockHash.should.equal(blockHash);
+      wallet.id.compare(walletId).should.equal(0);
       wallet.balance.should.equal(100000000);
     });
     it('will create a new empty bloom filter and zero balance', function() {
-      var wallet = new Wallet({
-        height: 100,
-        blockHash: new Buffer('000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f', 'hex')
-      });
+      var wallet = new Wallet(walletId);
       wallet.addressFilter.should.be.instanceOf(BloomFilter);
-      wallet.addressFilter.vData.length.should.equal(11981322);
+      wallet.addressFilter.vData.length.should.equal(3594396);
+      wallet.balance.should.equal(0);
+    });
+    it('will create without "new"', function() {
+      /* jshint newcap: false */
+      var wallet = Wallet(walletId);
+      wallet.addressFilter.should.be.instanceOf(BloomFilter);
+      wallet.addressFilter.vData.length.should.equal(3594396);
       wallet.balance.should.equal(0);
     });
     it('will error non-number height', function() {
@@ -54,42 +55,29 @@ describe.skip('Wallet Data Model', function() {
       }).should.throw(Error);
     });
   });
-  describe('#toBuffer/#fromBuffer', function() {
+  describe('#getValue', function() {
     it('roundtrip', function() {
-      var wallet = new Wallet({
-        height: 100,
-        blockHash: new Buffer('000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f', 'hex')
-      });
+      var wallet = new Wallet(walletId);
       wallet.addressFilter.insert(new Buffer('abcdef', 'hex'));
       wallet.addressFilter.contains(new Buffer('abcdef', 'hex')).should.equal(true);
       wallet.balance.should.equal(0);
-      var wallet2 = Wallet.fromBuffer(wallet.toBuffer());
-      wallet2.height.should.equal(100);
+      var wallet2 = Wallet.fromBuffer(walletId, wallet.getValue());
       wallet2.addressFilter.contains(new Buffer('abcdef', 'hex')).should.equal(true);
     });
   });
   describe('#clone', function() {
     it('will have the same height and address filter', function() {
-      var wallet = new Wallet({
-        height: 100,
-        blockHash: new Buffer('000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f', 'hex')
-      });
+      var wallet = new Wallet(walletId);
       wallet.addressFilter.insert(new Buffer('abcdef', 'hex'));
       wallet.addressFilter.contains(new Buffer('abcdef', 'hex')).should.equal(true);
       wallet.balance.should.equal(0);
       var wallet2 = wallet.clone();
-      wallet2.height.should.equal(100);
       wallet2.addressFilter.contains(new Buffer('abcdef', 'hex')).should.equal(true);
     });
     it('will not create references', function() {
-      var blockHash = new Buffer('000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f', 'hex');
-      var wallet = new Wallet({
-        height: 100,
-        blockHash: blockHash
-      });
+      var wallet = new Wallet(walletId);
       var wallet2 = wallet.clone();
-      should.equal(wallet2.blockHash === blockHash, false);
-      wallet2.blockHash.should.deep.equal(blockHash);
+      should.equal(wallet2.id === walletId, false);
     });
   });
 });
