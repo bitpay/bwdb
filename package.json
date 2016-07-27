@@ -11,6 +11,7 @@
   "scripts": {
     "start": "./bin/walletd",
     "test": "mocha -R spec --recursive",
+    "jshint": "jshint --reporter=node_modules/jshint-stylish ./lib",
     "regtest": "mocha -R spec ./regtest/index.js",
     "coverage": "istanbul cover _mocha -- --recursive"
   },
@@ -50,6 +51,8 @@
   },
   "devDependencies": {
     "chai": "^3.5.0",
+    "jshint": "^2.9.2",
+    "jshint-stylish": "^2.2.0",
     "mocha": "^2.5.3",
     "proxyquire": "^1.7.9",
     "rimraf": "^2.5.3",
