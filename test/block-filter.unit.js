@@ -8,7 +8,7 @@ var BloomFilter = require('bloom-filter');
 
 var BlockHandler = require('../lib/block-filter');
 
-describe('Wallet Block Filter', function() {
+describe.skip('Wallet Block Filter', function() {
   describe('@constructor', function() {
     it('will construct new object', function() {
       var handler = new BlockHandler({
