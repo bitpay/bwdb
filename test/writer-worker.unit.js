@@ -4,9 +4,10 @@ var chai = require('chai');
 var should = chai.should();
 var sinon = require('sinon');
 
+var WriterWorker = require('../lib/writer-worker.js');
 var blockData = require('./data/blocks.json');
 
-describe.skip('Wallet Writer Worker', function() {
+describe('Wallet Writer Worker', function() {
   var testNode = {
     network: 'testnet'
   };
@@ -79,10 +80,6 @@ describe.skip('Wallet Writer Worker', function() {
     });
   });
   describe('#_updateTip', function() {
-    it('', function() {
-    });
-  });
-  describe('#sync', function() {
     it('', function() {
     });
   });
@@ -845,64 +842,82 @@ describe.skip('Wallet Writer Worker', function() {
   });
 
   describe('#sync', function() {
-    it('will bail out if already syncing', function() {
-      var wallet = new Wallet({node: node});
+    var options = {
+      network: 'testnet',
+      bitcoinHeight: 100,
+      bitcoinHash: '949b2f9e3ce27c3daf0f5b881540ac36b80f14a3d8316bd6114d2ff5bde54a54',
+      clientsConfig: [
+        {
+          rpcport: 2121,
+          rpcuser: 'user',
+          rpcpassword: 'password'
+        }
+      ],
+      listen: 8000
+    };
+    it('will bail out if already syncing', function(done) {
+      var wallet = new WriterWorker(options);
+      wallet._updateTip = sinon.stub();
       wallet.syncing = true;
-      var started = wallet.sync();
-      started.should.equal(false);
+      wallet.sync({
+        bitcoinHeight: 101,
+        bitcoinHash: 'c3f6790a1e612146c2f36ed0855c560b39e602be7c27b37007f946e9c2adf177'
+      }, function(err) {
+        if (err) {
+          return done(err);
+        }
+        wallet._updateTip.callCount.should.equal(0);
+        done();
+      });
     });
-    it('will bail out if node is stopping', function() {
-      var testNode = {
-        network: 'testnet'
-      };
-      var wallet = new Wallet({node: testNode});
-      wallet.node.stopping = true;
-      var started = wallet.sync();
-      started.should.equal(false);
+    it('will bail out if node is stopping', function(done) {
+      var wallet = new WriterWorker(options);
+      wallet._updateTip = sinon.stub();
+      wallet.stopping = true;
+      wallet.sync({
+        bitcoinHeight: 101,
+        bitcoinHash: 'c3f6790a1e612146c2f36ed0855c560b39e602be7c27b37007f946e9c2adf177'
+      }, function(err) {
+        if (err) {
+          return done(err);
+        }
+        wallet._updateTip.callCount.should.equal(0);
+        done();
+      });
     });
-    it('will bail out if walletData is not available', function() {
-      var wallet = new Wallet({node: node});
-      wallet.walletData = null;
-      var started = wallet.sync();
-      started.should.equal(false);
-    });
-    it('will bail out if walletTxids is not available', function() {
-      var wallet = new Wallet({node: node});
-      wallet.walletTxids = null;
-      var started = wallet.sync();
-      started.should.equal(false);
-    });
-    it('will emit synced when height matches', function() {
-      var wallet = new Wallet({node: node});
-      wallet.walletTxids = null;
-      var started = wallet.sync();
-      started.should.equal(false);
+    it('will bail out if walletBlock is not available', function(done) {
+      var wallet = new WriterWorker(options);
+      wallet._updateTip = sinon.stub();
+      wallet.walletBlock = null;
+      wallet.sync({
+        bitcoinHeight: 101,
+        bitcoinHash: 'c3f6790a1e612146c2f36ed0855c560b39e602be7c27b37007f946e9c2adf177'
+      }, function(err) {
+        if (err) {
+          return done(err);
+        }
+        wallet._updateTip.callCount.should.equal(0);
+        done();
+      });
     });
     it('will update wallet height until it matches bitcoind height', function(done) {
-      var testNode = {
-        network: 'testnet'
-      };
-      testNode.stopping = false;
-      var wallet = new Wallet({node: testNode});
-      wallet.walletData = {};
-      wallet.walletData.height = 100;
-      wallet.walletTxids = {};
-      wallet.bitcoind = {
-        height: 200
-      };
+      var wallet = new WriterWorker(options);
+      wallet.walletBlock = {};
+      wallet.walletBlock.height = 100;
       wallet._updateTip = function(height, callback) {
-        wallet.walletData.height += 1;
+        wallet.walletBlock.height += 1;
         setImmediate(callback);
       };
       sinon.spy(wallet, '_updateTip');
-      wallet.once('synced', function() {
+      wallet.sync({
+        bitcoinHeight: 200,
+        bitcoinHash: 'c3f6790a1e612146c2f36ed0855c560b39e602be7c27b37007f946e9c2adf177'
+      }, function() {
         wallet._updateTip.callCount.should.equal(100);
-        wallet.walletData.height.should.equal(200);
+        wallet.walletBlock.height.should.equal(200);
         wallet.syncing.should.equal(false);
         done();
       });
-      var started = wallet.sync();
-      started.should.equal(true);
     });
     it('will bail out if node is stopping while syncing', function(done) {
       var testNode = {
@@ -918,7 +933,7 @@ describe.skip('Wallet Writer Worker', function() {
       };
       wallet._updateTip = function(height, callback) {
         wallet.walletData.height += 1;
-        wallet.node.stopping = true;
+        wallet.stopping = true;
         setImmediate(callback);
       };
       sinon.spy(wallet, '_updateTip');
