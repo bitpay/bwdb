@@ -1,12 +1,12 @@
 **Note**: Currently in active development
 
-# Bitcore Wallet Database
+# bwdb
 
 A database for high and low volume bitcoin wallets
 
 ## Database Design
 
-Data is stored in a [B+ tree](https://en.wikipedia.org/wiki/B%2B_tree) using the key/value pairs shown below. Design is optimized for wallet queries for balances, txids, transactions, addresses and utxos. Multiple wallets are supported with several million addresses and transactions.
+Wallet data is stored in a [B+ tree](https://en.wikipedia.org/wiki/B%2B_tree) using the key/value pairs shown below. The design is optimized for wallet queries for balances, txids, transactions, addresses and utxos. Multiple wallets are supported, each with several million addresses and transactions.
 
 ### Structures
 
