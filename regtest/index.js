@@ -15,6 +15,11 @@ var Config = index.Config;
 var testWIF = 'cSdkPxkAjA4HDr5VHgsebAPDEh9Gyub4HK8UJr2DFGGqKKy4K5sG';
 var testKey = bitcore.PrivateKey(testWIF);
 var testAddress = testKey.toAddress('regtest').toString();
+
+var test2WIF = 'cR4qogdN9UxLZJXCNFNwDRRZNeLRWuds9TTSuLNweFVjiaE4gPaq';
+var test2Key = bitcore.PrivateKey(test2WIF);
+var test2Address = test2Key.toAddress('regtest').toString();
+
 var bitcoinClient;
 var server;
 var client;
@@ -36,6 +41,25 @@ describe('Wallet Server & Client', function() {
         }
         data.blockHash = response.result[0];
         done(null, data);
+      });
+    });
+  }
+
+  function broadcastAndGenerate(tx, done) {
+    var data = {};
+    bitcoinClient.sendRawTransaction(tx.serialize(), function(err, response) {
+      if (err) {
+        return done(err);
+      }
+      data.txid = response.result;
+      bitcoinClient.generate(1, function(err, response) {
+        if (err) {
+          return done(err);
+        }
+        data.blockHash = response.result;
+        setTimeout(function() {
+          done(null, data);
+        }, 500);
       });
     });
   }
@@ -176,6 +200,52 @@ describe('Wallet Server & Client', function() {
         done();
       });
     });
-  });
+    it('will get utxos', function(done) {
+      client.getUTXOs(walletId, {}, function(err, result) {
+        if (err) {
+          return done(err);
+        }
+        result.utxos.length.should.equal(1);
+        result.utxos[0].address.should.equal(testAddress);
+        result.utxos[0].satoshis.should.equal(10 * 1e8);
+        result.utxos[0].txid.length.should.equal(64);
+        result.utxos[0].index.should.be.a('number');
+        result.utxos[0].height.should.be.a('number');
+        done();
+      });
+    });
+    it('will remove utxo after being spent', function(done) {
+      client.getUTXOs(walletId, {}, function(err, result1) {
+        if (err) {
+          return done(err);
+        }
+        var tx = bitcore.Transaction();
+        var utxo = {
+          outputIndex: result1.utxos[0].index,
+          satoshis: result1.utxos[0].satoshis,
+          txid: result1.utxos[0].txid,
+          address: result1.utxos[0].address,
+          script: bitcore.Script.fromAddress(result1.utxos[0].address)
+        };
+        tx.from(utxo);
+        tx.to(test2Address, (10 * 1e8) - 1000);
+        tx.fee(1000);
+        tx.sign(testKey);
+        tx.outputs.length.should.equal(1);
 
+        broadcastAndGenerate(tx, function(err, data) {
+          if (err) {
+            return done(err);
+          }
+          client.getUTXOs(walletId, {}, function(err, result2) {
+            if (err) {
+              return done(err);
+            }
+            result2.utxos.length.should.equal(0);
+            done();
+          });
+        });
+      });
+    });
+  });
 });
