@@ -9,6 +9,7 @@ var EventEmitter = require('events').EventEmitter;
 var utils = require('../lib/utils');
 
 describe('Wallet Utils', function() {
+
   describe('#isInteger', function() {
     it('will return false for 0.1', function() {
       utils.isInteger(0.1).should.equal(false);
@@ -38,6 +39,7 @@ describe('Wallet Utils', function() {
       utils.isInteger(-99).should.equal(true);
     });
   });
+
   describe('#setupDirectory', function() {
     it('will make directory if the application directory does not exist', function(done) {
       var mkdirp = sinon.stub().callsArg(1);
@@ -94,6 +96,7 @@ describe('Wallet Utils', function() {
       });
     });
   });
+
   describe('#splitRange', function() {
     it('will split 1 to 10 by sections of 3', function() {
       var range = utils.splitRange(1, 10, 3);
@@ -108,6 +111,7 @@ describe('Wallet Utils', function() {
       range.should.deep.equal([[1, 2]]);
     });
   });
+
   describe('#readJSONFile', function() {
     it('will give error from readFile', function(done) {
       var enoentError = new Error();
@@ -156,6 +160,7 @@ describe('Wallet Utils', function() {
       });
     });
   });
+
   describe('#readWalletFile', function() {
     var sandbox = sinon.sandbox.create();
     afterEach(function() {
@@ -189,6 +194,16 @@ describe('Wallet Utils', function() {
       });
     });
   });
+
+  describe('#splitArray', function() {
+    it('will split an array', function() {
+      var array = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k'];
+      var split = utils.splitArray(array, 2);
+      split.length.should.equal(6);
+      split.should.deep.equal([['a', 'b'], ['c', 'd'], ['e', 'f'], ['g', 'h'], ['i', 'j'], ['k']]);
+    });
+  });
+
   describe('#getRemoteAddress', function() {
     it('will return cloudflare headers', function() {
       var address = utils.getRemoteAddress({headers: {'cf-connecting-ip': '127.0.0.1'}});
@@ -199,10 +214,7 @@ describe('Wallet Utils', function() {
       address.should.equal('127.0.0.1');
     });
   });
-  describe('#enableCORS', function() {
-    it('', function() {
-    });
-  });
+
   describe('#sendError', function() {
     var sandbox = sinon.sandbox.create();
     afterEach(function() {
@@ -238,10 +250,7 @@ describe('Wallet Utils', function() {
       send.args[0][0].should.equal('test');
     });
   });
-  describe('#createLogStream', function() {
-    it('', function() {
-    });
-  });
+
   describe('#getTaskId', function() {
     it('will get a random value', function() {
       var id = utils.getTaskId();
@@ -249,16 +258,22 @@ describe('Wallet Utils', function() {
       id.length.should.equal(8);
     });
   });
+
   describe('#getClients', function() {
+    it('', function() {
+    });
   });
+
   describe('#setClients', function() {
     it('', function() {
     });
   });
+
   describe('#tryAllClients', function() {
     it('', function() {
     });
   });
+
   describe('#wrapRPCError', function() {
     it('will create an error', function() {
       var error = utils.wrapRPCError({message: 'test'});
@@ -266,6 +281,7 @@ describe('Wallet Utils', function() {
       error.message.should.equal('test');
     });
   });
+
   describe('#getAddressTypeString', function() {
     it('it will return pubkeyhash with 01', function() {
       utils.getAddressTypeString(new Buffer('01', 'hex')).should.equal('pubkeyhash');
@@ -279,6 +295,7 @@ describe('Wallet Utils', function() {
       }).should.throw('Unknown address type');
     });
   });
+
   describe('#getAddressTypeBuffer', function() {
     it('it will return 01 for pubkeyhash', function() {
       utils.getAddressTypeBuffer({type: 'pubkeyhash'}).toString('hex').should.equal('01');
@@ -292,6 +309,7 @@ describe('Wallet Utils', function() {
       }).should.throw('Unknown address type');
     });
   });
+
   describe('#splitBuffer', function() {
     it('will split buffers by segment size', function() {
       var value = 'f4d652a6902744f4738ab484c23d267293a2c7fdb89fe1aa78e6f0f2d0b63d2c';
@@ -305,6 +323,7 @@ describe('Wallet Utils', function() {
       buffers[2].toString('hex').should.equal('97bdd4ac795eb08c6fd99b198bc9d8f549e3bc7e3fbb9e37563d8c9bf78bb477');
     });
   });
+
   describe('#exitWorker', function() {
     it('will send SIGINT and exit cleanly', function(done) {
       var worker = new EventEmitter();
@@ -340,11 +359,13 @@ describe('Wallet Utils', function() {
       });
     });
   });
+
   describe('#timestampToISOString', function() {
     it('will convert second timestamp to iso string', function() {
       utils.timestampToISOString(1231006505).should.equal('2009-01-03T18:15:05.000Z');
     });
   });
+
   describe('#satoshisToBitcoin', function() {
     it('1999 to 0.00001999', function() {
       utils.satoshisToBitcoin(1999, 0.00001999);
