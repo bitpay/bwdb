@@ -37,7 +37,7 @@ describe('Wallet Utils', function() {
     it('will return true for -99', function() {
       utils.isInteger(-99).should.equal(true);
     });
-  })
+  });
   describe('#setupDirectory', function() {
     it('will make directory if the application directory does not exist', function(done) {
       var mkdirp = sinon.stub().callsArg(1);
@@ -120,7 +120,7 @@ describe('Wallet Utils', function() {
       });
       utils.readJSONFile('/tmp/bwsv2-directory', function(err) {
         should.exist(err);
-        err.code.should.equal('ENOENT')
+        err.code.should.equal('ENOENT');
         readFile.callCount.should.equal(1);
         done();
       });
@@ -204,7 +204,38 @@ describe('Wallet Utils', function() {
     });
   });
   describe('#sendError', function() {
-    it('', function() {
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
+    });
+    it('will include status code', function() {
+      var err = new Error('test');
+      err.statusCode = 404;
+      var send = sinon.stub();
+      var status = sinon.stub().returns({send: send});
+      var res = {
+        status: status
+      };
+      utils.sendError(err, res);
+      status.callCount.should.equal(1);
+      status.args[0][0].should.equal(404);
+      send.callCount.should.equal(1);
+      send.args[0][0].should.equal('test');
+    });
+    it('will default to 503 if status code not included', function() {
+      sandbox.stub(console, 'error');
+      var err = new Error('test');
+      var send = sinon.stub();
+      var status = sinon.stub().returns({send: send});
+      var res = {
+        status: status
+      };
+      utils.sendError(err, res);
+      console.error.callCount.should.equal(1);
+      status.callCount.should.equal(1);
+      status.args[0][0].should.equal(503);
+      send.callCount.should.equal(1);
+      send.args[0][0].should.equal('test');
     });
   });
   describe('#createLogStream', function() {
@@ -302,7 +333,7 @@ describe('Wallet Utils', function() {
           worker.emit('exit', 1);
         }
       };
-      utils.exitWorker(worker, 1000, function(err) {
+      utils.exitWorker(worker, 10, function(err) {
         should.exist(err);
         err.message.should.equal('Worker exit timeout, force shutdown');
         done();
