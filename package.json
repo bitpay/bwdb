@@ -1,7 +1,7 @@
 {
-  "name": "bwsv2",
+  "name": "bwdb",
   "version": "1.0.0",
-  "description": "Experimental",
+  "description": "A database server for bitcoin wallets",
   "main": "lib/index.js",
   "bin": {
     "bwdb": "./bin/bwdb",
@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bitpay/bwsv2.git"
+    "url": "git+https://github.com/bitpay/bwdb.git"
   },
   "keywords": [
     "bitcoin",
@@ -26,9 +26,9 @@
   "author": "BitPay, Inc.",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/bitpay/bwsv2/issues"
+    "url": "https://github.com/bitpay/bwdb/issues"
   },
-  "homepage": "https://github.com/bitpay/bwsv2#readme",
+  "homepage": "https://github.com/bitpay/bwdb#readme",
   "dependencies": {
     "async": "^2.0.0",
     "bitcoind-rpc": "braydonf/bitcoind-rpc#8c319222776f4133e2246a98ec79d5e6f5b69fe9",
