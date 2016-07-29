@@ -1,0 +1,154 @@
+[
+  {
+    "addresses": [
+      "1BNwxHGaFbeUBitpjy2AsKpJ29Ybxntqvb",
+      "1EYTGtG4LnFfiMvjJdsU7GMGCQvsRSjYhx",
+      "1Am9UTGfdnxabvcywYG2hvzr6qK8T3oUZT",
+      "1JxDJCyWNakZ5kECKdCU9Zka6mh34mZ7B2"
+    ],
+    "deltas": {
+      "hash": "000000000003ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506",
+      "confirmations": 322756,
+      "size": 957,
+      "height": 100000,
+      "version": 1,
+      "merkleroot": "f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766",
+      "deltas": [
+        {
+          "txid": "8c14f0db3df150123e6f3dbbf30f8b955a8249b62ac1d1ff16284aefa3d06d87",
+          "index": 0,
+          "inputs": [
+          ],
+          "outputs": [
+          ]
+        },
+        {
+          "txid": "fff2525b8931402dd09222c50775608f75787bd2b87e56995a7bdd30f79702c4",
+          "index": 1,
+          "inputs": [
+            {
+              "address": "1BNwxHGaFbeUBitpjy2AsKpJ29Ybxntqvb",
+              "satoshis": -5000000000,
+              "index": 0,
+              "prevtxid": "87a157f3fd88ac7907c05fc55e271dc4acdc5605d187d646604ca8c0e9382e03",
+              "prevout": 0
+            }
+          ],
+          "outputs": [
+            {
+              "address": "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn",
+              "satoshis": 556000000,
+              "index": 0
+            },
+            {
+              "address": "1EYTGtG4LnFfiMvjJdsU7GMGCQvsRSjYhx",
+              "satoshis": 4444000000,
+              "index": 1
+            }
+          ]
+        },
+        {
+          "txid": "6359f0868171b1d194cbee1af2f16ea598ae8fad666d9b012c8ed2b79a236ec4",
+          "index": 2,
+          "inputs": [
+            {
+              "address": "15vScfMHNrXN4QvWe54q5hwfVoYwG79CS1",
+              "satoshis": -300000000,
+              "index": 0,
+              "prevtxid": "cf4e2978d0611ce46592e02d7e7daf8627a316ab69759a9f3df109a7f2bf3ec3",
+              "prevout": 1
+            }
+          ],
+          "outputs": [
+            {
+              "address": "1H8ANdafjpqYntniT3Ddxh4xPBMCSz33pj",
+              "satoshis": 1000000,
+              "index": 0
+            },
+            {
+              "address": "1Am9UTGfdnxabvcywYG2hvzr6qK8T3oUZT",
+              "satoshis": 299000000,
+              "index": 1
+            }
+          ]
+        },
+        {
+          "txid": "e9a66845e05d5abc0ad04ec80f774a7e585c6e8db975962d069a522137b80c1d",
+          "index": 3,
+          "inputs": [
+            {
+              "address": "1JxDJCyWNakZ5kECKdCU9Zka6mh34mZ7B2",
+              "satoshis": -1000000,
+              "index": 0,
+              "prevtxid": "f4515fed3dc4a19b90a317b9840c243bac26114cf637522373a7d486b372600b",
+              "prevout": 0
+            }
+          ],
+          "outputs": [
+            {
+              "address": "16FuTPaeRSPVxxCnwQmdyx2PQWxX6HWzhQ",
+              "satoshis": 1000000,
+              "index": 0
+            }
+          ]
+        }
+      ],
+      "time": 1293623863,
+      "mediantime": 1293622620,
+      "nonce": 274148111,
+      "bits": "1b04864c",
+      "difficulty": 14484.1623612254,
+      "chainwork": "0000000000000000000000000000000000000000000000000644cb7f5234089e",
+      "previousblockhash": "000000000002d01c1fccc21636b607dfd930d31d01c3a62104612a1719011250",
+      "nextblockhash": "00000000000080b66c911bd5ba14a74260057311eaeb1982802f7010f1a9f090"
+    },
+    "expected": [
+      {
+        "txid": "fff2525b8931402dd09222c50775608f75787bd2b87e56995a7bdd30f79702c4",
+        "index": 1,
+        "inputs": [
+          {
+            "address": "1BNwxHGaFbeUBitpjy2AsKpJ29Ybxntqvb",
+            "satoshis": -5000000000,
+            "index": 0,
+            "prevtxid": "87a157f3fd88ac7907c05fc55e271dc4acdc5605d187d646604ca8c0e9382e03",
+            "prevout": 0
+          }
+        ],
+        "outputs": [
+          {
+            "address": "1EYTGtG4LnFfiMvjJdsU7GMGCQvsRSjYhx",
+            "satoshis": 4444000000,
+            "index": 1
+          }
+        ]
+      },
+      {
+        "txid": "6359f0868171b1d194cbee1af2f16ea598ae8fad666d9b012c8ed2b79a236ec4",
+        "index": 2,
+        "inputs": [],
+        "outputs": [
+          {
+            "address": "1Am9UTGfdnxabvcywYG2hvzr6qK8T3oUZT",
+            "satoshis": 299000000,
+            "index": 1
+          }
+        ]
+      },
+      {
+        "txid": "e9a66845e05d5abc0ad04ec80f774a7e585c6e8db975962d069a522137b80c1d",
+        "index": 3,
+        "inputs": [
+          {
+            "address": "1JxDJCyWNakZ5kECKdCU9Zka6mh34mZ7B2",
+            "satoshis": -1000000,
+            "index": 0,
+            "prevtxid": "f4515fed3dc4a19b90a317b9840c243bac26114cf637522373a7d486b372600b",
+            "prevout": 0
+          }
+        ],
+        "outputs": []
+      }
+    ]
+  }
+]
