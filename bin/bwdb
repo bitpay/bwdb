@@ -2,7 +2,7 @@
 
 'use strict';
 
-process.title = 'walletd';
+process.title = 'bwdb';
 
 var version = require('../package.json').version;
 var program = require('commander');

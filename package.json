@@ -2,14 +2,13 @@
   "name": "bwsv2",
   "version": "1.0.0",
   "description": "Experimental",
-  "bitcoreNode": "lib/wallet.js",
   "main": "lib/index.js",
   "bin": {
-    "walletd": "./bin/walletd",
-    "wallet-cli": "./bin/wallet-cli"
+    "bwdb": "./bin/bwdb",
+    "bwdb-cli": "./bin/bwdb-cli"
   },
   "scripts": {
-    "start": "./bin/walletd",
+    "start": "./bin/bwdb",
     "test": "mocha -R spec --recursive",
     "jshint": "jshint --reporter=node_modules/jshint-stylish ./lib",
     "regtest": "mocha -R spec ./regtest/index.js",

@@ -2,7 +2,7 @@
 
 'use strict';
 
-process.title = 'wallet-cli';
+process.title = 'bwdb-cli';
 
 var async = require('async');
 var program = require('commander');
