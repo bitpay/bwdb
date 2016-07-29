@@ -34,5 +34,13 @@ describe('Wallet Block Filter', function() {
       var transactions = filter.filterDeltas(blockDeltas[0].deltas);
       transactions.should.deep.equal(blockDeltas[0].expected);
     });
+    it('return empty array', function() {
+      var filter = new BlockFilter({
+        network: bitcore.Networks.testnet,
+        addressFilter: BloomFilter.create(100, 0.1)
+      });
+      var transactions = filter.filterDeltas(blockDeltas[0].deltas);
+      transactions.should.deep.equal([]);
+    });
   });
 });
