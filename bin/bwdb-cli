@@ -148,7 +148,7 @@ program
       options.height = start;
       options.index = 0;
     }
-    options.limit = 10;
+    options.limit = 50;
     var stream = client.getTransactionsStream(walletId, options);
     stream.on('data', function(transactions) {
       console.log(transactions);
