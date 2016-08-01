@@ -65,7 +65,7 @@ describe('Wallet Server & Client', function() {
   }
 
   before(function(done) {
-    this.timeout(10000);
+    this.timeout(60000);
 
     var configPath = __dirname + '/data';
 

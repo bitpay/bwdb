@@ -26,6 +26,22 @@ describe('Wallet Data Model', function() {
       wallet.id.compare(walletId).should.equal(0);
       wallet.balance.should.equal(100000000);
     });
+    it('will set properties using string', function() {
+      var wallet = new Wallet(walletId.toString('hex'), {
+        addressFilter: {
+          vData: new Array([0, 1]),
+          nHashFuncs: 3,
+          nTweak: false,
+          nFlags: 0,
+          noMaxSize: true
+        },
+        balance: 100000000
+      });
+      wallet.addressFilter.should.be.instanceOf(BloomFilter);
+
+      wallet.id.compare(walletId).should.equal(0);
+      wallet.balance.should.equal(100000000);
+    });
     it('will create a new empty bloom filter and zero balance', function() {
       var wallet = new Wallet(walletId);
       wallet.addressFilter.should.be.instanceOf(BloomFilter);
@@ -53,6 +69,59 @@ describe('Wallet Data Model', function() {
           blockHash: 'notablockhash'
         });
       }).should.throw(Error);
+    });
+  });
+  describe('@create', function() {
+    it('will set properties', function() {
+      var wallet = Wallet.create(walletId, {
+        addressFilter: {
+          vData: new Array([0, 1]),
+          nHashFuncs: 3,
+          nTweak: false,
+          nFlags: 0,
+          noMaxSize: true
+        },
+        balance: 100000000
+      });
+      wallet.addressFilter.should.be.instanceOf(BloomFilter);
+
+      wallet.id.compare(walletId).should.equal(0);
+      wallet.balance.should.equal(100000000);
+    });
+  });
+  describe('#getKey', function() {
+    it('will get the correct key', function() {
+      var wallet = new Wallet(walletId, {
+        addressFilter: {
+          vData: new Array([0, 1]),
+          nHashFuncs: 3,
+          nTweak: false,
+          nFlags: 0,
+          noMaxSize: true
+        },
+        balance: 100000000
+      });
+      var key = wallet.getKey('hex');
+      walletId.toString('hex').should.equal(key);
+      key = wallet.getKey();
+      walletId.compare(key).should.equal(0);
+    });
+  });
+  describe('#addBalance', function() {
+    it('will add balance to a wallet', function() {
+      var wallet = new Wallet(walletId, {
+        addressFilter: {
+          vData: new Array([0, 1]),
+          nHashFuncs: 3,
+          nTweak: false,
+          nFlags: 0,
+          noMaxSize: true
+        },
+        balance: 100000000
+      });
+      var oldBalance = wallet.balance;
+      wallet.addBalance(500);
+      wallet.balance.should.equal(oldBalance + 500);
     });
   });
   describe('#getValue', function() {
