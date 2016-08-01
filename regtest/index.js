@@ -20,6 +20,10 @@ var test2WIF = 'cR4qogdN9UxLZJXCNFNwDRRZNeLRWuds9TTSuLNweFVjiaE4gPaq';
 var test2Key = bitcore.PrivateKey(test2WIF);
 var test2Address = test2Key.toAddress('regtest').toString();
 
+var test3WIF = 'cNDGTzXC45gTf9jh5JiRuNbiF4GovNHEhZe1rjDK6WhA7H1pem9c';
+var test3Key = bitcore.PrivateKey(test3WIF);
+var test3Address = test3Key.toAddress('regtest').toString();
+
 var bitcoinClient;
 var server;
 var client;
@@ -27,6 +31,124 @@ var client;
 describe('Wallet Server & Client', function() {
 
   var regtest;
+
+  function getOverview(walletId, done) {
+    var txids;
+    var balance;
+    var utxos;
+
+    async.series([
+      function(next) {
+        client.getTxids(walletId, {}, function(err, result) {
+          if (err) {
+            return next(err);
+          }
+          txids = result.txids;
+          next();
+        });
+      }, function(next) {
+        client.getBalance(walletId, function(err, result) {
+          if (err) {
+            return next(err);
+          }
+          balance = result.balance;
+          next();
+        });
+      }, function(next) {
+        client.getUTXOs(walletId, {}, function(err, result) {
+          if (err) {
+            return next(err);
+          }
+          utxos = result.utxos;
+          next();
+        });
+      }
+    ], function(err) {
+      if (err) {
+        return done(err);
+      }
+      done(null, {
+        txids: txids,
+        balance: balance,
+        utxos: utxos
+      });
+    });
+  }
+
+  function replaceAndGenerate(tx, address, amount, done) {
+    var data = {};
+    tx.outputs = [];
+    tx.to(address, amount * 1e8);
+    bitcoinClient.signRawTransaction(tx.uncheckedSerialize(), function(err, response) {
+      if (err) {
+        return done(err);
+      }
+      data.hex = response.result.hex;
+      bitcoinClient.sendRawTransaction(response.result.hex, true, function(err, response) {
+        if (err) {
+          return done(err);
+        }
+        data.txid = response.result;
+        bitcoinClient.generate(2, function(err, response) {
+          if (err) {
+            return done(err);
+          }
+          data.blockHash = response.result[0];
+          setTimeout(function() {
+            done(null, data);
+          }, 2000);
+        });
+      });
+    });
+  }
+
+  function sendReplaceableAndGenerate(address, amount, done) {
+    var data = {};
+    bitcoinClient.listUnspent(function(err, response) {
+      if (err) {
+        return done(err);
+      }
+      var utxos = response.result;
+      var tx = bitcore.Transaction();
+      var totalInput = 0;
+      var c = 0;
+      while (totalInput < amount) {
+        tx.from(utxos[c]);
+        totalInput += utxos[c].amount;
+        c++;
+      }
+      tx.change(utxos[0].address);
+      tx.enableRBF();
+      tx.to(address, amount * 1e8);
+
+      bitcoinClient.signRawTransaction(tx.serialize({disableIsFullySigned: true}), function(err, response) {
+        if (err) {
+          return done(err);
+        }
+
+        data.hex = response.result.hex;
+
+        bitcoinClient.sendRawTransaction(data.hex, function(err, response) {
+          if (err) {
+            return done(err);
+          }
+          data.txid = response.result;
+
+          bitcoinClient.generate(1, function(err, response) {
+            if (err) {
+              return done(err);
+            }
+
+            data.blockHash = response.result[0];
+
+            setTimeout(function() {
+              done(null, data);
+            }, 1000);
+          });
+        });
+      });
+    });
+  }
 
   function sendAndGenerate(address, amount, done) {
     var data = {};
@@ -40,7 +162,9 @@ describe('Wallet Server & Client', function() {
           return done(err);
         }
         data.blockHash = response.result[0];
-        done(null, data);
+        setTimeout(function() {
+          done(null, data);
+        }, 1000);
       });
     });
   }
@@ -245,6 +369,82 @@ describe('Wallet Server & Client', function() {
             done();
           });
         });
+      });
+    });
+  });
+  describe('reorg the chain', function() {
+    this.timeout(10000);
+    var starting;
+    var replacedTxid;
+    before(function(done) {
+      var replaceableTx;
+      var invalidBlockHash;
+      async.series([
+        function(next) {
+          getOverview(walletId, function(err, overview) {
+            if (err) {
+              return next(err);
+            }
+            starting = overview;
+            next();
+          });
+        },
+        function(next) {
+          sendReplaceableAndGenerate(testAddress, 10, function(err, result) {
+            if (err) {
+              return next(err);
+            }
+            replaceableTx = bitcore.Transaction(result.hex);
+            invalidBlockHash = result.blockHash;
+            next();
+          });
+        },
+        function(next) {
+          getOverview(walletId, function(err, overview) {
+            if (err) {
+              return next(err);
+            }
+            overview.txids.length.should.equal(2);
+            overview.balance.should.equal(1000000000);
+            overview.utxos.length.should.equal(1);
+            next();
+          });
+        },
+        function(next) {
+          bitcoinClient.invalidateBlock(invalidBlockHash, function() {
+            setTimeout(next, 1000);
+          });
+        },
+        function(next) {
+          replaceAndGenerate(replaceableTx, test3Address, 9, next);
+        }
+      ], done);
+    });
+    it('will have the correct txids', function(done) {
+      client.getTxids(walletId, {}, function(err, result) {
+        if (err) {
+          return done(err);
+        }
+        result.txids.should.deep.equal(starting.txids);
+        done();
+      });
+    });
+    it('will have the correct balance', function(done) {
+      client.getBalance(walletId, function(err, result) {
+        if (err) {
+          return done(err);
+        }
+        result.balance.should.equal(starting.balance);
+        done();
+      });
+    });
+    it('will have the correct utxos', function(done) {
+      client.getUTXOs(walletId, {}, function(err, result) {
+        if (err) {
+          return done(err);
+        }
+        result.utxos.should.deep.equal(starting.utxos);
+        done();
       });
     });
   });

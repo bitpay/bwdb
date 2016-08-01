@@ -52,7 +52,11 @@ describe('WalletBlockModel', function () {
 
       var serialized = block.getValue();
       var returnedBlock = WalletBlock.fromBuffer(key, serialized);
-      block.should.deep.equal(returnedBlock);
+      block.height.should.equal(returnedBlock.height);
+      block.blockHash.should.deep.equal(returnedBlock.blockHash);
+      block.addressFilter.should.deep.equal(returnedBlock.addressFilter);
+      should.not.exist(block.deltas);
+      should.not.exist(block.spentOutputs);
     });
   });
 
