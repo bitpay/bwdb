@@ -37,6 +37,18 @@ describe('Wallet UTXO By Height Model', function() {
         height: 100001
       });
       should.exist(utxo);
+      checkUTXO(utxo);
+    });
+    it('with hex strings', function() {
+      var utxo = WalletUTXOByHeight('b4f97411dadf3882296997ade99f4a0891b07e768a76898b837ac41d2c2622e7', {
+        address: 'mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc',
+        satoshis: 300000,
+        txid: '5dde1b67c1a1dbc459f56a71efcedbd06c9516c51a9f901067253341175615bc',
+        index: 3,
+        height: 100001
+      });
+      should.exist(utxo);
+      checkUTXO(utxo);
     });
     it('with buffers', function() {
       var utxo = new WalletUTXOByHeight(walletId, {
@@ -59,6 +71,19 @@ describe('Wallet UTXO By Height Model', function() {
       checkUTXO(utxo);
     });
   });
+  describe('@create', function() {
+    it('will create an instance', function() {
+      var utxo = WalletUTXOByHeight.create('b4f97411dadf3882296997ade99f4a0891b07e768a76898b837ac41d2c2622e7', {
+        address: 'mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc',
+        satoshis: 300000,
+        txid: '5dde1b67c1a1dbc459f56a71efcedbd06c9516c51a9f901067253341175615bc',
+        index: 3,
+        height: 100001
+      });
+      should.exist(utxo);
+      checkUTXO(utxo);
+    });
+  });
   describe('#getKey', function() {
     it('will get the correct key', function() {
       var utxo = new WalletUTXOByHeight(walletId, {
@@ -73,6 +98,7 @@ describe('Wallet UTXO By Height Model', function() {
       expectedKey += '5dde1b67c1a1dbc459f56a71efcedbd06c9516c51a9f901067253341175615bc'; // txid
       expectedKey += '00000003'; // index
       utxo.getKey('hex').should.equal(expectedKey);
+      utxo.getKey().toString('hex').should.equal(expectedKey);
     });
   });
   describe('@getKey', function() {
@@ -112,6 +138,10 @@ describe('Wallet UTXO By Height Model', function() {
       key += '000186a1'; // height
       key += '5dde1b67c1a1dbc459f56a71efcedbd06c9516c51a9f901067253341175615bc'; // txid
       key += '00000003'; // index
+
+      var bufKey = new Buffer(key, 'hex');
+      var utxo = WalletUTXOByHeight.fromBuffer(bufKey, valueBuf, bitcore.Networks.testnet);
+      checkUTXO(utxo);
 
       var utxo = WalletUTXOByHeight.fromBuffer(key, valueBuf, bitcore.Networks.testnet);
       checkUTXO(utxo);

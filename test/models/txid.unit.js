@@ -24,6 +24,24 @@ describe('Wallet Txids Model', function() {
       should.exist(txid);
       checkTxid(txid);
     });
+    it('with non instance', function() {
+      var txid = WalletTxid('b4f97411dadf3882296997ade99f4a0891b07e768a76898b837ac41d2c2622e7', {
+        height: 404837,
+        index: 23,
+        value: '346f7f425b89107716fd1de761a0161d3591e2ae5b3a60282bb66f7ab73a085a'
+      });
+      should.exist(txid);
+      checkTxid(txid);
+    });
+    it('without options', function() {
+      var txid = new WalletTxid('b4f97411dadf3882296997ade99f4a0891b07e768a76898b837ac41d2c2622e7');
+      txid.should.be.an('object');
+      should.exist(txid);
+      should.not.exist(txid.height);
+      should.exist(txid.walletId);
+      should.not.exist(txid.index);
+      should.not.exist(txid.value);
+    });
     it('with buffers', function() {
       var txid = new WalletTxid(walletId, {
         height: 404837,
@@ -52,6 +70,7 @@ describe('Wallet Txids Model', function() {
       var expectedKey = 'b4f97411dadf3882296997ade99f4a0891b07e768a76898b837ac41d2c2622e7'; // walletId
       expectedKey += '00062d65'; // height
       expectedKey += '00000017'; // index
+      txid.getKey().toString('hex').should.equal(expectedKey);
       txid.getKey('hex').should.equal(expectedKey);
     });
   });

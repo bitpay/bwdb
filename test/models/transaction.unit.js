@@ -60,6 +60,23 @@ describe('Wallet Transaction Model', function() {
       should.exist(tx);
       checkTransaction(tx);
     });
+    it('will construct from id string', function() {
+      var tx = new WalletTransaction(walletId.toString('hex'), detailedData);
+      should.exist(tx);
+      checkTransaction(tx);
+    });		
+    it('will construct class', function() {
+      var tx = WalletTransaction(walletId, detailedData);
+      should.exist(tx);
+      checkTransaction(tx);
+    });
+  });
+  describe('@create', function() {
+    it('create an object', function() {
+      var tx = WalletTransaction.create(walletId, detailedData);
+      should.exist(tx);
+      checkTransaction(tx);
+    });
   });
   describe('#getValue/#fromBuffer', function() {
     it('roundtrip', function() {
@@ -119,6 +136,11 @@ describe('Wallet Transaction Model', function() {
       var delta = -100000;
       WalletTransaction.classify(tx, delta).should.equal('join');
     });
+    describe('@isJoin', function() {
+      it('will return "false"', function() {
+	WalletTransaction.isJoin({coinbase: true}, 10).should.equal(false);
+      });
+    });
     it('it will return "receive"', function() {
       var tx = {
         inputs: [{wallet: false}, {wallet: false}],
@@ -143,6 +165,24 @@ describe('Wallet Transaction Model', function() {
       };
       var delta = 0;
       WalletTransaction.classify(tx, delta).should.equal('move');
+    });
+  });
+  describe('#getKey', function() {
+    it('will get the key', function() {
+      var tx = new WalletTransaction(walletId, detailedData);
+      var key = tx.getKey('hex');
+      var bufferKey = tx.getKey();
+
+      bufferKey.toString('hex').should.equal(key);
+      var expectedKey = walletId.toString('hex') + tx.value.hash;
+      key.should.equal(expectedKey);
+    });
+  });
+  describe('@getKey', function() {
+    it('will get the key', function() {
+      var bufferKey = WalletTransaction.getKey(walletId.toString('hex'), new Buffer(detailedData.hash, 'hex'));
+      var expectedKey = walletId.toString('hex') + detailedData.hash;
+      bufferKey.toString('hex').should.equal(expectedKey);
     });
   });
 });

@@ -35,11 +35,25 @@ describe('Wallet Address Model', function() {
       should.exist(key);
       checkAddress(key);
     });
+    it('with address non instance', function() {
+      var key = WalletAddress(walletId, bitcore.Address('2N2JD6wb56AfK4tfmM6PwdVmoYk2dCKf4Br'));
+      should.exist(key);
+      checkAddress(key);
+    });
+  });
+  describe('@create', function() {
+    it('will create an instance', function () {
+      var key = WalletAddress.create(walletId, bitcore.Address('2N2JD6wb56AfK4tfmM6PwdVmoYk2dCKf4Br'));
+      should.exist(key);
+      checkAddress(key);
+    });
   });
   describe('#getKey', function() {
     it('will return database key', function() {
       var key = new WalletAddress(walletId, '2N2JD6wb56AfK4tfmM6PwdVmoYk2dCKf4Br');
       var dbKey = key.getKey();
+      var hexKey = key.getKey('hex');
+      dbKey.toString('hex').should.equal(hexKey);
       Buffer.isBuffer(dbKey).should.equal(true);
       var expectedKey = walletId.toString('hex');
       expectedKey += '02';
@@ -61,6 +75,8 @@ describe('Wallet Address Model', function() {
       keyHex += '02';
       keyHex += '6349a418fc4578d10a372b54b45c280cc8c4382f';
       var key = WalletAddress.fromBuffer(new Buffer(keyHex, 'hex'), new Buffer(new Array(0)), bitcore.Networks.testnet);
+      var keyString = WalletAddress.fromBuffer(keyHex, new Buffer(new Array(0)), bitcore.Networks.testnet);
+      keyString.should.deep.equal(key);
       should.exist(key);
     });
   });

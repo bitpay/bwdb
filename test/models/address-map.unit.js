@@ -23,6 +23,11 @@ describe('Wallet Address Map Model', function() {
       should.exist(map);
       checkMap(map);
     });
+    it('will instantiate without new', function() {
+      var map = WalletAddressMap(address, walletIds, bitcore.Networks.testnet);
+      should.exist(map);
+      checkMap(map);
+    });
   });
   describe('@create', function() {
     it('with buffers', function() {
@@ -49,11 +54,17 @@ describe('Wallet Address Map Model', function() {
     });
   });
   describe('@getKey', function() {
-    it('will get the key', function() {
+    it('will get the key with encoding', function() {
       var key = WalletAddressMap.getKey(address, 'hex', bitcore.Networks.testnet);
       var expectedKey = '02'; // address type
       expectedKey += '6349a418fc4578d10a372b54b45c280cc8c4382f'; // address hash
       key.should.equal(expectedKey);
+    });
+    it('will get the key', function() {
+      var key = WalletAddressMap.getKey(address, '', bitcore.Networks.testnet);
+      var expectedKey = '02'; // address type
+      expectedKey += '6349a418fc4578d10a372b54b45c280cc8c4382f'; // address hash
+      key.toString('hex').should.equal(expectedKey);
     });
   });
   describe('#getKey', function() {
@@ -64,10 +75,24 @@ describe('Wallet Address Map Model', function() {
       map.getKey('hex').should.equal(expectedKey);
     });
   });
+  describe('#getValue', function() {
+    it('will get the value from instance', function() {
+      var map = WalletAddressMap.create(address, walletIds, bitcore.Networks.testnet);
+      var expectedValue = 'b6bf0b237e987ea9b3cc4bb6e95372554a9afb35cbb9ebc17a33e7ae9620e49e'; // first Id
+      expectedValue += 'b07d70caeaee6daf21e99cac4e9340b786a5c92f8e5f2e092f050f8c6baf3a8b';
+      map.getValue().toString('hex').should.equal(expectedValue);
+    });
+  });
   describe('#insert', function() {
     it('will insert new wallet id', function() {
       var map = WalletAddressMap.create(address, [walletId1], bitcore.Networks.testnet);
       map.insert(walletId2);
+      map.walletIds[0].compare(walletId1).should.equal(0);
+      map.walletIds[1].compare(walletId2).should.equal(0);
+    });
+    it('will insert new wallet id as string', function() {
+      var map = WalletAddressMap.create(address, [walletId1], bitcore.Networks.testnet);
+      map.insert(walletId2.toString('hex'));
       map.walletIds[0].compare(walletId1).should.equal(0);
       map.walletIds[1].compare(walletId2).should.equal(0);
     });

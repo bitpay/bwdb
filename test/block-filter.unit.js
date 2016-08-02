@@ -43,4 +43,13 @@ describe('Wallet Block Filter', function() {
       transactions.should.deep.equal([]);
     });
   });
+  describe('#filterAddress', function() {
+    it('will return false if address property not defined', function() {
+      var filter = new BlockFilter({
+        network: bitcore.Networks.testnet,
+        addressFilter: BloomFilter.create(100, 0.1)
+      });
+      filter.filterAddress({}).should.equal(false);
+    });
+  });
 });
