@@ -166,7 +166,7 @@ describe('Wallet Utils', function() {
     afterEach(function() {
       sandbox.restore();
     });
-    it('it will call readWalletDatFile', function(done) {
+    it('it will call readJSONFile', function(done) {
       sandbox.stub(utils, 'readJSONFile').callsArg(1);
       utils.readWalletFile('wallet.json', 'testnet', function(err) {
         if (err) {
@@ -176,7 +176,7 @@ describe('Wallet Utils', function() {
         done();
       });
     });
-    it('it will call readJSONFile', function(done) {
+    it('it will call readWalletDatFile', function(done) {
       sandbox.stub(utils, 'readWalletDatFile').callsArg(2);
       utils.readWalletFile('wallet.dat', 'testnet', function(err) {
         if (err) {
@@ -192,6 +192,211 @@ describe('Wallet Utils', function() {
         err.message.should.equal('"dat" or "json" file extension is expected');
         done();
       });
+    });
+  });
+
+  describe('#readWalletDatFile', function() {
+    it('will callback with error set', function(done) {
+      var mySpawn = new EventEmitter();
+      var spawnStub = function(exec, options) {
+        mySpawn.stdout = new EventEmitter();
+        mySpawn.stderr = new EventEmitter();
+        mySpawn.emit('ready');
+        return mySpawn;
+      };
+      var utilsStub = proxyquire('../lib/utils', {
+        child_process: {
+          spawn : spawnStub
+        }
+      });
+      mySpawn.on('ready', function() {
+        setImmediate(function() {
+          mySpawn.stdout.emit('data', '[\"1Ebb8NfVmKMoGuMJCAEbVMv2dX8GnzgxSa\", \"32PZ2TJ93YN8pRu9yQhgLpUKCrQVarv6uN\"]');
+          mySpawn.emit('close', 1);
+        });
+      });
+      utilsStub.readWalletDatFile('filepath', 'testnet', function(err, data) {
+        should.exist(err);
+        should.not.exist(data);
+        err.message.should.equal('wallet-utility exited (1): ["1Ebb8NfVmKMoGuMJCAEbVMv2dX8GnzgxSa", "32PZ2TJ93YN8pRu9yQhgLpUKCrQVarv6uN"]');
+        done();
+      });
+    });
+    it('will return address JSON correctly', function(done) {
+      var mySpawn = new EventEmitter();
+      var spawnStub = function(exec, options) {
+        mySpawn.stdout = new EventEmitter();
+        mySpawn.stderr = new EventEmitter();
+        mySpawn.emit('ready');
+        return mySpawn;
+      };
+      var utilsStub = proxyquire('../lib/utils', {
+        child_process: {
+          spawn : spawnStub
+        }
+      });
+      mySpawn.on('ready', function() {
+        setImmediate(function() {
+          mySpawn.stdout.emit('data', '["1Ebb8NfVmKMoGuMJCAEbVMv2dX8GnzgxSa", "32PZ2TJ93YN8pRu9yQhgLpUKCrQVarv6uN"]');
+          mySpawn.emit('close', 0);
+        });
+      });
+      utilsStub.readWalletDatFile('filepath', 'regtest', function(err, data) {
+        should.not.exist(err);
+        should.exist(data);
+        data.should.deep.equal(["1Ebb8NfVmKMoGuMJCAEbVMv2dX8GnzgxSa", "32PZ2TJ93YN8pRu9yQhgLpUKCrQVarv6uN"]);
+        done();
+      });
+    });
+    it('will return address JSON correctly from object', function(done) {
+      var mySpawn = new EventEmitter();
+      var spawnStub = function(exec, options) {
+        mySpawn.stdout = new EventEmitter();
+        mySpawn.stderr = new EventEmitter();
+        mySpawn.emit('ready');
+        return mySpawn;
+      };
+      var utilsStub = proxyquire('../lib/utils', {
+        child_process: {
+          spawn : spawnStub
+        }
+      });
+      var emitData = '[{"addr": "1Ebb8NfVmKMoGuMJCAEbVMv2dX8GnzgxSa"}, {"addr": "32PZ2TJ93YN8pRu9yQhgLpUKCrQVarv6uN"}]';
+      mySpawn.on('ready', function() {
+        setImmediate(function() {
+          mySpawn.stdout.emit('data', emitData);
+          mySpawn.emit('close', 0);
+        });
+      });
+      utilsStub.readWalletDatFile('filepath', 'regtest', function(err, data) {
+        should.not.exist(err);
+        should.exist(data);
+        data.should.deep.equal(["1Ebb8NfVmKMoGuMJCAEbVMv2dX8GnzgxSa", "32PZ2TJ93YN8pRu9yQhgLpUKCrQVarv6uN"]);
+        done();
+      });
+    });
+    it('will back with an error from stderr', function(done) {
+      var mySpawn = new EventEmitter();
+      var spawnStub = function(exec, options) {
+        mySpawn.stdout = new EventEmitter();
+        mySpawn.stderr = new EventEmitter();
+        mySpawn.emit('ready');
+        return mySpawn;
+      };
+      var utilsStub = proxyquire('../lib/utils', {
+        child_process: {
+          spawn : spawnStub
+        }
+      });
+      mySpawn.on('ready', function() {
+        setImmediate(function() {
+          mySpawn.stderr.emit('data', 'some error');
+          mySpawn.emit('close', 1);
+        });
+      });
+      utilsStub.readWalletDatFile('filepath', 'regtest', function(err, data) {
+        should.exist(err);
+        should.not.exist(data);
+        err.message.should.equal('some error');
+        done();
+      });
+    });
+    it('will callback with a json parse error', function(done) {
+      var mySpawn = new EventEmitter();
+      var spawnStub = function(exec, options) {
+        mySpawn.stdout = new EventEmitter();
+        mySpawn.stderr = new EventEmitter();
+        mySpawn.emit('ready');
+        return mySpawn;
+      };
+      var utilsStub = proxyquire('../lib/utils', {
+        child_process: {
+          spawn : spawnStub
+        }
+      });
+      mySpawn.on('ready', function() {
+        setImmediate(function() {
+          mySpawn.stdout.emit('data', '["some bad json"');
+          mySpawn.emit('close', 0);
+        });
+      });
+
+      utilsStub.readWalletDatFile('filepath', '', function(err, data) {
+        should.exist(err);
+        should.not.exist(data);
+        err.message.should.equal('Unexpected end of input');
+        done();
+      });
+    });
+  });
+
+  describe('#enableCORS', function() {
+    it('will set res headers with req method GET', function() {
+      var header = sinon.stub().returns('res header stub');
+      var end = sinon.stub();
+      var myRes = {
+        header: header,
+        statusCode: '',
+        end: end
+      };
+      var toUpperCase = sinon.stub().returns('GET');
+      var myReq = {
+        method: {
+          toUpperCase: toUpperCase
+        }
+      };
+      var next = sinon.stub();
+      utils.enableCORS(myReq, myRes, next);
+    });
+    it('will set res headers with req method OPTIONS', function() {
+      var header = sinon.stub().returns('res header stub');
+      var end = sinon.stub();
+      var myRes = {
+        header: header,
+        statusCode: '',
+        end: end
+      };
+      var toUpperCase = sinon.stub().returns('OPTIONS');
+      var myReq = {
+        method: {
+          toUpperCase: toUpperCase
+        }
+      };
+      var next = sinon.stub();
+      utils.enableCORS(myReq, myRes, next);
+      myRes.statusCode.should.equal(204);
+    });
+  });
+
+  describe('#createLogStream', function() {
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
+    });
+    it('will return log stream', function() {
+      var fn = sinon.stub();
+      var stream = utils.createLogStream(fn);
+      should.exist(stream);
+      stream.write('something', 'utf8', fn);
+    });
+  });
+
+  describe('#getClients', function() {
+    it('will get a list of clients', function() {
+      var config = {
+        rpcprotocol: 'http',
+        rpchost: 'localhost',
+        rpcport: 18333,
+        rpcuser: 'test',
+        rpcpassword: 'local',
+        rpcstrict: false
+      };
+      var clients = utils.getClients([config]);
+      should.exist(clients);
+    });
+    it('will get a list of clients with empty config', function() {
+      var clients = utils.getClients([{}]);
+      should.exist(clients);
     });
   });
 
