@@ -52,7 +52,7 @@ describe('Wallet Utils', function() {
         },
         'mkdirp': mkdirp
       });
-      utils.setupDirectory('/tmp/bwsv2-directory', function(err) {
+      utils.setupDirectory('/tmp/bwdb-directory', function(err) {
         if (err) {
           return done(err);
         }
@@ -70,7 +70,7 @@ describe('Wallet Utils', function() {
         },
         'mkdirp': mkdirp
       });
-      utils.setupDirectory('/tmp/bwsv2-directory', function(err) {
+      utils.setupDirectory('/tmp/bwdb-directory', function(err) {
         err.should.be.instanceOf(Error);
         err.message.should.equal('test');
         mkdirp.callCount.should.equal(0);
@@ -86,7 +86,7 @@ describe('Wallet Utils', function() {
         },
         'mkdirp': mkdirp
       });
-      utils.setupDirectory('/tmp/bwsv2-directory', function(err) {
+      utils.setupDirectory('/tmp/bwdb-directory', function(err) {
         if (err) {
           return done(err);
         }
@@ -122,7 +122,7 @@ describe('Wallet Utils', function() {
           readFile: readFile
         }
       });
-      utils.readJSONFile('/tmp/bwsv2-directory', function(err) {
+      utils.readJSONFile('/tmp/bwdb-directory', function(err) {
         should.exist(err);
         err.code.should.equal('ENOENT');
         readFile.callCount.should.equal(1);
@@ -136,7 +136,7 @@ describe('Wallet Utils', function() {
           readFile: readFile
         }
       });
-      utils.readJSONFile('/tmp/bwsv2-directory', function(err) {
+      utils.readJSONFile('/tmp/bwdb-directory', function(err) {
         should.exist(err);
         err.message.should.equal('Unexpected token b');
         readFile.callCount.should.equal(1);
@@ -150,7 +150,7 @@ describe('Wallet Utils', function() {
           readFile: readFile
         }
       });
-      utils.readJSONFile('/tmp/bwsv2-directory', function(err, json) {
+      utils.readJSONFile('/tmp/bwdb-directory', function(err, json) {
         if (err) {
           return done(err);
         }

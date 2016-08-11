@@ -10,7 +10,6 @@ var BloomFilter = require('bloom-filter');
 
 var utils = require('../lib/utils');
 var Wallet = require('../lib/wallet-service');
-var BlockFilter = require('../lib/block-filter');
 
 describe('Wallet Service', function() {
   var node = {
@@ -58,14 +57,14 @@ describe('Wallet Service', function() {
       };
 
       var wallet = new Wallet(options);
-      var op_ret = wallet._getWorkerOptions();
-      op_ret.configPath.should.equal(process.env.HOME);
-      op_ret.network.should.equal('testnet');
-      op_ret.bitcoinHeight.should.equal(100);
-      op_ret.bitcoinHash.should.equal('00000000000000000495aa8f7662444b0e26cbcbe1a2311b10d604eaa7df319e');
-      op_ret.clientsConfig[0].rpcport.should.equal(18333);
-      op_ret.clientsConfig[0].rpcuser.should.equal('testuser');
-      op_ret.clientsConfig[0].rpcpassword.should.equal('testpassword');
+      var ops = wallet._getWorkerOptions();
+      ops.configPath.should.equal(process.env.HOME);
+      ops.network.should.equal('testnet');
+      ops.bitcoinHeight.should.equal(100);
+      ops.bitcoinHash.should.equal('00000000000000000495aa8f7662444b0e26cbcbe1a2311b10d604eaa7df319e');
+      ops.clientsConfig[0].rpcport.should.equal(18333);
+      ops.clientsConfig[0].rpcuser.should.equal('testuser');
+      ops.clientsConfig[0].rpcpassword.should.equal('testpassword');
     });
     it('will get options for writer worker with connect', function() {
       var node = {
@@ -90,14 +89,14 @@ describe('Wallet Service', function() {
       };
 
       var wallet = new Wallet(options);
-      var op_ret = wallet._getWorkerOptions();
-      op_ret.configPath.should.equal(process.env.HOME);
-      op_ret.network.should.equal('testnet');
-      op_ret.bitcoinHeight.should.equal(100);
-      op_ret.bitcoinHash.should.equal('00000000000000000495aa8f7662444b0e26cbcbe1a2311b10d604eaa7df319e');
-      op_ret.clientsConfig[0].rpcport.should.equal(18333);
-      op_ret.clientsConfig[0].rpcuser.should.equal('testuser');
-      op_ret.clientsConfig[0].rpcpassword.should.equal('testpassword');
+      var ops = wallet._getWorkerOptions();
+      ops.configPath.should.equal(process.env.HOME);
+      ops.network.should.equal('testnet');
+      ops.bitcoinHeight.should.equal(100);
+      ops.bitcoinHash.should.equal('00000000000000000495aa8f7662444b0e26cbcbe1a2311b10d604eaa7df319e');
+      ops.clientsConfig[0].rpcport.should.equal(18333);
+      ops.clientsConfig[0].rpcuser.should.equal('testuser');
+      ops.clientsConfig[0].rpcpassword.should.equal('testpassword');
     });
   });
   describe('#_startWriterWorker', function() {
