@@ -57,6 +57,7 @@ describe('Wallet Service', function() {
       };
 
       var wallet = new Wallet(options);
+      wallet.bitcoind = node.services.bitcoind;
       var ops = wallet._getWorkerOptions();
       ops.configPath.should.equal(process.env.HOME);
       ops.network.should.equal('testnet');
@@ -77,7 +78,7 @@ describe('Wallet Service', function() {
               connect: [{
                 rpcport: 18333,
                 rpcuser: 'testuser',
-              rpcpassword: 'testpassword'
+                rpcpassword: 'testpassword'
               }]
             }
           }
@@ -89,6 +90,7 @@ describe('Wallet Service', function() {
       };
 
       var wallet = new Wallet(options);
+      wallet.bitcoind = node.services.bitcoind;
       var ops = wallet._getWorkerOptions();
       ops.configPath.should.equal(process.env.HOME);
       ops.network.should.equal('testnet');
@@ -111,7 +113,7 @@ describe('Wallet Service', function() {
               connect: [{
                 rpcport: 18333,
                 rpcuser: 'testuser',
-              rpcpassword: 'testpassword'
+                rpcpassword: 'testpassword'
               }]
             }
           }
@@ -126,11 +128,12 @@ describe('Wallet Service', function() {
       var temp = function(msg, t){t('ready');};
       var spawnStub = sinon.stub().returns({once:temp});
       var Wallet = proxyquire('../lib/wallet-service', {
-        child_process: {
+        'child_process': {
           spawn : spawnStub
         }
       });
       var wallet = new Wallet(options);
+      wallet.bitcoind = node.services.bitcoind;
       wallet._startWriterWorker(fn);
       fn.callCount.should.equal(1);
     });
@@ -147,7 +150,7 @@ describe('Wallet Service', function() {
               connect: [{
                 rpcport: 18333,
                 rpcuser: 'testuser',
-              rpcpassword: 'testpassword'
+                rpcpassword: 'testpassword'
               }]
             }
           }
@@ -193,7 +196,7 @@ describe('Wallet Service', function() {
               connect: [{
                 rpcport: 18333,
                 rpcuser: 'testuser',
-              rpcpassword: 'testpassword'
+                rpcpassword: 'testpassword'
               }]
             }
           }
@@ -203,11 +206,29 @@ describe('Wallet Service', function() {
         configPath: process.env.HOME,
         node: node
       };
+      sandbox.stub(utils, 'getTaskId').returns('3eb2264d');
+
       var write = sinon.stub();
       var wallet = new Wallet(options);
+      wallet.bitcoind = node.services.bitcoind;
       wallet._writerSocket  = {write:write};
       wallet._queueWriterSyncTask();
       write.callCount.should.equal(1);
+      var expectedMsg = {
+        task: {
+          id: '3eb2264d',
+          method: 'sync',
+          params: [
+            {
+              bitcoinHeight:100,
+              bitcoinHash: '00000000000000000495aa8f7662444b0e26cbcbe1a2311b10d604eaa7df319e'
+            }
+          ]
+        },
+        priority:1
+      };
+      write.args[0][1].should.equal('utf8');
+      JSON.parse(write.args[0][0]).should.deep.equal(expectedMsg);
     });
   });
   describe('#_startWebWorkers', function() {
@@ -222,7 +243,7 @@ describe('Wallet Service', function() {
               connect: [{
                 rpcport: 18333,
                 rpcuser: 'testuser',
-              rpcpassword: 'testpassword'
+                rpcpassword: 'testpassword'
               }]
             }
           }
@@ -240,14 +261,26 @@ describe('Wallet Service', function() {
       var spawnStub = sinon.stub();
       var fn = sinon.stub();
       var Wallet = proxyquire('../lib/wallet-service', {
-        child_process: {
+        'child_process': {
           spawn : spawnStub
         }
       });
       var wallet = new Wallet(options);
+      wallet.bitcoind = node.services.bitcoind;
+      wallet._getWorkerOptions = sinon.stub().returns({hello: 'world'});
+      wallet.config.data.wallet.port = 314159;
+      wallet.config.path = '/tmp/test';
+      wallet.config.getWriterSocketPath = sinon.stub().returns('/tmp/writer-1000.sock');
+      wallet._dirname = '/tmp/bwdb/lib';
       wallet._startWebWorkers(fn);
       fn.callCount.should.equal(1);
       spawnStub.callCount.should.equal(1);
+      spawnStub.args[0][0].should.equal('node');
+      var expectedOptions = [
+        '/tmp/bwdb/lib/web-workers',
+        '{"hello":"world","port":314159,"configPath":"/tmp/test","writerSocketPath":"/tmp/writer-1000.sock"}'
+      ];
+      spawnStub.args[0][1].should.deep.equal(expectedOptions);
     });
   });
   describe('#start', function() {
@@ -271,14 +304,10 @@ describe('Wallet Service', function() {
       };
       var wallet  = new Wallet({node: testNode});
       wallet.sync = sinon.stub();
-      var walletData = {
-        addressFilter: BloomFilter.create(1000, 0.1)
-      };
       sinon.stub(wallet, '_getWorkerOptions');
       sinon.stub(wallet, '_startWriterWorker').callsArg(0);
       sinon.stub(wallet, '_connectWriterSocket').callsArg(0);
       sinon.stub(wallet, '_queueWriterSyncTask');
-      //      sinon.stub(wallet, '_startWebWorkers').callsArgWith(0, new Error('error'));
       sinon.stub(wallet, '_startWebWorkers').callsArgWith(0);
       wallet.config = {setupConfig: sinon.stub().callsArg(0)};
 
@@ -287,15 +316,22 @@ describe('Wallet Service', function() {
           done(err);
         }
 
-        // will setup event for tip and call sync
-        bitcoind.once('tip', function() {
+        var tipCalled = 0;
 
-          // will not call sync if node is stopping
+        bitcoind.on('tip', function() {
+          tipCalled += 1;
+          wallet._queueWriterSyncTask.callCount.should.equal(2);
+          if (tipCalled >= 2) {
+            done();
+          }
+        });
+
+        bitcoind.once('tip', function() {
           wallet.node.stopping = true;
           bitcoind.emit('tip');
         });
+
         bitcoind.emit('tip');
-        done();
       });
     });
     it('wallet service start returns error', function(done) {
@@ -311,9 +347,7 @@ describe('Wallet Service', function() {
       };
       var wallet  = new Wallet({node: testNode});
       wallet.sync = sinon.stub();
-      var walletData = {
-        addressFilter: BloomFilter.create(1000, 0.1)
-      };
+
       sinon.stub(wallet, '_getWorkerOptions');
       sinon.stub(wallet, '_startWriterWorker').callsArg(0);
       sinon.stub(wallet, '_connectWriterSocket').callsArg(0);
@@ -366,17 +400,16 @@ describe('Wallet Service', function() {
     };
     it('will exit all workers', function(done) {
       sandbox.stub(utils, 'exitWorker', exitWorker);
-      var fn = sinon.stub();
       var wallet = new Wallet(options);
-      wallet.stop(fn);
-      done();
+      wallet.stop(done);
     });
     it('will exit all workers with error', function(done) {
       var exitWorker = sinon.stub().callsArgWith(2, new Error('error'));
       sandbox.stub(utils, 'exitWorker', exitWorker);
-      var fn = sinon.stub();
       var wallet = new Wallet(options);
       wallet.stop(function(err) {
+        should.exist(err);
+        err.message.should.equal('error');
         done();
       });
     });
