@@ -9,6 +9,7 @@ var bitcore = require('bitcore-lib');
 var BloomFilter = require('bloom-filter');
 
 var utils = require('../lib/utils');
+var messages = require('../lib/messages');
 var Wallet = require('../lib/wallet-service');
 
 describe('Wallet Service', function() {
@@ -139,7 +140,11 @@ describe('Wallet Service', function() {
     });
   });
   describe('#_connectWriterSocket', function() {
-    it('will connect to writer socket', function() {
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
+    });
+    it('will connect to writer socket', function(done) {
       var node = {
         network: 'testnet',
         services: {
@@ -174,9 +179,22 @@ describe('Wallet Service', function() {
         }
       });
       var wallet = new WalletStub(options);
+      wallet._writerCallbacks = {};
+      wallet._writerCallbacks.abcdef = function(err, result) {
+        if (err) {
+          return done(err);
+        }
+        result.should.deep.equal({hello: 'world'});
+        done();
+      };
+      sandbox.stub(messages, 'parser', function(callback) {
+        return function() {
+          callback({id: 'abcdef', error: null, result: {hello: 'world'}});
+        };
+      });
       wallet._connectWriterSocket(fn);
       tempFunc();
-      tempEmitter.emit('data', '"json data"');
+      tempEmitter.emit('data');
       fn.callCount.should.equal(1);
     });
   });
@@ -210,25 +228,22 @@ describe('Wallet Service', function() {
 
       var write = sinon.stub();
       var wallet = new Wallet(options);
+      sandbox.stub(messages, 'encodeWriterMessage').returns(new Buffer('buffer', 'utf8'));
       wallet.bitcoind = node.services.bitcoind;
-      wallet._writerSocket  = {write:write};
+      wallet._writerSocket = {write:write};
       wallet._queueWriterSyncTask();
       write.callCount.should.equal(1);
-      var expectedMsg = {
-        task: {
-          id: '3eb2264d',
-          method: 'sync',
-          params: [
-            {
-              bitcoinHeight:100,
-              bitcoinHash: '00000000000000000495aa8f7662444b0e26cbcbe1a2311b10d604eaa7df319e'
-            }
-          ]
-        },
-        priority:1
-      };
-      write.args[0][1].should.equal('utf8');
-      JSON.parse(write.args[0][0]).should.deep.equal(expectedMsg);
+      messages.encodeWriterMessage.args[0][0].should.equal('3eb2264d');
+      messages.encodeWriterMessage.args[0][1].should.equal('sync');
+      var params =  [
+        {
+          bitcoinHeight:100,
+          bitcoinHash: '00000000000000000495aa8f7662444b0e26cbcbe1a2311b10d604eaa7df319e'
+        }
+      ];
+      messages.encodeWriterMessage.args[0][2].should.deep.equal(params);
+      messages.encodeWriterMessage.args[0][3].should.equal(1);
+      write.args[0][0].toString().should.equal('buffer');
     });
   });
   describe('#_startWebWorkers', function() {
