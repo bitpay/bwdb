@@ -201,45 +201,33 @@ describe('Wallet Utils', function() {
       var spawnStub = function(exec, options) {
         mySpawn.stdout = new EventEmitter();
         mySpawn.stderr = new EventEmitter();
-        mySpawn.emit('ready');
         return mySpawn;
       };
       var utilsStub = proxyquire('../lib/utils', {
-        child_process: {
+        'child_process': {
           spawn : spawnStub
         }
-      });
-      mySpawn.on('ready', function() {
-        setImmediate(function() {
-          mySpawn.stdout.emit('data', '[\"1Ebb8NfVmKMoGuMJCAEbVMv2dX8GnzgxSa\", \"32PZ2TJ93YN8pRu9yQhgLpUKCrQVarv6uN\"]');
-          mySpawn.emit('close', 1);
-        });
       });
       utilsStub.readWalletDatFile('filepath', 'testnet', function(err, data) {
         should.exist(err);
         should.not.exist(data);
-        err.message.should.equal('wallet-utility exited (1): ["1Ebb8NfVmKMoGuMJCAEbVMv2dX8GnzgxSa", "32PZ2TJ93YN8pRu9yQhgLpUKCrQVarv6uN"]');
+        err.message.should.equal('wallet-utility exited (1): error message');
         done();
       });
+      mySpawn.stdout.emit('data', 'error message');
+      mySpawn.emit('close', 1);
     });
     it('will return address JSON correctly', function(done) {
       var mySpawn = new EventEmitter();
       var spawnStub = function(exec, options) {
         mySpawn.stdout = new EventEmitter();
         mySpawn.stderr = new EventEmitter();
-        mySpawn.emit('ready');
         return mySpawn;
       };
       var utilsStub = proxyquire('../lib/utils', {
-        child_process: {
+        'child_process': {
           spawn : spawnStub
         }
-      });
-      mySpawn.on('ready', function() {
-        setImmediate(function() {
-          mySpawn.stdout.emit('data', '["1Ebb8NfVmKMoGuMJCAEbVMv2dX8GnzgxSa", "32PZ2TJ93YN8pRu9yQhgLpUKCrQVarv6uN"]');
-          mySpawn.emit('close', 0);
-        });
       });
       utilsStub.readWalletDatFile('filepath', 'regtest', function(err, data) {
         should.not.exist(err);
@@ -247,13 +235,14 @@ describe('Wallet Utils', function() {
         data.should.deep.equal(["1Ebb8NfVmKMoGuMJCAEbVMv2dX8GnzgxSa", "32PZ2TJ93YN8pRu9yQhgLpUKCrQVarv6uN"]);
         done();
       });
+      mySpawn.stdout.emit('data', '["1Ebb8NfVmKMoGuMJCAEbVMv2dX8GnzgxSa", "32PZ2TJ93YN8pRu9yQhgLpUKCrQVarv6uN"]');
+      mySpawn.emit('close', 0);
     });
     it('will return address JSON correctly from object', function(done) {
       var mySpawn = new EventEmitter();
       var spawnStub = function(exec, options) {
         mySpawn.stdout = new EventEmitter();
         mySpawn.stderr = new EventEmitter();
-        mySpawn.emit('ready');
         return mySpawn;
       };
       var utilsStub = proxyquire('../lib/utils', {
@@ -262,37 +251,26 @@ describe('Wallet Utils', function() {
         }
       });
       var emitData = '[{"addr": "1Ebb8NfVmKMoGuMJCAEbVMv2dX8GnzgxSa"}, {"addr": "32PZ2TJ93YN8pRu9yQhgLpUKCrQVarv6uN"}]';
-      mySpawn.on('ready', function() {
-        setImmediate(function() {
-          mySpawn.stdout.emit('data', emitData);
-          mySpawn.emit('close', 0);
-        });
-      });
       utilsStub.readWalletDatFile('filepath', 'regtest', function(err, data) {
         should.not.exist(err);
         should.exist(data);
         data.should.deep.equal(["1Ebb8NfVmKMoGuMJCAEbVMv2dX8GnzgxSa", "32PZ2TJ93YN8pRu9yQhgLpUKCrQVarv6uN"]);
         done();
       });
+      mySpawn.stdout.emit('data', emitData);
+      mySpawn.emit('close', 0);
     });
     it('will back with an error from stderr', function(done) {
       var mySpawn = new EventEmitter();
       var spawnStub = function(exec, options) {
         mySpawn.stdout = new EventEmitter();
         mySpawn.stderr = new EventEmitter();
-        mySpawn.emit('ready');
         return mySpawn;
       };
       var utilsStub = proxyquire('../lib/utils', {
         child_process: {
           spawn : spawnStub
         }
-      });
-      mySpawn.on('ready', function() {
-        setImmediate(function() {
-          mySpawn.stderr.emit('data', 'some error');
-          mySpawn.emit('close', 1);
-        });
       });
       utilsStub.readWalletDatFile('filepath', 'regtest', function(err, data) {
         should.exist(err);
@@ -300,13 +278,14 @@ describe('Wallet Utils', function() {
         err.message.should.equal('some error');
         done();
       });
+      mySpawn.stderr.emit('data', 'some error');
+      mySpawn.emit('close', 1);
     });
     it('will callback with a json parse error', function(done) {
       var mySpawn = new EventEmitter();
       var spawnStub = function(exec, options) {
         mySpawn.stdout = new EventEmitter();
         mySpawn.stderr = new EventEmitter();
-        mySpawn.emit('ready');
         return mySpawn;
       };
       var utilsStub = proxyquire('../lib/utils', {
@@ -314,19 +293,14 @@ describe('Wallet Utils', function() {
           spawn : spawnStub
         }
       });
-      mySpawn.on('ready', function() {
-        setImmediate(function() {
-          mySpawn.stdout.emit('data', '["some bad json"');
-          mySpawn.emit('close', 0);
-        });
-      });
-
       utilsStub.readWalletDatFile('filepath', '', function(err, data) {
         should.exist(err);
         should.not.exist(data);
         err.message.should.equal('Unexpected end of input');
         done();
       });
+      mySpawn.stdout.emit('data', '["some bad json"');
+      mySpawn.emit('close', 0);
     });
   });
 
@@ -347,6 +321,22 @@ describe('Wallet Utils', function() {
       };
       var next = sinon.stub();
       utils.enableCORS(myReq, myRes, next);
+      header.callCount.should.equal(3);
+      header.args[0][0].should.equal('access-control-allow-origin');
+      header.args[0][1].should.equal('*');
+      header.args[1][0].should.equal('access-control-allow-methods');
+      header.args[1][1].should.equal('GET, HEAD, PUT, POST, OPTIONS');
+      header.args[2][0].should.equal('access-control-allow-headers');
+      var allowed = [
+        'origin',
+        'x-requested-with',
+        'content-type',
+        'accept',
+        'content-length',
+        'cache-control',
+        'cf-connecting-ip'
+      ];
+      header.args[2][1].should.equal(allowed.join(', '));
     });
     it('will set res headers with req method OPTIONS', function() {
       var header = sinon.stub().returns('res header stub');
@@ -393,6 +383,22 @@ describe('Wallet Utils', function() {
       };
       var clients = utils.getClients([config]);
       should.exist(clients);
+      clients.length.should.equal(1);
+      clients[0].rejectUnauthorized.should.equal(false);
+    });
+    it('will get a list of clients (with strict)', function() {
+      var config = {
+        rpcprotocol: 'http',
+        rpchost: 'localhost',
+        rpcport: 18333,
+        rpcuser: 'test',
+        rpcpassword: 'local',
+        rpcstrict: true
+      };
+      var clients = utils.getClients([config]);
+      should.exist(clients);
+      clients.length.should.equal(1);
+      clients[0].rejectUnauthorized.should.equal(true);
     });
     it('will get a list of clients with empty config', function() {
       var clients = utils.getClients([{}]);
@@ -464,18 +470,89 @@ describe('Wallet Utils', function() {
     });
   });
 
-  describe('#getClients', function() {
-    it('', function() {
-    });
-  });
-
   describe('#setClients', function() {
     it('', function() {
     });
   });
 
   describe('#tryAllClients', function() {
-    it('', function() {
+    it('will retry for each node client', function(done) {
+      var obj = {
+        _clients: [
+          {
+            getInfo: sinon.stub().callsArgWith(0, new Error('test'))
+          },
+          {
+            getInfo: sinon.stub().callsArgWith(0, new Error('test'))
+          },
+          {
+            getInfo: sinon.stub().callsArg(0)
+          }
+        ],
+        _clientsIndex: 0
+      };
+      utils.tryAllClients(obj, function(client, next) {
+        client.getInfo(next);
+      }, {interval: 1}, function(err) {
+        if (err) {
+          return done(err);
+        }
+        obj._clients[0].getInfo.callCount.should.equal(1);
+        obj._clients[1].getInfo.callCount.should.equal(1);
+        obj._clients[2].getInfo.callCount.should.equal(1);
+        done();
+      });
+    });
+    it('will start using the current node index (round-robin)', function(done) {
+      var obj = {
+        _clients: [
+          {
+            getInfo: sinon.stub().callsArgWith(0, new Error('2'))
+          },
+          {
+            getInfo: sinon.stub().callsArgWith(0, new Error('3'))
+          },
+          {
+            getInfo: sinon.stub().callsArgWith(0, new Error('1'))
+          }
+        ],
+        _clientsIndex: 2
+      };
+      utils.tryAllClients(obj, function(client, next) {
+        client.getInfo(next);
+      }, {interval: 1}, function(err) {
+        err.should.be.instanceOf(Error);
+        err.message.should.equal('3');
+        obj._clients[0].getInfo.callCount.should.equal(1);
+        obj._clients[1].getInfo.callCount.should.equal(1);
+        obj._clients[2].getInfo.callCount.should.equal(1);
+        obj._clientsIndex.should.equal(2);
+        done();
+      });
+    });
+    it('will get error if all clients fail', function(done) {
+      var obj = {
+        _clients: [
+          {
+            getInfo: sinon.stub().callsArgWith(0, new Error('test'))
+          },
+          {
+            getInfo: sinon.stub().callsArgWith(0, new Error('test'))
+          },
+          {
+            getInfo: sinon.stub().callsArgWith(0, new Error('test'))
+          }
+        ],
+        _clientsIndex: 0
+      };
+      utils.tryAllClients(obj, function(client, next) {
+        client.getInfo(next);
+      }, {interval: 1}, function(err) {
+        should.exist(err);
+        err.should.be.instanceOf(Error);
+        err.message.should.equal('test');
+        done();
+      });
     });
   });
 
@@ -488,6 +565,9 @@ describe('Wallet Utils', function() {
   });
 
   describe('#getAddressTypeString', function() {
+    it('it will return pubkeyhash with 01 (string)', function() {
+      utils.getAddressTypeString('01').should.equal('pubkeyhash');
+    });
     it('it will return pubkeyhash with 01', function() {
       utils.getAddressTypeString(new Buffer('01', 'hex')).should.equal('pubkeyhash');
     });
