@@ -6,6 +6,7 @@ var EventEmitter = require('events').EventEmitter;
 var chai = require('chai');
 var should = chai.should();
 var sinon = require('sinon');
+var proxyquire = require('proxyquire');
 var bitcore = require('bitcore-lib');
 var _ = require('lodash');
 
@@ -171,13 +172,13 @@ describe('Wallet Web Worker', function() {
       });
     });
   });
-  describe.skip('#_queueWriterTask', function() {
+  describe('#_queueWriterTask', function() {
     it('will log error from socket write', function() {
     });
     it('will write to socket with write task message', function() {
     });
   });
-  describe.skip('#_importTransaction', function() {
+  describe('#_importTransaction', function() {
     it('queue a write task to save the transaction if above safe confirmations', function() {
     });
     it('will give back transaction directly if below safe confirmations', function() {
@@ -187,22 +188,20 @@ describe('Wallet Web Worker', function() {
     it('will handle error from writer task', function() {
     });
   });
-  describe.skip('#getWalletTransactions', function() {
+  describe('#getWalletTransactions', function() {
     it('will map over txids and get wallet transactions', function() {
     });
     it('will map over txids and import transactions that are missing', function() {
     });
   });
-  describe.skip('#_getLatestTxids', function() {
-    it('', function() {
+  describe('#_getLatestTxids', function() {
+  });
+  describe('#getBalance', function() {
+    it('will get balance for wallet', function() {
     });
   });
-  describe.skip('#getBalance', function() {
-    it('', function() {
-    });
-  });
-  describe.skip('#getWalletTxids', function() {
-    it('will give error if options are invalid', function(done) {
+  describe('#getWalletTxids', function() {
+    it.skip('will give error if options are invalid', function(done) {
       var wallet = new Wallet({node: node});
       var txn = {
         abort: sinon.stub()
@@ -224,12 +223,85 @@ describe('Wallet Web Worker', function() {
     it('will give hex strings if option buffer is not set', function() {
     });
   });
-  describe.skip('#_updateLatestTip', function() {
-    it('', function() {
+  describe('#_updateLatestTip', function() {
+    it('will update with the latest bitcoin height and hash', function() {
+    });
+    it('will log error if there is not a tip', function() {
     });
   });
-  describe.skip('#_startListener', function() {
-    it('', function() {
+
+  describe('#_endpointBalance', function() {
+    it('will set status to 200 with balance', function() {
+    });
+    it('will call sendError if error', function() {
+    });
+  });
+
+  describe('#_endpointTxids', function() {
+    it('will set status to 200 with txids', function() {
+    });
+    it('will call sendError if error', function() {
+    });
+  });
+
+  describe('#_endpointTransactions', function() {
+    it('will set status to 200 with txs', function() {
+    });
+    it('will call sendError if error', function() {
+    });
+  });
+
+  describe('#_endpointUTXOs', function() {
+    it('will set status to 200 with utxos', function() {
+    });
+    it('will call sendError if error', function() {
+    });
+  });
+
+  describe('#_endpointPutAddress', function() {
+    it('will set status to 201 if new address created', function() {
+    });
+    it('will set status to 200 without new address', function() {
+    });
+    it('will call sendError if error', function() {
+    });
+  });
+
+  describe('#_endpointPostAddresses', function() {
+    it('will set status to 201 if new addresses', function() {
+    });
+    it('will set status to 204 without new addresses', function() {
+    });
+    it('will call sendError if error', function() {
+    });
+  });
+
+  describe('#_endpointPutWallet', function() {
+    it('will set status to 204 if not a new walletId', function() {
+    });
+    it('will set status to 201 for new walletId', function() {
+    });
+    it('will call sendError if error', function() {
+    });
+  });
+
+  describe('#_startListener', function() {
+    it('will create express application, setup and start listening on port', function() {
+      var listen = sinon.stub();
+      var app = {listen: listen};
+      var WebWorkerStubbed = proxyquire('../lib/web-workers', {
+        express: sinon.stub().returns(app)
+      });
+      var worker = new WebWorkerStubbed(options);
+      worker._setupMiddleware = sinon.stub();
+      worker._setupRoutes = sinon.stub();
+      worker._startListener();
+      worker._setupMiddleware.callCount.should.equal(1);
+      worker._setupMiddleware.args[0][0].should.equal(app);
+      worker._setupRoutes.callCount.should.equal(1);
+      worker._setupRoutes.args[0][0].should.equal(app);
+      listen.callCount.should.equal(1);
+      listen.args[0][0].should.equal(20001);
     });
   });
 });
