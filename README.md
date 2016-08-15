@@ -81,6 +81,26 @@ walletTransaction | ? | BSON | Wallet transaction JSON (see below)
 }
 ```
 
+## Process Structure
+
+There are three groups of processes that are started from the `bwdb` master process:
+
+```
+               [bwdb]
+              /   |   \
+           /      |      \
+        /         |         \
+[bwdb-web]  [bwdb-writer]  [bitcoind]
+[bwdb-web]
+[bwdb-web]
+[bwdb-web]
+[bwdb-web]
+```
+
+- Bitcoin block chain process, `bitcoind`, is accessible via ZMQ and JSON-RPC for requesting block and address deltas.
+- Wallet writer process, `bwdb-writer` opens a unix socket for other processes to add to the writer queue. The writer is the only process that can open a write database transaction.
+- Wallet reader processes, `bwdb-web-master` with several `bwdb-web` processes that listen at a port for the wallet API, described below. Only read-only database transactions can be opened in these processes.
+
 ## Wallet API
 
 ### Create Wallets
