@@ -260,18 +260,137 @@ describe('Wallet Web Worker', function() {
     it('will call sendError if error', function() {
     });
   });
-  describe.skip('#_endpointUTXOs', function() {
+  describe('#_endpointUTXOs', function() {
+    var walletId = 'bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0';
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
+    });
     it('will set status to 200 with utxos', function() {
+      var worker = new WebWorker(options);
+      var utxos = [];
+      worker.getWalletUTXOs = sinon.stub().callsArgWith(2, null, utxos);
+      var endpoint = worker._endpointUTXOs();
+      var req = {
+        walletId: walletId
+      };
+      var jsonp = sinon.stub();
+      var status = sinon.stub().returns({jsonp: jsonp});
+      var res = {
+        status: status
+      };
+      endpoint(req, res);
+      status.callCount.should.equal(1);
+      status.args[0][0].should.equal(200);
+      jsonp.callCount.should.equal(1);
+      jsonp.args[0][0].should.equal(utxos);
     });
     it('will call sendError if error', function() {
+      // TODO
     });
   });
-  describe.skip('#_endpointPutAddress', function() {
-    it('will set status to 201 if new address created', function() {
+  describe('#_endpointPutAddress', function() {
+    var walletId = 'bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0';
+    var address = '12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX';
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
     });
-    it('will set status to 200 without new address', function() {
+    function checkWriterArgs(fn) {
+      fn.args[0][0].should.equal('importWalletAddresses');
+      fn.args[0][1].should.deep.equal([walletId, [address]]);
+      fn.args[0][2].should.equal(5);
+    }
+    it('will set status to 201 if new address created', function() {
+      var worker = new WebWorker(options);
+      var newAddresses = [address];
+      worker._queueWriterTask = sinon.stub().callsArgWith(3, null, newAddresses);
+      var endpoint = worker._endpointPutAddress();
+      var req = {
+        walletId: walletId,
+        address: address
+      };
+      var jsonp = sinon.stub();
+      var status = sinon.stub().returns({
+        jsonp: jsonp
+      });
+      var res = {
+        status: status
+      };
+      endpoint(req, res);
+      checkWriterArgs(worker._queueWriterTask);
+      status.callCount.should.equal(1);
+      status.args[0][0].should.equal(201);
+      jsonp.callCount.should.equal(1);
+      jsonp.args[0][0].should.deep.equal({
+        address: address
+      });
+    });
+    it('will set status to 200 without new address (empty array)', function() {
+      var worker = new WebWorker(options);
+      var newAddresses = [];
+      worker._queueWriterTask = sinon.stub().callsArgWith(3, null, newAddresses);
+      var endpoint = worker._endpointPutAddress();
+      var req = {
+        walletId: walletId,
+        address: address
+      };
+      var jsonp = sinon.stub();
+      var status = sinon.stub().returns({
+        jsonp: jsonp
+      });
+      var res = {
+        status: status
+      };
+      endpoint(req, res);
+      checkWriterArgs(worker._queueWriterTask);
+      status.callCount.should.equal(1);
+      status.args[0][0].should.equal(200);
+      jsonp.callCount.should.equal(1);
+      jsonp.args[0][0].should.deep.equal({
+        address: address
+      });
+    });
+    it('will set status to 200 without new address (undefined)', function() {
+      var worker = new WebWorker(options);
+      worker._queueWriterTask = sinon.stub().callsArgWith(3, null, undefined);
+      var endpoint = worker._endpointPutAddress();
+      var req = {
+        walletId: walletId,
+        address: address
+      };
+      var jsonp = sinon.stub();
+      var status = sinon.stub().returns({
+        jsonp: jsonp
+      });
+      var res = {
+        status: status
+      };
+      endpoint(req, res);
+      checkWriterArgs(worker._queueWriterTask);
+      status.callCount.should.equal(1);
+      status.args[0][0].should.equal(200);
+      jsonp.callCount.should.equal(1);
+      jsonp.args[0][0].should.deep.equal({
+        address: address
+      });
     });
     it('will call sendError if error', function() {
+      var worker = new WebWorker(options);
+      var error = new Error('test');
+      sandbox.stub(utils, 'sendError');
+      worker._queueWriterTask = sinon.stub().callsArgWith(3, error);
+      var endpoint = worker._endpointPutAddress();
+      var req = {
+        walletId: walletId,
+        address: address
+      };
+      var res = {};
+      endpoint(req, res);
+      checkWriterArgs(worker._queueWriterTask);
+      utils.sendError.callCount.should.equal(1);
+      utils.sendError.args[0][0].should.equal(error);
+      utils.sendError.args[0][1].should.equal(res);
     });
   });
   describe('#_endpointPostAddresses', function() {
@@ -302,7 +421,6 @@ describe('Wallet Web Worker', function() {
         addresses: addresses
       };
       var jsonp = sinon.stub();
-
       var status = sinon.stub().returns({jsonp: jsonp});
       var res = {
         status: status
