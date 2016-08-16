@@ -1,0 +1,492 @@
+[
+  {
+    "comment": "standard tx with one address part of the wallet",
+    "expected": {
+      "hash": "5aa8e36f9423ee5fcf17c1d0d45d6988b8a5773eae8ad25d945bf34352040009",
+      "blockHash": "000000000000265dad8db0728e318aabd0098e69a82984f8c1c5b9d55de5fd9a",
+      "height": 105001,
+      "blockTimestamp": 1296211474,
+      "blockIndex": 100,
+      "locktime": 0,
+      "version": 1,
+      "inputSatoshis": 9070000000,
+      "outputSatoshis": 9070000000,
+      "feeSatoshis": 0,
+      "inputs": [
+        {
+          "wallet": true,
+          "prevTxId": "791dca118db6358e66f15a5cafafe762f06ce909baee235685f03a0fefbe3382",
+          "outputIndex": 1,
+          "satoshis": 1888000000,
+          "address": "1LMoKwPnH4zuXd48kmHprGJeQkJqGoNsQT",
+          "sequence": 4294967295
+        },
+        {
+          "wallet": false,
+          "prevTxId": "356b5251663a62c12601bc0a8e5bf814b501eba97424a4478ea47d15c676bd03",
+          "outputIndex": 1,
+          "satoshis": 362000000,
+          "address": "1DVUHu9G8r6Cgg1bR8L7RWG9KWtyfxPvVe",
+          "sequence": 4294967295
+        },
+        {
+          "wallet": false,
+          "prevTxId": "9b9167a1fc127f659f76ed8d9610d02250b3e19b4a65554d978ef14c891a640e",
+          "outputIndex": 0,
+          "satoshis": 5000000000,
+          "address": "1BNwxHGaFbeUBitpjy2AsKpJ29Ybxntqvb",
+          "sequence": 4294967295
+        },
+        {
+          "wallet": false,
+          "prevTxId": "bef395d6dab2b18f0c29457d87957a3c52b1788075967ddf26dc8d3509b1cb3e",
+          "outputIndex": 1,
+          "satoshis": 3000000,
+          "address": "14duhPGzJMSMCEFqQSkDrAXkSGFxGJNByr",
+          "sequence": 4294967295
+        },
+        {
+          "wallet": false,
+          "prevTxId": "a898d050b4e28598bc1985c1d2cc1e6442f78ea9f267f4a3c0ac29c40505cb9b",
+          "outputIndex": 0,
+          "satoshis": 186000000,
+          "address": "1Ai5mqjDvLABBJnpykssBm51ktckUtUQuJ",
+          "sequence": 4294967295
+        },
+        {
+          "wallet": false,
+          "prevTxId": "a529830b6fb3c4e00bf2bba434b6dc063b2abcabcb3fc26b4cbe5c11e430eda3",
+          "outputIndex": 0,
+          "satoshis": 21000000,
+          "address": "13mQccVj95TRGhYDY5NS79Wnfu3smA5FUt",
+          "sequence": 4294967295
+        },
+        {
+          "wallet": false,
+          "prevTxId": "fff2525b8931402dd09222c50775608f75787bd2b87e56995a7bdd30f79702c4",
+          "outputIndex": 0,
+          "satoshis": 556000000,
+          "address": "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn",
+          "sequence": 4294967295
+        },
+        {
+          "wallet": false,
+          "prevTxId": "fbde5d03b027d2b9ba4cf5d4fecab9a99864df2637b25ea4cbcb1796ff6550ca",
+          "outputIndex": 1,
+          "satoshis": 556000000,
+          "address": "127YYnp1jvgAX3vCB22WUUsuyTYfAeSQHh",
+          "sequence": 4294967295
+        },
+        {
+          "wallet": false,
+          "prevTxId": "1a8f0b19d50fb25aa81994b7420224de49d2805bddf1bca981e1dfd264528af9",
+          "outputIndex": 0,
+          "satoshis": 498000000,
+          "address": "1PgpVv6wmckjqEMwfaZMLDTehce4R413t7",
+          "sequence": 4294967295
+        }
+      ],
+      "outputs": [
+        {
+          "wallet": false,
+          "satoshis": 9070000000,
+          "script": "76a9149490023a1f27c8f0956a963f365f726872dc359288ac",
+          "address": "1EYXXHs5gV4pc7QAddmDj5z7m14QPHGvWL"
+        }
+      ]
+    },
+    "raw": {
+      "hex": "01000000098233beef0f3af0855623eeba09e96cf062e7afaf5c5af1668e35b68d11ca1d79010000008b483045022100dcd443f70a1ca9246d1271842d4725db4b3f90d72690555a545bbeaf50f9bfd8022035ba5c03384bd93c5b33540fa83bc5c46001f8e05ab53d32299758fbaf1ff22d0141044888318b7c43164f3bb2de4599e7fe08b60da985ce7de7b9af68e140e48f26539c9dfc5df37d14586c086ab496a74f060fc3d5e941cbea2fad6c40a3193ba5eaffffffff03bd76c6157da48e47a42474a9eb01b514f85b8e0abc0126c1623a6651526b35010000008a47304402207eaca01fccabdb82921157278f743b89fa9d5354d627ae65b1f60cb45b51f3130220039f1af96b26b46ec7c21ab4583dcab38b6a2d9fc3b79eff600071767e4c8d9601410427332771d3d7da5e4feca7cc5dac712ddf9537637966d161ae1cead99dffadad5d994d0a9c2ada8ae0ca3cd12150bbc9c4c85ef2c97952dba9dda76aaa03a528ffffffff0e641a894cf18e974d55654a9be1b35022d010968ded769f657f12fca167919b000000008a47304402202758c2225501af4c4fafc0f6bc7792aaa25b4599e0011bd29d104736a9c507f10220084f5c1bdfdca0938562f221af93bd5551257fcb41cfe063fdf59ecd286f074b014104f46db5e9d61a9dc27b8d64ad23e7383a4e6ca164593c2527c038c0857eb67ee8e825dca65046b82c9331586c82e0fd1f633f25f87c161bc6f8a630121df2b3d3ffffffff3ecbb109358ddc26df7d96758078b1523c7a95877d45290c8fb1b2dad695f3be010000008a473044022000d848d59c30e95ec72bb66565c39df6ad50b136f21ff160722c14e5fcf1b7a90220324bc6715ed70a10ccb793fe97f37f035e53857798080680127cacf67ea63285014104fbde61e09918ca461345c5bed2380f0d4c0cc02177460be6a52e70b6af0ebfbddbdfeb1a99860655084080064275a8380aaf8d1551d18730516b975af47c6bb7ffffffff9bcb0505c429acc0a3f467f2a98ef742641eccd2c18519bc9885e2b450d098a8000000008c493046022100f043b7b3e19f01095cb315657fe1be9c2962a3a1b43417682b48508dd2c455d6022100abf5cde3b8aeca869e613eb1dd14e3628e2f8a77a65192da8b57b8be3ab12083014104dc71d7d5090af35d5ec7285b4244baa65e3d96b2923326358c509df50623bc9403d0cb77048b4e3b0c774809674913a2eb309939b9a8669430fec84d18ddfe71ffffffffa3ed30e4115cbe4c6bc23fcbabbc2a3b06dcb634a4bbf20be0c4b36f0b8329a5000000008a4730440220076fcb83dfed0bb2beba4a45397705e9786681da2a825f5ff18771d4c0509615022065d1b5a41099ca2ecdd3c6fa4dcae48cf5d4b8003c47fa9e161a35d225b85e6d0141047e868eefc8e24ff89af5017da1baf8fc528c7566ed2026cc80244ba76a0adbca50ba4d2e0ec4744c4d55ab6a3f442657f9d0981099d2e4e3339e210c6efee647ffffffffc40297f730dd7b5a99567eb8d27b78758f607507c52292d02d4031895b52f2ff000000008b48304502202f3fa1413d769eee26c2ecef3f3ef826b52bc40fcaa177fcb60a238c24ad306a022100a82a2bd54f8874b4142f76b127189a9bf4d0c5f4c43dbd71bbdccdf58f0e3f9b014104ef709b5379567ce8b5b2c4bd0efd01ff1b6f56dcd213937f56ac2370202630a7d1fd5086b5e806090857a0a009b08a87ce283274d8178d71b4f2718d790645ebffffffffca5065ff9617cbcba45eb23726df6498a9b9cafed4f54cbab9d227b0035ddefb010000008c493046022100cabd732acf7306b9565e676179b3d144cc5af5de2d0618d700ba2863a53da662022100aa2cff8a4164904a6b1a6ef0279f022bc7a02dfa9a59b88ef50a87efdbf0f5ef01410456d53467bd7d2afc5ca6003e510dec95d59d658b9e3e8af4950f170f392e8aafbb8387bc1eba8ea5d4e27dad8a2c603966f2e0e0618dd78847b39fd8cf7f81d5fffffffff98a5264d2dfe181a9bcf1dd5b80d249de240242b79419a85ab20fd5190b8f1a000000008b48304502201410751ad9a8c5689895fa8861481757cea323b8310e6cf18ec8c90d2feb6bfe022100d94e567ebef06ffb06c5ad678f50778cd687780ff7c3df3fea177b78e3f762220141041609784269e43dcc8bd9918e06b868f5c1f171408ad26543753aad9dc7791c57af9e0da56abc6b3b528db2770760c9bd0c06669620945446515a98f8573e7c07ffffffff0180379d1c020000001976a9149490023a1f27c8f0956a963f365f726872dc359288ac00000000",
+      "txid": "5aa8e36f9423ee5fcf17c1d0d45d6988b8a5773eae8ad25d945bf34352040009",
+      "size": 1662,
+      "version": 1,
+      "locktime": 0,
+      "vin": [
+        {
+          "txid": "791dca118db6358e66f15a5cafafe762f06ce909baee235685f03a0fefbe3382",
+          "vout": 1,
+          "scriptSig": {
+            "asm": "3045022100dcd443f70a1ca9246d1271842d4725db4b3f90d72690555a545bbeaf50f9bfd8022035ba5c03384bd93c5b33540fa83bc5c46001f8e05ab53d32299758fbaf1ff22d[ALL] 044888318b7c43164f3bb2de4599e7fe08b60da985ce7de7b9af68e140e48f26539c9dfc5df37d14586c086ab496a74f060fc3d5e941cbea2fad6c40a3193ba5ea",
+            "hex": "483045022100dcd443f70a1ca9246d1271842d4725db4b3f90d72690555a545bbeaf50f9bfd8022035ba5c03384bd93c5b33540fa83bc5c46001f8e05ab53d32299758fbaf1ff22d0141044888318b7c43164f3bb2de4599e7fe08b60da985ce7de7b9af68e140e48f26539c9dfc5df37d14586c086ab496a74f060fc3d5e941cbea2fad6c40a3193ba5ea"
+          },
+          "value": 18.88000000,
+          "valueSat": 1888000000,
+          "address": "1LMoKwPnH4zuXd48kmHprGJeQkJqGoNsQT",
+          "sequence": 4294967295
+        },
+        {
+          "txid": "356b5251663a62c12601bc0a8e5bf814b501eba97424a4478ea47d15c676bd03",
+          "vout": 1,
+          "scriptSig": {
+            "asm": "304402207eaca01fccabdb82921157278f743b89fa9d5354d627ae65b1f60cb45b51f3130220039f1af96b26b46ec7c21ab4583dcab38b6a2d9fc3b79eff600071767e4c8d96[ALL] 0427332771d3d7da5e4feca7cc5dac712ddf9537637966d161ae1cead99dffadad5d994d0a9c2ada8ae0ca3cd12150bbc9c4c85ef2c97952dba9dda76aaa03a528",
+            "hex": "47304402207eaca01fccabdb82921157278f743b89fa9d5354d627ae65b1f60cb45b51f3130220039f1af96b26b46ec7c21ab4583dcab38b6a2d9fc3b79eff600071767e4c8d9601410427332771d3d7da5e4feca7cc5dac712ddf9537637966d161ae1cead99dffadad5d994d0a9c2ada8ae0ca3cd12150bbc9c4c85ef2c97952dba9dda76aaa03a528"
+          },
+          "value": 3.62000000,
+          "valueSat": 362000000,
+          "address": "1DVUHu9G8r6Cgg1bR8L7RWG9KWtyfxPvVe",
+          "sequence": 4294967295
+        },
+        {
+          "txid": "9b9167a1fc127f659f76ed8d9610d02250b3e19b4a65554d978ef14c891a640e",
+          "vout": 0,
+          "scriptSig": {
+            "asm": "304402202758c2225501af4c4fafc0f6bc7792aaa25b4599e0011bd29d104736a9c507f10220084f5c1bdfdca0938562f221af93bd5551257fcb41cfe063fdf59ecd286f074b[ALL] 04f46db5e9d61a9dc27b8d64ad23e7383a4e6ca164593c2527c038c0857eb67ee8e825dca65046b82c9331586c82e0fd1f633f25f87c161bc6f8a630121df2b3d3",
+            "hex": "47304402202758c2225501af4c4fafc0f6bc7792aaa25b4599e0011bd29d104736a9c507f10220084f5c1bdfdca0938562f221af93bd5551257fcb41cfe063fdf59ecd286f074b014104f46db5e9d61a9dc27b8d64ad23e7383a4e6ca164593c2527c038c0857eb67ee8e825dca65046b82c9331586c82e0fd1f633f25f87c161bc6f8a630121df2b3d3"
+          },
+          "value": 50.00000000,
+          "valueSat": 5000000000,
+          "address": "1BNwxHGaFbeUBitpjy2AsKpJ29Ybxntqvb",
+          "sequence": 4294967295
+        },
+        {
+          "txid": "bef395d6dab2b18f0c29457d87957a3c52b1788075967ddf26dc8d3509b1cb3e",
+          "vout": 1,
+          "scriptSig": {
+            "asm": "3044022000d848d59c30e95ec72bb66565c39df6ad50b136f21ff160722c14e5fcf1b7a90220324bc6715ed70a10ccb793fe97f37f035e53857798080680127cacf67ea63285[ALL] 04fbde61e09918ca461345c5bed2380f0d4c0cc02177460be6a52e70b6af0ebfbddbdfeb1a99860655084080064275a8380aaf8d1551d18730516b975af47c6bb7",
+            "hex": "473044022000d848d59c30e95ec72bb66565c39df6ad50b136f21ff160722c14e5fcf1b7a90220324bc6715ed70a10ccb793fe97f37f035e53857798080680127cacf67ea63285014104fbde61e09918ca461345c5bed2380f0d4c0cc02177460be6a52e70b6af0ebfbddbdfeb1a99860655084080064275a8380aaf8d1551d18730516b975af47c6bb7"
+          },
+          "value": 0.03000000,
+          "valueSat": 3000000,
+          "address": "14duhPGzJMSMCEFqQSkDrAXkSGFxGJNByr",
+          "sequence": 4294967295
+        },
+        {
+          "txid": "a898d050b4e28598bc1985c1d2cc1e6442f78ea9f267f4a3c0ac29c40505cb9b",
+          "vout": 0,
+          "scriptSig": {
+            "asm": "3046022100f043b7b3e19f01095cb315657fe1be9c2962a3a1b43417682b48508dd2c455d6022100abf5cde3b8aeca869e613eb1dd14e3628e2f8a77a65192da8b57b8be3ab12083[ALL] 04dc71d7d5090af35d5ec7285b4244baa65e3d96b2923326358c509df50623bc9403d0cb77048b4e3b0c774809674913a2eb309939b9a8669430fec84d18ddfe71",
+            "hex": "493046022100f043b7b3e19f01095cb315657fe1be9c2962a3a1b43417682b48508dd2c455d6022100abf5cde3b8aeca869e613eb1dd14e3628e2f8a77a65192da8b57b8be3ab12083014104dc71d7d5090af35d5ec7285b4244baa65e3d96b2923326358c509df50623bc9403d0cb77048b4e3b0c774809674913a2eb309939b9a8669430fec84d18ddfe71"
+          },
+          "value": 1.86000000,
+          "valueSat": 186000000,
+          "address": "1Ai5mqjDvLABBJnpykssBm51ktckUtUQuJ",
+          "sequence": 4294967295
+        },
+        {
+          "txid": "a529830b6fb3c4e00bf2bba434b6dc063b2abcabcb3fc26b4cbe5c11e430eda3",
+          "vout": 0,
+          "scriptSig": {
+            "asm": "30440220076fcb83dfed0bb2beba4a45397705e9786681da2a825f5ff18771d4c0509615022065d1b5a41099ca2ecdd3c6fa4dcae48cf5d4b8003c47fa9e161a35d225b85e6d[ALL] 047e868eefc8e24ff89af5017da1baf8fc528c7566ed2026cc80244ba76a0adbca50ba4d2e0ec4744c4d55ab6a3f442657f9d0981099d2e4e3339e210c6efee647",
+            "hex": "4730440220076fcb83dfed0bb2beba4a45397705e9786681da2a825f5ff18771d4c0509615022065d1b5a41099ca2ecdd3c6fa4dcae48cf5d4b8003c47fa9e161a35d225b85e6d0141047e868eefc8e24ff89af5017da1baf8fc528c7566ed2026cc80244ba76a0adbca50ba4d2e0ec4744c4d55ab6a3f442657f9d0981099d2e4e3339e210c6efee647"
+          },
+          "value": 0.21000000,
+          "valueSat": 21000000,
+          "address": "13mQccVj95TRGhYDY5NS79Wnfu3smA5FUt",
+          "sequence": 4294967295
+        },
+        {
+          "txid": "fff2525b8931402dd09222c50775608f75787bd2b87e56995a7bdd30f79702c4",
+          "vout": 0,
+          "scriptSig": {
+            "asm": "304502202f3fa1413d769eee26c2ecef3f3ef826b52bc40fcaa177fcb60a238c24ad306a022100a82a2bd54f8874b4142f76b127189a9bf4d0c5f4c43dbd71bbdccdf58f0e3f9b[ALL] 04ef709b5379567ce8b5b2c4bd0efd01ff1b6f56dcd213937f56ac2370202630a7d1fd5086b5e806090857a0a009b08a87ce283274d8178d71b4f2718d790645eb",
+            "hex": "48304502202f3fa1413d769eee26c2ecef3f3ef826b52bc40fcaa177fcb60a238c24ad306a022100a82a2bd54f8874b4142f76b127189a9bf4d0c5f4c43dbd71bbdccdf58f0e3f9b014104ef709b5379567ce8b5b2c4bd0efd01ff1b6f56dcd213937f56ac2370202630a7d1fd5086b5e806090857a0a009b08a87ce283274d8178d71b4f2718d790645eb"
+          },
+          "value": 5.56000000,
+          "valueSat": 556000000,
+          "address": "1JqDybm2nWTENrHvMyafbSXXtTk5Uv5QAn",
+          "sequence": 4294967295
+        },
+        {
+          "txid": "fbde5d03b027d2b9ba4cf5d4fecab9a99864df2637b25ea4cbcb1796ff6550ca",
+          "vout": 1,
+          "scriptSig": {
+            "asm": "3046022100cabd732acf7306b9565e676179b3d144cc5af5de2d0618d700ba2863a53da662022100aa2cff8a4164904a6b1a6ef0279f022bc7a02dfa9a59b88ef50a87efdbf0f5ef[ALL] 0456d53467bd7d2afc5ca6003e510dec95d59d658b9e3e8af4950f170f392e8aafbb8387bc1eba8ea5d4e27dad8a2c603966f2e0e0618dd78847b39fd8cf7f81d5",
+            "hex": "493046022100cabd732acf7306b9565e676179b3d144cc5af5de2d0618d700ba2863a53da662022100aa2cff8a4164904a6b1a6ef0279f022bc7a02dfa9a59b88ef50a87efdbf0f5ef01410456d53467bd7d2afc5ca6003e510dec95d59d658b9e3e8af4950f170f392e8aafbb8387bc1eba8ea5d4e27dad8a2c603966f2e0e0618dd78847b39fd8cf7f81d5"
+          },
+          "value": 5.56000000,
+          "valueSat": 556000000,
+          "address": "127YYnp1jvgAX3vCB22WUUsuyTYfAeSQHh",
+          "sequence": 4294967295
+        },
+        {
+          "txid": "1a8f0b19d50fb25aa81994b7420224de49d2805bddf1bca981e1dfd264528af9",
+          "vout": 0,
+          "scriptSig": {
+            "asm": "304502201410751ad9a8c5689895fa8861481757cea323b8310e6cf18ec8c90d2feb6bfe022100d94e567ebef06ffb06c5ad678f50778cd687780ff7c3df3fea177b78e3f76222[ALL] 041609784269e43dcc8bd9918e06b868f5c1f171408ad26543753aad9dc7791c57af9e0da56abc6b3b528db2770760c9bd0c06669620945446515a98f8573e7c07",
+            "hex": "48304502201410751ad9a8c5689895fa8861481757cea323b8310e6cf18ec8c90d2feb6bfe022100d94e567ebef06ffb06c5ad678f50778cd687780ff7c3df3fea177b78e3f762220141041609784269e43dcc8bd9918e06b868f5c1f171408ad26543753aad9dc7791c57af9e0da56abc6b3b528db2770760c9bd0c06669620945446515a98f8573e7c07"
+          },
+          "value": 4.98000000,
+          "valueSat": 498000000,
+          "address": "1PgpVv6wmckjqEMwfaZMLDTehce4R413t7",
+          "sequence": 4294967295
+        }
+      ],
+      "vout": [
+        {
+          "value": 90.70000000,
+          "valueSat": 9070000000,
+          "n": 0,
+          "scriptPubKey": {
+            "asm": "OP_DUP OP_HASH160 9490023a1f27c8f0956a963f365f726872dc3592 OP_EQUALVERIFY OP_CHECKSIG",
+            "hex": "76a9149490023a1f27c8f0956a963f365f726872dc359288ac",
+            "reqSigs": 1,
+            "type": "pubkeyhash",
+            "addresses": [
+              "1EYXXHs5gV4pc7QAddmDj5z7m14QPHGvWL"
+            ]
+          },
+          "spentTxId": "ca7c337e531dde28d4af367f1b8fe282a06c42f17355966bf637d05d00011c67",
+          "spentIndex": 1,
+          "spentHeight": 105016
+        }
+      ],
+      "blockhash": "000000000000265dad8db0728e318aabd0098e69a82984f8c1c5b9d55de5fd9a",
+      "height": 105001,
+      "confirmations": 320492,
+      "time": 1296211474,
+      "blocktime": 1296211474
+    }
+  },
+  {
+    "comment": "a coinbase transaction",
+    "expected": {
+      "blockHash": "00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048",
+      "blockIndex": 100,
+      "height": 1,
+      "blockTimestamp": 1231469665,
+      "hash": "0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098",
+      "version": 1,
+      "locktime": 0,
+      "coinbase": true,
+      "inputSatoshis": 0,
+      "outputSatoshis": 5000000000,
+      "feeSatoshis": 0,
+      "inputs": [
+        {
+          "outputIndex": null,
+          "prevTxId": null,
+          "address": null,
+          "satoshis": null,
+          "wallet": false,
+          "sequence": 4294967295
+        }
+      ],
+      "outputs": [
+        {
+          "wallet": false,
+          "satoshis": 5000000000,
+          "script": "410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac",
+          "address": "12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX"
+        }
+      ]
+    },
+    "raw": {
+      "hex": "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d0104ffffffff0100f2052a0100000043410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac00000000",
+      "txid": "0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098",
+      "size": 134,
+      "version": 1,
+      "locktime": 0,
+      "vin": [
+        {
+          "coinbase": "04ffff001d0104",
+          "sequence": 4294967295
+        }
+      ],
+      "vout": [
+        {
+          "value": 50.00000000,
+          "valueSat": 5000000000,
+          "n": 0,
+          "scriptPubKey": {
+            "asm": "0496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858ee OP_CHECKSIG",
+            "hex": "410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac",
+            "reqSigs": 1,
+            "type": "pubkey",
+            "addresses": [
+              "12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX"
+            ]
+          }
+        }
+      ],
+      "blockhash": "00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048",
+      "height": 1,
+      "confirmations": 425499,
+      "time": 1231469665,
+      "blocktime": 1231469665
+    }
+  },
+  {
+    "comment": "outputs without an address",
+    "expected": {
+      "hash": "ebc9fa1196a59e192352d76c0f6e73167046b9d37b8302b6bb6968dfd279b767",
+      "version": 1,
+      "locktime": 0,
+      "blockIndex": 100,
+      "inputs": [
+        {
+          "wallet": false,
+          "prevTxId": "6d7ed9914625c73c0288694a6819196a27ef6c08f98e1270d975a8e65a3dc09a",
+          "outputIndex": 1,
+          "satoshis": 10000000,
+          "address": "18FoAUZvzUwA44TcQi7WYRssor4psvTjJk",
+          "sequence": 4294967295
+        }
+      ],
+      "outputs": [
+        {
+          "wallet": false,
+          "satoshis": 1,
+          "script": "01",
+          "address": null
+        },
+        {
+          "wallet": false,
+          "satoshis": 1,
+          "script": "0201",
+          "address": null
+        },
+        {
+          "wallet": false,
+          "satoshis": 1,
+          "script": "4c",
+          "address": null
+        },
+        {
+          "wallet": false,
+          "satoshis": 1,
+          "script": "4c0201",
+          "address": null
+        },
+        {
+          "wallet": false,
+          "satoshis": 1,
+          "script": "4d",
+          "address": null
+        },
+        {
+          "wallet": false,
+          "satoshis": 1,
+          "script": "4dffff01",
+          "address": null
+        },
+        {
+          "wallet": false,
+          "satoshis": 1,
+          "script": "4e",
+          "address": null
+        },
+        {
+          "wallet": false,
+          "satoshis": 1,
+          "script": "4effffffff01",
+          "address": null
+        }
+      ],
+      "outputSatoshis": 8,
+      "inputSatoshis": 10000000,
+      "feeSatoshis": 9999992,
+      "blockHash": "000000000000000b7e48f88e86ceee3e97b4df7c139f5411d14735c1b3c36791",
+      "height": 265458,
+      "blockTimestamp": 1382508379
+    },
+    "raw": {
+      "hex": "01000000019ac03d5ae6a875d970128ef9086cef276a1919684a6988023cc7254691d97e6d010000006b4830450221009d41dc793ba24e65f571473d40b299b6459087cea1509f0d381740b1ac863cb6022039c425906fcaf51b2b84d8092569fb3213de43abaff2180e2a799d4fcb4dd0aa012102d5ede09a8ae667d0f855ef90325e27f6ce35bbe60a1e6e87af7f5b3c652140fdffffffff080100000000000000010101000000000000000202010100000000000000014c0100000000000000034c02010100000000000000014d0100000000000000044dffff010100000000000000014e0100000000000000064effffffff0100000000",
+      "txid": "ebc9fa1196a59e192352d76c0f6e73167046b9d37b8302b6bb6968dfd279b767",
+      "size": 249,
+      "version": 1,
+      "locktime": 0,
+      "vin": [
+        {
+          "txid": "6d7ed9914625c73c0288694a6819196a27ef6c08f98e1270d975a8e65a3dc09a",
+          "vout": 1,
+          "scriptSig": {
+            "asm": "30450221009d41dc793ba24e65f571473d40b299b6459087cea1509f0d381740b1ac863cb6022039c425906fcaf51b2b84d8092569fb3213de43abaff2180e2a799d4fcb4dd0aa[ALL] 02d5ede09a8ae667d0f855ef90325e27f6ce35bbe60a1e6e87af7f5b3c652140fd",
+            "hex": "4830450221009d41dc793ba24e65f571473d40b299b6459087cea1509f0d381740b1ac863cb6022039c425906fcaf51b2b84d8092569fb3213de43abaff2180e2a799d4fcb4dd0aa012102d5ede09a8ae667d0f855ef90325e27f6ce35bbe60a1e6e87af7f5b3c652140fd"
+          },
+          "value": 0.10000000,
+          "valueSat": 10000000,
+          "address": "18FoAUZvzUwA44TcQi7WYRssor4psvTjJk",
+          "sequence": 4294967295
+        }
+      ],
+      "vout": [
+        {
+          "value": 0.00000001,
+          "valueSat": 1,
+          "n": 0,
+          "scriptPubKey": {
+            "asm": "[error]",
+            "hex": "01",
+            "type": "nonstandard"
+          }
+        },
+        {
+          "value": 0.00000001,
+          "valueSat": 1,
+          "n": 1,
+          "scriptPubKey": {
+            "asm": "[error]",
+            "hex": "0201",
+            "type": "nonstandard"
+          }
+        },
+        {
+          "value": 0.00000001,
+          "valueSat": 1,
+          "n": 2,
+          "scriptPubKey": {
+            "asm": "[error]",
+            "hex": "4c",
+            "type": "nonstandard"
+          }
+        },
+        {
+          "value": 0.00000001,
+          "valueSat": 1,
+          "n": 3,
+          "scriptPubKey": {
+            "asm": "[error]",
+            "hex": "4c0201",
+            "type": "nonstandard"
+          }
+        },
+        {
+          "value": 0.00000001,
+          "valueSat": 1,
+          "n": 4,
+          "scriptPubKey": {
+            "asm": "[error]",
+            "hex": "4d",
+            "type": "nonstandard"
+          }
+        },
+        {
+          "value": 0.00000001,
+          "valueSat": 1,
+          "n": 5,
+          "scriptPubKey": {
+            "asm": "[error]",
+            "hex": "4dffff01",
+            "type": "nonstandard"
+          }
+        },
+        {
+          "value": 0.00000001,
+          "valueSat": 1,
+          "n": 6,
+          "scriptPubKey": {
+            "asm": "[error]",
+            "hex": "4e",
+            "type": "nonstandard"
+          }
+        },
+        {
+          "value": 0.00000001,
+          "valueSat": 1,
+          "n": 7,
+          "scriptPubKey": {
+            "asm": "[error]",
+            "hex": "4effffffff01",
+            "type": "nonstandard"
+          }
+        }
+      ],
+      "blockhash": "000000000000000b7e48f88e86ceee3e97b4df7c139f5411d14735c1b3c36791",
+      "height": 265458,
+      "confirmations": 160045,
+      "time": 1382508379,
+      "blocktime": 1382508379
+    }
+
+  }
+]

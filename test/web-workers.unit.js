@@ -8,12 +8,17 @@ var should = chai.should();
 var sinon = require('sinon');
 var proxyquire = require('proxyquire');
 var bitcore = require('bitcore-lib');
+var lmdb = require('node-lmdb');
 var _ = require('lodash');
 
 var WebWorker = require('../lib/web-workers');
 var db = require('../lib/db');
 var messages = require('../lib/messages');
 var utils = require('../lib/utils');
+var models = require('../lib/models');
+var validators = require('../lib/validators');
+
+var transactionData = require('./data/transactions.json');
 
 describe('Wallet Web Worker', function() {
   var options = {
@@ -153,6 +158,7 @@ describe('Wallet Web Worker', function() {
           result.should.deep.equal({
             hello: 'world'
           });
+          should.not.exist(worker._writerCallbacks.cgtbe3t);
           done();
         };
         socket.emit('data');
@@ -186,60 +192,667 @@ describe('Wallet Web Worker', function() {
     });
   });
   describe('#_queueWriterTask', function() {
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
+    });
     it('will log error from socket write', function() {
+      var worker = new WebWorker(options);
+      sandbox.stub(utils, 'getTaskId').returns('ac12meo');
+      sandbox.stub(messages, 'encodeWriterMessage').returns('message');
+      sandbox.stub(console, 'error');
+      worker._writerSocket = {
+        write: sinon.stub().callsArgWith(2, new Error('test'))
+      };
+      worker._queueWriterTask('foo', ['baz'], 10, sinon.stub());
+      should.not.exist(worker._writerCallbacks.ac12meo);
+      messages.encodeWriterMessage.callCount.should.equal(1);
+      worker._writerSocket.write.callCount.should.equal(1);
+      console.error.callCount.should.equal(1);
     });
     it('will write to socket with write task message', function() {
+      var worker = new WebWorker(options);
+      sandbox.stub(utils, 'getTaskId').returns('ac12meo');
+      sandbox.stub(messages, 'encodeWriterMessage').returns('message');
+      worker._writerSocket = {
+        write: sinon.stub().callsArgWith(2, null)
+      };
+      worker._queueWriterTask('foo', ['baz'], 10, sinon.stub());
+      worker._writerCallbacks.ac12meo.should.be.a('function');
+      messages.encodeWriterMessage.callCount.should.equal(1);
+      messages.encodeWriterMessage.args[0][0].should.equal('ac12meo');
+      messages.encodeWriterMessage.args[0][1].should.equal('foo');
+      messages.encodeWriterMessage.args[0][2].should.deep.equal(['baz']);
+      messages.encodeWriterMessage.args[0][3].should.equal(10);
+      worker._writerSocket.write.callCount.should.equal(1);
+      worker._writerSocket.write.args[0][0].should.equal('message');
+      worker._writerSocket.write.args[0][1].should.equal('utf8');
+    });
+  });
+  describe('#_transformRawTransaction', function() {
+    var walletId = 'bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0';
+    var txn = {
+      getBinary: function(dbi, key) {
+        if (key === walletId + '01' + 'd459616bfac2fb02b3150dd83c8be25e7be5358a') {
+          return new Buffer(new Array(0));
+        }
+        return false;
+      }
+    };
+    var wallet = {
+      addressFilter: {
+        contains: function(hash) {
+          if (hash.toString('hex') === 'd459616bfac2fb02b3150dd83c8be25e7be5358a') {
+            return true;
+          }
+          // false positive
+          if (hash.toString('hex') === '8903f021e71cf3383bc595fb9af482746f50b069') {
+            return true;
+          }
+          return false;
+        }
+      }
+    };
+    var blockIndex = 100;
+    transactionData.forEach(function(item, n) {
+      it('transform: ' + item.comment + ' (' + n + ')', function() {
+        var worker = new WebWorker(options);
+        worker.db = {
+          addresses: {}
+        };
+        var transformed = worker._transformRawTransaction(txn, wallet, walletId, blockIndex, item.raw);
+        transformed.should.deep.equal(item.expected);
+      });
     });
   });
   describe('#_importTransaction', function() {
-    it('queue a write task to save the transaction if above safe confirmations', function() {
+    var walletId = 'bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0';
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
     });
-    it('will give back transaction directly if below safe confirmations', function() {
+    it('will handle error from bitcoind', function(done) {
+      var worker = new WebWorker(options);
+      var txn = {};
+      var wallet = {};
+      var txidInfo = [400, 12, 'txid'];
+      sandbox.stub(worker._clients[0], 'getRawTransaction').callsArgWith(2, new Error('test'));
+      worker._importTransaction(txn, wallet, walletId, txidInfo, function(err) {
+        err.should.be.instanceOf(Error);
+        err.message.should.equal('test');
+        done();
+      });
     });
-    it('will handle error from bitcoind', function() {
+    it('queue a write task to save the transaction if above safe confirmations', function(done) {
+      var worker = new WebWorker(options);
+      var txn = {};
+      var wallet = {};
+      var txidInfo = [400, 12, 'txid'];
+      var response = {
+        result: {
+          confirmations: 100
+        }
+      };
+      sandbox.stub(worker._clients[0], 'getRawTransaction').callsArgWith(2, null, response);
+      worker._transformRawTransaction = sinon.stub().returns('transaction');
+      worker._queueWriterTask = sinon.stub().callsArgWith(3, null);
+      worker._importTransaction(txn, wallet, walletId, txidInfo, function(err, transaction) {
+        worker._clients[0].getRawTransaction.callCount.should.equal(1);
+        worker._queueWriterTask.callCount.should.equal(1);
+        worker._queueWriterTask.args[0][0].should.equal('saveTransaction');
+        worker._queueWriterTask.args[0][1].should.deep.equal([walletId, 'transaction']);
+        worker._queueWriterTask.args[0][2].should.equal(1);
+        transaction.should.equal('transaction');
+        done();
+      });
     });
-    it('will handle error from writer task', function() {
+    it('will give error from writer', function(done) {
+      var worker = new WebWorker(options);
+      var txn = {};
+      var wallet = {};
+      var txidInfo = [400, 12, 'txid'];
+      var response = {
+        result: {
+          confirmations: 100
+        }
+      };
+      sandbox.stub(worker._clients[0], 'getRawTransaction').callsArgWith(2, null, response);
+      worker._transformRawTransaction = sinon.stub().returns('transaction');
+      worker._queueWriterTask = sinon.stub().callsArgWith(3, new Error('test'));
+      worker._importTransaction(txn, wallet, walletId, txidInfo, function(err) {
+        err.should.be.instanceOf(Error);
+        err.message.should.equal('test');
+        done();
+      });
+    });
+    it('will give back transaction directly if below safe confirmations', function(done) {
+      var worker = new WebWorker(options);
+      var txn = {};
+      var wallet = {};
+      var txidInfo = [400, 12, 'txid'];
+      var response = {
+        result: {
+          confirmations: 1
+        }
+      };
+      sandbox.stub(worker._clients[0], 'getRawTransaction').callsArgWith(2, null, response);
+      worker._transformRawTransaction = sinon.stub().returns('transaction');
+      worker._queueWriterTask = sinon.stub().callsArgWith(3, null);
+      worker._importTransaction(txn, wallet, walletId, txidInfo, function(err, transaction) {
+        worker._clients[0].getRawTransaction.callCount.should.equal(1);
+        worker._queueWriterTask.callCount.should.equal(0);
+        transaction.should.equal('transaction');
+        done();
+      });
     });
   });
   describe('#getWalletTransactions', function() {
-    it('will map over txids and get wallet transactions', function() {
+    var walletId = 'bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0';
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
     });
-    it('will map over txids and import transactions that are missing', function() {
-    });
-  });
-  describe('#_getLatestTxids', function() {
-  });
-  describe('#getBalance', function() {
-    it('will get balance for wallet', function() {
-    });
-  });
-  describe('#getWalletTxids', function() {
-    it.skip('will give error if options are invalid', function(done) {
-      var wallet = new Wallet({node: node});
+    it('will give 404 error if wallet not found', function(done) {
+      var worker = new WebWorker(options);
       var txn = {
+        getBinary: sinon.stub().returns(null),
         abort: sinon.stub()
       };
-      wallet.db = {
+      worker.db = {
         env: {
           beginTxn: sinon.stub().returns(txn)
         }
       };
-      wallet._checkTxidsQuery = sinon.stub().throws(new Error('test'));
-      wallet.getWalletTxids({}, function(err) {
+      worker._getLatestTxids = sinon.stub().callsArgWith(3, new Error('test'));
+      var opts = {};
+      worker.getWalletTransactions(walletId, opts, function(err) {
+        err.should.be.instanceOf(Error);
+        err.statusCode.should.equal(404);
+        txn.abort.callCount.should.equal(1);
+        done();
+      });
+    });
+    it('will handle error from get latest txids', function(done) {
+      var worker = new WebWorker(options);
+      var txn = {
+        getBinary: sinon.stub().returns(new Buffer(new Array())),
+        abort: sinon.stub()
+      };
+      worker.db = {
+        env: {
+          beginTxn: sinon.stub().returns(txn)
+        }
+      };
+      sandbox.stub(models.Wallet, 'fromBuffer').returns({});
+      worker._getLatestTxids = sinon.stub().callsArgWith(3, new Error('test'));
+      var opts = {};
+      worker.getWalletTransactions(walletId, opts, function(err) {
+        err.should.be.instanceOf(Error);
+        err.message.should.equal('test');
+        txn.abort.callCount.should.equal(1);
+        done();
+      });
+    });
+    it('will map over txids and get wallet transactions from db', function(done) {
+      var worker = new WebWorker(options);
+      var getBinary = sinon.stub().returns(new Buffer(new Array()));
+      var txn = {
+        getBinary: getBinary,
+        abort: sinon.stub()
+      };
+      worker.db = {
+        env: {
+          beginTxn: sinon.stub().returns(txn)
+        }
+      };
+      sandbox.stub(models.Wallet, 'fromBuffer').returns({});
+      sandbox.stub(models.WalletTransaction, 'getKey').returns({toString: sinon.stub().returns('key')});
+      sandbox.stub(models.WalletTransaction, 'fromBuffer').returns({value: 'transaction'});
+      var result = {
+        txids: [
+          [400, 0, 'txid'],
+          [402, 12, 'txid']
+        ],
+        start: {
+          height: 400,
+          index: 12
+        },
+        end: {
+          height: 400,
+          index: 14
+        }
+      };
+      worker._importTransaction = sinon.stub();
+      worker._getLatestTxids = sinon.stub().callsArgWith(3, null, result);
+      var opts = {
+        height: 400,
+        index: 12
+      };
+      worker.getWalletTransactions(walletId, opts, function(err, result) {
+        if (err) {
+          return done(err);
+        }
+        worker._importTransaction.callCount.should.equal(0);
+        should.exist(result);
+        result.transactions.length.should.equal(2);
+        result.transactions[0].should.equal('transaction');
+        result.transactions[1].should.equal('transaction');
+        getBinary.callCount.should.equal(3);
+        models.WalletTransaction.getKey.callCount.should.equal(2);
+        models.WalletTransaction.getKey.args[0][0].should.equal(walletId);
+        models.WalletTransaction.getKey.args[0][1].should.equal('txid');
+        models.WalletTransaction.fromBuffer.callCount.should.equal(2);
+        models.WalletTransaction.fromBuffer.args[0][0].should.equal(walletId);
+        models.WalletTransaction.fromBuffer.args[0][1].should.deep.equal(new Buffer(new Array(0)));
+        result.start.height.should.equal(400);
+        result.start.index.should.equal(12);
+        result.end.height.should.equal(400);
+        result.end.index.should.equal(14);
+        txn.abort.callCount.should.equal(1);
+        done();
+      });
+    });
+    it('get error from importing a transaction', function(done) {
+      var worker = new WebWorker(options);
+      var getBinary = sinon.stub().returns(null);
+      getBinary.onFirstCall().returns(new Buffer(new Array(0)));
+      var txn = {
+        getBinary: getBinary,
+        abort: sinon.stub()
+      };
+      worker.db = {
+        env: {
+          beginTxn: sinon.stub().returns(txn)
+        }
+      };
+      sandbox.stub(models.Wallet, 'fromBuffer').returns({});
+      sandbox.stub(models.WalletTransaction, 'getKey').returns({toString: sinon.stub().returns('key')});
+      sandbox.stub(models.WalletTransaction, 'fromBuffer');
+      var result = {
+        txids: [
+          [400, 0, 'txid'],
+          [402, 12, 'txid']
+        ],
+        start: {
+          height: 400,
+          index: 12
+        },
+        end: {
+          height: 400,
+          index: 14
+        }
+      };
+      worker._importTransaction = sinon.stub().callsArgWith(4, new Error('test'));
+      worker._getLatestTxids = sinon.stub().callsArgWith(3, null, result);
+      var opts = {
+        height: 400,
+        index: 12
+      };
+      worker.getWalletTransactions(walletId, opts, function(err, result) {
+        err.should.be.instanceOf(Error);
+        err.message.should.equal('test');
+        txn.abort.callCount.should.equal(1);
+        done();
+      });
+    });
+    it('will import transactions from bitcoind if not in db', function(done) {
+      var worker = new WebWorker(options);
+      var getBinary = sinon.stub().returns(null);
+      getBinary.onFirstCall().returns(new Buffer(new Array(0)));
+      var txn = {
+        getBinary: getBinary,
+        abort: sinon.stub()
+      };
+      worker.db = {
+        env: {
+          beginTxn: sinon.stub().returns(txn)
+        }
+      };
+      var wallet = {};
+      sandbox.stub(models.Wallet, 'fromBuffer').returns(wallet);
+      sandbox.stub(models.WalletTransaction, 'getKey').returns({toString: sinon.stub().returns('key')});
+      sandbox.stub(models.WalletTransaction, 'fromBuffer');
+      var latestTxids = {
+        txids: [
+          [400, 0, 'txid'],
+          [402, 12, 'txid']
+        ],
+        start: {
+          height: 400,
+          index: 12
+        },
+        end: {
+          height: 400,
+          index: 14
+        }
+      };
+      worker._importTransaction = sinon.stub().callsArgWith(4, null, 'transaction');
+      worker._getLatestTxids = sinon.stub().callsArgWith(3, null, latestTxids);
+      var opts = {
+        height: 400,
+        index: 12
+      };
+      worker.getWalletTransactions(walletId, opts, function(err, result) {
+        if (err) {
+          return done(err);
+        }
+        worker._importTransaction.callCount.should.equal(2);
+        worker._importTransaction.args[0][0].should.equal(txn);
+        worker._importTransaction.args[0][1].should.equal(wallet);
+        worker._importTransaction.args[0][2].should.equal(walletId);
+        worker._importTransaction.args[0][3].should.deep.equal(latestTxids.txids[0]);
+        worker._importTransaction.args[1][0].should.equal(txn);
+        worker._importTransaction.args[1][1].should.equal(wallet);
+        worker._importTransaction.args[1][2].should.equal(walletId);
+        worker._importTransaction.args[1][3].should.deep.equal(latestTxids.txids[1]);
+        models.WalletTransaction.getKey.callCount.should.equal(2);
+        models.WalletTransaction.fromBuffer.callCount.should.equal(0);
+        result.transactions.length.should.equal(2);
+        result.transactions[0].should.equal('transaction');
+        result.transactions[1].should.equal('transaction');
+        txn.abort.callCount.should.equal(1);
+        done();
+      });
+    });
+  });
+  describe('#_getLatestTxids', function() {
+    var walletId = 'bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0';
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
+    });
+    it('will give error from validator', function(done) {
+      var worker = new WebWorker(options);
+      var txn = {};
+      var opts = {};
+      sandbox.stub(validators, 'sanitizeRangeOptions').throws(new Error('test'));
+      worker._getLatestTxids(txn, walletId, opts, function(err) {
+        err.should.be.instanceOf(Error);
+        err.message.should.equal('test');
+        done();
+      });
+    });
+    it('will return empty array if no txids found', function(done) {
+      var worker = new WebWorker(options);
+      worker.db = {
+        txids: {}
+      };
+      var cursor = {
+        goToRange: sinon.stub().returns(null),
+        goToPrev: sinon.stub().returns(null),
+        close: sinon.stub()
+      };
+      sandbox.stub(lmdb, 'Cursor').returns(cursor);
+      var opts = {height: 400, index: 20};
+      var txn = {};
+      worker._getLatestTxids(txn, walletId, opts, function(err, result) {
+        if (err) {
+          return done(err);
+        }
+        result.txids.should.deep.equal([]);
+        result.start.height.should.equal(400);
+        result.start.index.should.equal(20);
+        cursor.close.callCount.should.equal(1);
+        done();
+      });
+    });
+    it('will iterate until limit is reached', function(done) {
+      var worker = new WebWorker(options);
+      worker.db = {
+        txids: {}
+      };
+      var key = 'key';
+      var value = 'value';
+      var cursor = {
+        goToRange: sinon.stub().returns(new Buffer(new Array(0))),
+        goToPrev: sinon.stub().returns(new Buffer(new Array(0))),
+        getCurrentBinary: sinon.stub().callsArgWith(0, key, value),
+        close: sinon.stub()
+      };
+      var height = 400;
+      var index = 0;
+      sandbox.stub(models.WalletTxid, 'parseKey', function() {
+        var result = {
+          height: height,
+          index: index
+        };
+        index++;
+        return result;
+      });
+      sandbox.stub(lmdb, 'Cursor').returns(cursor);
+      var opts = {
+        height: 400,
+        index: 0
+      };
+      var txn = {};
+      worker._getLatestTxids(txn, walletId, opts, function(err, result) {
+        if (err) {
+          return done(err);
+        }
+        result.txids.should.deep.equal([
+          [400, 0, 'value'],
+          [400, 1, 'value'],
+          [400, 2, 'value'],
+          [400, 3, 'value'],
+          [400, 4, 'value'],
+          [400, 5, 'value'],
+          [400, 6, 'value'],
+          [400, 7, 'value'],
+          [400, 8, 'value'],
+          [400, 9, 'value']
+        ]);
+        result.start.height.should.equal(400);
+        result.start.index.should.equal(0);
+        result.end.height.should.equal(400);
+        result.end.index.should.equal(9);
+        cursor.close.callCount.should.equal(1);
+        done();
+      });
+    });
+    it('will iterate and stop before limit is reached', function(done) {
+      var worker = new WebWorker(options);
+      worker.db = {
+        txids: {}
+      };
+      var key = 'key';
+      var value = 'value';
+      var c = 0;
+      var cursor = {
+        goToRange: sinon.stub().returns(new Buffer(new Array(0))),
+        goToPrev: function() {
+          var result = null;
+          if (c < 6) {
+            result = new Buffer(new Array(0));
+          }
+          c++;
+          return result;
+        },
+        getCurrentBinary: sinon.stub().callsArgWith(0, key, value),
+        close: sinon.stub()
+      };
+      var height = 400;
+      var index = 0;
+      sandbox.stub(models.WalletTxid, 'parseKey', function() {
+        var result = {
+          height: height,
+          index: index
+        };
+        index++;
+        return result;
+      });
+      sandbox.stub(lmdb, 'Cursor').returns(cursor);
+      var opts = {
+        height: 400,
+        index: 0
+      };
+      var txn = {};
+      worker._getLatestTxids(txn, walletId, opts, function(err, result) {
+        if (err) {
+          return done(err);
+        }
+        result.txids.should.deep.equal([
+          [400, 0, 'value'],
+          [400, 1, 'value'],
+          [400, 2, 'value'],
+          [400, 3, 'value'],
+          [400, 4, 'value'],
+          [400, 5, 'value'],
+          [400, 6, 'value']
+        ]);
+        result.start.height.should.equal(400);
+        result.start.index.should.equal(0);
+        should.not.exist(result.end);
+        cursor.close.callCount.should.equal(1);
+        done();
+      });
+    });
+  });
+  describe('#getBalance', function() {
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
+    });
+    var walletId = 'bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0';
+    it('will get 404 if wallet not found', function(done) {
+      var worker = new WebWorker(options);
+      var getBinary = sinon.stub().returns(null);
+      var abort = sinon.stub();
+      var beginTxn = sinon.stub().returns({getBinary: getBinary, abort: abort});
+      worker.db = {
+        env: {
+          beginTxn: beginTxn
+        }
+      };
+      worker.getBalance(walletId, function(err) {
+        err.should.be.instanceOf(Error);
+        err.statusCode.should.equal(404);
+        err.message.should.equal('Wallet not found');
+        done();
+      });
+    });
+    it('will get balance if wallet found', function(done) {
+      var worker = new WebWorker(options);
+      var getBinary = sinon.stub().returns(new Buffer(new Array(0)));
+      var abort = sinon.stub();
+      sandbox.stub(models.Wallet, 'fromBuffer').returns({balance: 10000});
+      var beginTxn = sinon.stub().returns({getBinary: getBinary, abort: abort});
+      worker.db = {
+        env: {
+          beginTxn: beginTxn
+        }
+      };
+      worker.getBalance(walletId, function(err, balance) {
+        if (err) {
+          return done(err);
+        }
+        balance.should.deep.equal({balance: 10000});
+        done();
+      });
+    });
+  });
+  describe('#getWalletTxids', function() {
+    var walletId = 'bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0';
+    it('will give error if options are invalid', function(done) {
+      var worker = new WebWorker(options);
+      var txn = {
+        abort: sinon.stub()
+      };
+      worker.db = {
+        env: {
+          beginTxn: sinon.stub().returns(txn)
+        }
+      };
+      worker._getLatestTxids = sinon.stub().callsArgWith(3, new Error('test'));
+      worker.getWalletTxids(walletId, {}, function(err) {
         err.should.be.instanceOf(Error);
         txn.abort.callCount.should.equal(1);
         done();
       });
     });
-    it('will give buffers if option is set', function() {
-    });
-    it('will give hex strings if option buffer is not set', function() {
+    it('will give hex strings for txids', function(done) {
+      var worker = new WebWorker(options);
+      var txn = {
+        abort: sinon.stub()
+      };
+      worker.db = {
+        env: {
+          beginTxn: sinon.stub().returns(txn)
+        }
+      };
+      var result = {
+        txids: [
+          [400, 1, new Buffer('62876740bd494e980b87304f74801b269fea7e7f9835fa22868e909c6da368f1', 'hex')],
+          [400, 2, new Buffer('dd947d1ffb5dee014f4281fecf7680450c289d02bc8fb883d4f6e9071cc1b6d2', 'hex')]
+        ]
+      };
+      worker._getLatestTxids = sinon.stub().callsArgWith(3, null, result);
+      worker.getWalletTxids(walletId, {}, function(err, res) {
+        res.txids.should.deep.equal([
+          '62876740bd494e980b87304f74801b269fea7e7f9835fa22868e909c6da368f1',
+          'dd947d1ffb5dee014f4281fecf7680450c289d02bc8fb883d4f6e9071cc1b6d2'
+        ]);
+        txn.abort.callCount.should.equal(1);
+        done();
+      });
     });
   });
-  describe.skip('#_updateLatestTip', function() {
+  describe('#_updateLatestTip', function() {
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
+    });
     it('will update with the latest bitcoin height and hash', function() {
+      var worker = new WebWorker(options);
+      worker.db = {};
+      worker.db.env = {};
+      var txn = {
+        abort: sinon.stub()
+      };
+      worker.db.env.beginTxn = sinon.stub().returns(txn);
+      var key = 'key';
+      var value = 'value';
+      var getCurrentBinary = sinon.stub().callsArgWith(0, key, value);
+      var close = sinon.stub();
+      var buffer = new Buffer(new Array(0));
+      var goToLast = sinon.stub().returns(buffer);
+      sandbox.stub(lmdb, 'Cursor').returns({
+        getCurrentBinary: getCurrentBinary,
+        close: close,
+        goToLast: goToLast
+      });
+      sandbox.stub(models.WalletBlock, 'fromBuffer').returns({
+        height: 1000,
+        blockHash: new Buffer('000000000b6c620d5f6b4f944982553875a53f8289a72a37fc48f9ed89d931d3', 'hex')
+      });
+      worker._updateLatestTip();
+      goToLast.callCount.should.equal(1);
+      getCurrentBinary.callCount.should.equal(1);
+      models.WalletBlock.fromBuffer.callCount.should.equal(1);
+      models.WalletBlock.fromBuffer.args[0][0].should.equal(key);
+      models.WalletBlock.fromBuffer.args[0][1].should.equal(value);
+      close.callCount.should.equal(1);
+      txn.abort.callCount.should.equal(1);
     });
     it('will log error if there is not a tip', function() {
+      var worker = new WebWorker(options);
+      worker.db = {};
+      worker.db.env = {};
+      var txn = {
+        abort: sinon.stub()
+      };
+      worker.db.env.beginTxn = sinon.stub().returns(txn);
+      var close = sinon.stub();
+      var goToLast = sinon.stub().returns(null);
+      sandbox.stub(lmdb, 'Cursor').returns({
+        close: close,
+        goToLast: goToLast
+      });
+      sandbox.stub(console, 'error');
+      worker._updateLatestTip();
+      goToLast.callCount.should.equal(1);
+      close.callCount.should.equal(1);
+      txn.abort.callCount.should.equal(1);
+      console.error.callCount.should.equal(1);
     });
   });
   describe('#_endpointBalance', function() {
@@ -251,7 +864,7 @@ describe('Wallet Web Worker', function() {
     it('will set status to 200 with balance', function() {
       var worker = new WebWorker(options);
       var balance = 100;
-      worker.getBalance = sinon.stub().callsArgWith(1, null, balance);
+      worker.getBalance = sinon.stub().callsArgWith(1, null, {balance: balance});
       var endpoint = worker._endpointBalance();
       var req = {
         walletId: walletId
