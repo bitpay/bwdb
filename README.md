@@ -2,6 +2,8 @@
 
 # bwdb
 
+[![Build Status](https://travis-ci.org/bitpay/bwdb.svg?branch=master)](https://travis-ci.org/bitpay/bwdb)
+
 A database for high and low volume bitcoin wallets
 
 ## Database Design

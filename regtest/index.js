@@ -143,7 +143,7 @@ describe('Wallet Server & Client', function() {
 
             setTimeout(function() {
               done(null, data);
-            }, 1000);
+            }, 2000);
           });
         });
       });
@@ -164,7 +164,7 @@ describe('Wallet Server & Client', function() {
         data.blockHash = response.result[0];
         setTimeout(function() {
           done(null, data);
-        }, 1000);
+        }, 2000);
       });
     });
   }
@@ -183,7 +183,7 @@ describe('Wallet Server & Client', function() {
         data.blockHash = response.result;
         setTimeout(function() {
           done(null, data);
-        }, 500);
+        }, 2000);
       });
     });
   }
@@ -339,6 +339,7 @@ describe('Wallet Server & Client', function() {
       });
     });
     it('will remove utxo after being spent', function(done) {
+      this.timeout(5000);
       client.getUTXOs(walletId, {}, function(err, result1) {
         if (err) {
           return done(err);
@@ -375,9 +376,9 @@ describe('Wallet Server & Client', function() {
   describe('reorg the chain', function() {
     this.timeout(10000);
     var starting;
-    var replacedTxid;
     before(function(done) {
       var replaceableTx;
+      var replaceableTxid;
       var invalidBlockHash;
       async.series([
         function(next) {
@@ -395,6 +396,7 @@ describe('Wallet Server & Client', function() {
               return next(err);
             }
             replaceableTx = bitcore.Transaction(result.hex);
+            replaceableTxid = result.txid;
             invalidBlockHash = result.blockHash;
             next();
           });
@@ -404,7 +406,8 @@ describe('Wallet Server & Client', function() {
             if (err) {
               return next(err);
             }
-            overview.txids.length.should.equal(2);
+            overview.txids.length.should.equal(3);
+            overview.txids[0].should.equal(replaceableTxid);
             overview.balance.should.equal(1000000000);
             overview.utxos.length.should.equal(1);
             next();
@@ -412,7 +415,7 @@ describe('Wallet Server & Client', function() {
         },
         function(next) {
           bitcoinClient.invalidateBlock(invalidBlockHash, function() {
-            setTimeout(next, 1000);
+            setTimeout(next, 2000);
           });
         },
         function(next) {

@@ -57,6 +57,7 @@ describe('Web Workers Cluster', function() {
     this.timeout(5000);
     var exec = path.resolve(__dirname, '../lib/web-workers.js');
     var options = JSON.stringify({
+      numWorkers: 2,
       network: 'testnet',
       bitcoinHeight: 10000,
       bitcoinHash: '0000000000f4446ad3056a6f8770381172b60ec6168e2260a06cf5f81f2caca7',
