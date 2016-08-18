@@ -54,6 +54,7 @@ describe('Web Workers Cluster', function() {
     rimraf(tmpDirectory, done);
   });
   it('will start and stop cluster', function(done) {
+    this.timeout(5000);
     var exec = path.resolve(__dirname, '../lib/web-workers.js');
     var options = JSON.stringify({
       network: 'testnet',
@@ -90,7 +91,7 @@ describe('Web Workers Cluster', function() {
         expect(JSON.parse(info.body)).to.deep.equal({version: version});
         child.kill('SIGINT');
       });
-    }, 1000);
+    }, 2000);
 
   });
 
