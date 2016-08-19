@@ -1820,55 +1820,93 @@ describe('Wallet Writer Worker', function() {
       });
     });
   });
-  describe.skip('#_commitWalletAddresses', function() {
-    it('', function() {
+  describe('#_commitWalletAddresses', function() {
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
     });
     it('will send expected operations to batch command', function(done) {
-      var wallet = new Wallet({node: node});
+      var walletId = '7e5a548623edccd9e18c4e515ba5e7380307f28463b4b90ea863aa34efa22a6d';
+      var worker = new WriterWorker(options);
+      var txn = {
+        getBinary: sinon.stub().returns('txn getBinary'),
+        putBinary: sinon.stub(),
+        commit: sinon.stub()
+      };
       var walletDbi = {};
       var keysDbi = {};
-      wallet.db = {
+      worker.db = {
         wallet: walletDbi,
         keys: keysDbi,
         env: {
           sync: sinon.stub().callsArg(0)
+        },
+        addresses: {},
+        addressesMap: {},
+        wallets: {},
+        blocks: {}
+      };
+      var walletBlock = {
+        getKey: sinon.stub().returns('walletBlock getKey'),
+        getValue: sinon.stub().returns('walletBlock getValue'),
+        addressFilter: BloomFilter.create(100, 0.01)
+      };
+      var wallet = {
+        getKey: sinon.stub().returns('wallet getKey'),
+        getValue: sinon.stub().returns('wallet getValue')
+      };
+      var newAddresses = [
+        {
+          getKey: sinon.stub().returns('walletAddress getKey'),
+          getValue: sinon.stub().returns('walletAddress getValue')
         }
+      ];
+      var addressMap = {
+        insert: sinon.stub(),
+        getKey: sinon.stub().returns('addressMap getKey'),
+        getValue: sinon.stub().returns('addressMap getValue')
       };
-      var walletData = {
-        toBuffer: sinon.stub().returns(new Buffer('02', 'hex'))
-      };
-      var keyData = {
-        getKey: sinon.stub().returns(new Buffer('03', 'hex')),
-        getValue: sinon.stub().returns(new Buffer('04', 'hex'))
-      };
-      var txn = {
-        putBinary: sinon.stub(),
-        commit: sinon.stub()
-      };
-      wallet._commitWalletKey(txn, walletData, keyData, function(err) {
+      sandbox.stub(models.WalletAddressMap, 'getKey').returns('test key');
+      sandbox.stub(models.WalletAddressMap, 'fromBuffer').returns(addressMap);
+      sandbox.stub(console, 'info');
+      worker._commitWalletAddresses(txn, walletBlock, walletId, wallet, newAddresses, function(err) {
         if (err) {
           return done(err);
         }
+
+        console.info.callCount.should.equal(1);
+        txn.putBinary.callCount.should.equal(4);
+        txn.putBinary.args[0][0].should.equal(worker.db.addresses);
+        txn.putBinary.args[0][1].should.equal('walletAddress getKey');
+        txn.putBinary.args[0][2].should.equal('walletAddress getValue');
+
+        txn.putBinary.args[1][0].should.equal(worker.db.addressesMap);
+        txn.putBinary.args[1][1].should.equal('addressMap getKey');
+        txn.putBinary.args[1][2].should.equal('addressMap getValue');
+
+        txn.putBinary.args[2][0].should.equal(worker.db.wallets);
+        txn.putBinary.args[2][1].should.equal('wallet getKey');
+        txn.putBinary.args[2][2].should.equal('wallet getValue');
+
+        txn.putBinary.args[3][0].should.equal(worker.db.blocks);
+        txn.putBinary.args[3][1].should.equal('walletBlock getKey');
+        txn.putBinary.args[3][2].should.equal('walletBlock getValue');
+
+        txn.getBinary.callCount.should.equal(1);
+        txn.getBinary.args[0][0].should.equal(worker.db.addressesMap);
+        txn.getBinary.args[0][1].should.equal('test key');
+
         txn.commit.callCount.should.equal(1);
-
-        txn.putBinary.callCount.should.equal(2);
-        txn.putBinary.args[0][0].should.equal(walletDbi);
-        txn.putBinary.args[0][1].should.equal('1000');
-        txn.putBinary.args[0][2].should.deep.equal(new Buffer('02', 'hex'));
-
-        txn.putBinary.args[1][0].should.equal(keysDbi);
-        txn.putBinary.args[1][1].should.equal('03');
-        txn.putBinary.args[1][2].should.deep.equal(new Buffer('04', 'hex'));
         done();
       });
     });
-    it('will handle error from batch and leave wallet references unchanged', function(done) {
-      var wallet = new Wallet({node: node});
-      wallet.walletTxids = null;
-      wallet.walletData = null;
+    it.skip('will handle error from batch and leave wallet references unchanged', function(done) {
+      var worker = new WriterWorker(options);
+      worker.walletTxids = null;
+      worker.walletData = null;
       var walletDbi = {};
       var keysDbi = {};
-      wallet.db = {
+      worker.db = {
         wallet: walletDbi,
         keys: keysDbi,
         env: {
@@ -1886,18 +1924,18 @@ describe('Wallet Writer Worker', function() {
         putBinary: sinon.stub(),
         commit: sinon.stub()
       };
-      wallet._commitWalletKey(txn, walletData, keyData, function(err) {
+      worker._commitWalletKey(txn, walletData, keyData, function(err) {
         err.should.be.instanceOf(Error);
         err.message.should.equal('test');
-        should.equal(wallet.walletData, null);
+        should.equal(worker.walletData, null);
         done();
       });
     });
-    it('will update wallet references with updated data', function(done) {
-      var wallet = new Wallet({node: node});
+    it.skip('will update wallet references with updated data', function(done) {
+      var worker = new WriterWorker(options);
       var walletDbi = {};
       var keysDbi = {};
-      wallet.db = {
+      worker.db = {
         wallet: walletDbi,
         keys: keysDbi,
         env: {
@@ -1915,11 +1953,11 @@ describe('Wallet Writer Worker', function() {
         putBinary: sinon.stub(),
         commit: sinon.stub()
       };
-      wallet._commitWalletKey(txn, walletData, keyData, function(err) {
+      worker._commitWalletKey(txn, walletData, keyData, function(err) {
         if (err) {
           return done(err);
         }
-        wallet.walletData.should.equal(walletData);
+        worker.walletData.should.equal(walletData);
         done();
       });
     });
