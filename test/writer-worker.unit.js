@@ -392,10 +392,6 @@ describe('Wallet Writer Worker', function() {
       });
     });
   });
-  describe.skip('#_getMethodsMap', function() {
-    it('', function() {
-    });
-  });
   describe('#_sendResponse', function() {
     var sandbox = sinon.sandbox.create();
     afterEach(function() {
@@ -1928,73 +1924,6 @@ describe('Wallet Writer Worker', function() {
       });
     });
   });
-  describe.skip('#_setupDatabase', function() {
-    it('will open database from path', function(done) {
-      var testNode = {
-        network: 'testnet',
-        bitcoind: {},
-        services: {
-          bitcoind: {}
-        }
-      };
-      // This will attempt to actually create the directory and database
-      var wallet = new Wallet({node: testNode});
-      wallet._getDatabasePath = sinon.stub().returns('/tmp/bwsv2-test.lmdb');
-      wallet._setupDatabase(function(err) {
-        if (err) {
-          return done(err);
-        }
-        done();
-      });
-    });
-  });
-  describe.skip('#_loadWalletData', function() {
-    it('will create new wallet at current height if wallet not found', function(done) {
-      var testNode = {
-        network: 'testnet'
-      };
-      var wallet = new Wallet({node: testNode});
-      wallet.bitcoind = {
-        height: 100,
-        tiphash: '000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4941'
-      };
-      wallet.db = {
-        env: {
-          beginTxn: sinon.stub().returns({
-            getBinary: sinon.stub().returns(null),
-            abort: sinon.stub()
-          })
-        }
-      };
-      wallet._loadWalletData(function(err) {
-        if (err) {
-          return done(err);
-        }
-        should.exist(wallet.walletData);
-        done();
-      });
-    });
-    it('will set the wallet reference to wallet data', function(done) {
-      var blockHash = new Buffer('000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4941', 'hex');
-      var walletData = models.Wallet.create({height: 100, blockHash: blockHash});
-      var wallet = new Wallet({node: node});
-      wallet.db = {
-        env: {
-          beginTxn: sinon.stub().returns({
-            getBinary: sinon.stub().returns(walletData.toBuffer()),
-            abort: sinon.stub()
-          })
-        }
-      };
-      wallet._loadWalletData(function(err) {
-        if (err) {
-          return done(err);
-        }
-        wallet.walletData.should.deep.equal(walletData);
-        done();
-      });
-    });
-  });
   describe.skip('#_connectBlockAddressDeltas', function() {
     var deltaData = {
       blockHeight: 10,
@@ -2048,7 +1977,7 @@ describe('Wallet Writer Worker', function() {
         done();
       });
     });
-    it.skip('will update balance of walletData', function() {
+    it('will update balance of walletData', function() {
     });
   });
 
@@ -2216,9 +2145,71 @@ describe('Wallet Writer Worker', function() {
       done();
     });
   });  
-  describe.skip('#_addUTXOSToWallet', function() {
-    it('', function() {
-      
+  describe('#_addUTXOSToWallet', function() {
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
+    });
+    it('adds UTXOs to wallet', function(done) {
+      var worker = new WriterWorker(options);
+      var response = {
+        result: [
+          {
+            height: 10,
+            address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r',
+            txid: '90e262c7baaf4a5a8eb910d075e945d5a27f856f71a06ff8681128115a07441a',
+            outputIndex: 50,
+            satoshis: 100000000
+          }
+        ]
+      };
+      worker._clients[0] = {
+        getAddressUtxos: sinon.stub().callsArgWith(1, null, response)
+      };
+      var newAddresses = [
+        {
+          address: 'first'
+        }
+      ];
+      sandbox.stub(console, 'info');
+      worker._addUTXO = sinon.stub();
+      worker._addUTXOSToWallet({}, '', newAddresses, function(err) {
+        if (err) {
+          return done(err);
+        }
+        console.info.callCount.should.equal(1);
+        worker._clients[0].getAddressUtxos.callCount.should.equal(1);
+        worker._clients[0].getAddressUtxos.args[0][0].addresses[0].should.equal('first');
+        worker._addUTXO.callCount.should.equal(1);
+        worker._addUTXO.args[0][0].should.deep.equal({});
+        worker._addUTXO.args[0][1].should.equal('');
+        worker._addUTXO.args[0][2].height.should.equal(response.result[0].height);
+        worker._addUTXO.args[0][2].address.should.equal(response.result[0].address);
+        worker._addUTXO.args[0][2].txid.should.equal(response.result[0].txid);
+        worker._addUTXO.args[0][2].satoshis.should.equal(response.result[0].satoshis);
+        worker._addUTXO.args[0][2].index.should.equal(response.result[0].outputIndex);
+
+        done();
+      });
+    });
+    it('returns error from getAddressUtxos', function(done) {
+      var worker = new WriterWorker(options);
+      worker._clients[0] = {
+        getAddressUtxos: sinon.stub().callsArgWith(1, new Error('test'))
+      };
+      var newAddresses = [
+        {
+          address: 'first'
+        }
+      ];
+      sandbox.stub(console, 'info');
+      worker._addUTXO = sinon.stub();
+      worker._addUTXOSToWallet({}, '', newAddresses, function(err) {
+        should.exist(err);
+        err.should.be.instanceOf(Error);
+        err.message.should.equal('test');
+        done();
+      });
     });
   });
   describe('#importWalletAddresses', function() {
