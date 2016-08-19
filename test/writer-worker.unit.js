@@ -951,7 +951,6 @@ describe('Wallet Writer Worker', function() {
         txn.getBinary.args[0][0].should.deep.equal(worker.db.addressesMap);
         txn.getBinary.args[0][1].should.equal('address map key');
 
-        console.log(txn.getBinary.args[1]);
         txn.getBinary.args[1][0].should.deep.equal(worker.db.wallets);
         txn.getBinary.args[1][1].should.equal(walletId.toString('hex'));
 
@@ -1070,7 +1069,7 @@ describe('Wallet Writer Worker', function() {
         blocks: {},
         wallets: {}
       };
-
+      sandbox.stub(console, 'info');
       worker._connectBlockCommit(txn, wallets, block, spentOutputs, function(err) {
         if (err) {
           return done(err);
@@ -1091,6 +1090,7 @@ describe('Wallet Writer Worker', function() {
         worker.walletBlock.should.equal(walletBlock);
         worker.blockFilter.addressFilter.should.equal(walletBlock.addressFilter);
         worker.blockFilter.network.should.equal(worker.network);
+        console.info.callCount.should.equal(1);        
         done();
       });
     });
@@ -1402,6 +1402,7 @@ describe('Wallet Writer Worker', function() {
         wallets: {}
       };
       sandbox.stub(models.WalletBlock, 'fromBuffer').returns(prevWalletBlock);
+      sandbox.stub(console, 'info');
       worker._disconnectBlockCommit(txn, wallets, walletBlock, function(err) {
         if (err) {
           return done(err);
@@ -1418,6 +1419,7 @@ describe('Wallet Writer Worker', function() {
         worker.walletBlock.should.equal(prevWalletBlock);
         worker.blockFilter.addressFilter.should.equal(prevWalletBlock.addressFilter);
         worker.blockFilter.network.should.equal(worker.network);
+        console.info.callCount.should.equal(1);
         done();
       });
     });
@@ -1675,6 +1677,10 @@ describe('Wallet Writer Worker', function() {
     });
   });
   describe('#_updateTip', function() {
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
+    });
     it('will get raw block or the next block height', function(done) {
       var worker = new WriterWorker(options);
       worker.walletBlock = {
@@ -1730,12 +1736,14 @@ describe('Wallet Writer Worker', function() {
         previousblockhash: '000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4945'
       };
       worker._getBlockDeltas = sinon.stub().callsArgWith(1, null, blockDeltas);
+      sandbox.stub(console, 'warn');
       worker._updateTip(0, function(err) {
         if (err) {
           return done(err);
         }
         worker._disconnectTip.callCount.should.equal(1);
         worker._getBlockDeltas.args[0][0].should.equal(1);
+        console.warn.callCount.should.equal(2);
         done();
       });
     });
@@ -1749,10 +1757,12 @@ describe('Wallet Writer Worker', function() {
         previousblockhash: '000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4945'
       };
       worker._getBlockDeltas = sinon.stub().callsArgWith(1, null, blockDeltas);
+      sandbox.stub(console, 'warn');      
       worker._updateTip(0, function(err) {
         should.exist(err);
         err.should.be.instanceOf(Error);
         err.message.should.equal('test');
+        console.warn.callCount.should.equal(1);
         done();
       });
     });
@@ -2255,8 +2265,11 @@ describe('Wallet Writer Worker', function() {
     });
   });
 
-
   describe('#sync', function() {
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
+    });
     it('will bail out if already syncing', function(done) {
       var wallet = new WriterWorker(options);
       wallet._updateTip = sinon.stub();
@@ -2312,6 +2325,7 @@ describe('Wallet Writer Worker', function() {
         setImmediate(callback);
       };
       sinon.spy(wallet, '_updateTip');
+      sandbox.stub(console, 'info');
       wallet.sync({
         bitcoinHeight: 200,
         bitcoinHash: 'c3f6790a1e612146c2f36ed0855c560b39e602be7c27b37007f946e9c2adf177'
@@ -2319,6 +2333,7 @@ describe('Wallet Writer Worker', function() {
         wallet._updateTip.callCount.should.equal(100);
         wallet.walletBlock.height.should.equal(200);
         wallet.syncing.should.equal(false);
+        console.info.callCount.should.equal(2);
         done();
       });
     });
@@ -2338,6 +2353,7 @@ describe('Wallet Writer Worker', function() {
         setImmediate(callback);
       };
       sinon.spy(wallet, '_updateTip');
+      sandbox.stub(console, 'info');
       wallet.sync({
         bitcoinHeight: 200,
         bitcoinHash: 'c3f6790a1e612146c2f36ed0855c560b39e602be7c27b37007f946e9c2adf177'
@@ -2345,6 +2361,7 @@ describe('Wallet Writer Worker', function() {
         wallet._updateTip.callCount.should.equal(1);
         wallet.walletBlock.height.should.equal(101);
         wallet.syncing.should.equal(false);
+        console.info.callCount.should.equal(2);
         done();
       });
     });
@@ -2359,12 +2376,16 @@ describe('Wallet Writer Worker', function() {
         height: 200
       };
       wallet._updateTip = sinon.stub().callsArgWith(1, new Error('test'));
+      sandbox.stub(console, 'error');
+      sandbox.stub(console, 'info');      
       wallet.sync({
         bitcoinHeight: 200,
         bitcoinHash: 'c3f6790a1e612146c2f36ed0855c560b39e602be7c27b37007f946e9c2adf177'
       }, function(err) {
         err.should.be.instanceOf(Error);
         wallet.syncing.should.equal(false);
+        console.error.callCount.should.equal(1);
+        console.info.callCount.should.equal(1);
         done();
       });
     });
