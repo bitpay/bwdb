@@ -65,7 +65,7 @@ describe('Wallet Writer Worker', function() {
           getInfo: sinon.stub().callsArg(0)
         }
       ];
-      sandbox.stub(utils, 'getClients', function (config) {
+      sandbox.stub(utils, 'getClients', function(config) {
         return clients;
       });
       var worker = new WriterWorker(options);
@@ -93,7 +93,7 @@ describe('Wallet Writer Worker', function() {
           getInfo: sinon.stub().callsArgWith(0, new Error('1'))
         }
       ];
-      sandbox.stub(utils, 'getClients', function (config) {
+      sandbox.stub(utils, 'getClients', function(config) {
         return clients;
       });
       var worker = new WriterWorker(options);
@@ -126,8 +126,8 @@ describe('Wallet Writer Worker', function() {
         }
       };
       var block;
-      var Cursor = {
-        getCurrentBinary: function (func) {
+      var cursor = {
+        getCurrentBinary: function(func) {
           block = new WalletBlock(10, {blockHash: new Buffer('0b925ce878f804390cf4d845a150ee142a167339d3984796c01a2efb6b5a3ce4', 'hex')});
           var hexKey = block.getKey('hex');
           var serialized = block.getValue();
@@ -137,7 +137,7 @@ describe('Wallet Writer Worker', function() {
         close: sinon.stub()
       };
       sandbox.stub(lmdb, 'Cursor', function(txn, blocks) {
-        return Cursor;
+        return cursor;
       });
       var expectedWalletBlock = {addressFilter: BloomFilter.create(100, 0.1)};
       sandbox.stub(models.WalletBlock, 'fromBuffer').returns(expectedWalletBlock);
@@ -157,8 +157,8 @@ describe('Wallet Writer Worker', function() {
         }
       };
       var block;
-      var Cursor = {
-        getCurrentBinary: function (func) {
+      var cursor = {
+        getCurrentBinary: function(func) {
           block = new WalletBlock(10, {blockHash: new Buffer('0b925ce878f804390cf4d845a150ee142a167339d3984796c01a2efb6b5a3ce4', 'hex')});
           var hexKey = block.getKey('hex');
           var serialized = block.getValue();
@@ -168,7 +168,7 @@ describe('Wallet Writer Worker', function() {
         close: sinon.stub()
       }
       sandbox.stub(lmdb, 'Cursor', function(txn, blocks) {
-        return Cursor;
+        return cursor;
       });
       var callback = function() {
         should.not.exist(worker.walletBlock);
@@ -185,7 +185,6 @@ describe('Wallet Writer Worker', function() {
     it('will set up the database', function() {
       sandbox.stub(utils, 'setupDirectory').callsArg(1);
       sandbox.stub(db, 'open', function(dbPath) {
-        console.log(dbPath);
         return 'some db instance';
       });
       var worker = new WriterWorker(options);
@@ -199,7 +198,7 @@ describe('Wallet Writer Worker', function() {
   });
   describe('#_startListener', function() {
     var sandbox = sinon.sandbox.create();
-    afterEach(function () {
+    afterEach(function() {
       sandbox.restore();
     });
     it('will start a listener with default priority', function(done) {
@@ -211,7 +210,7 @@ describe('Wallet Writer Worker', function() {
       var parsercb = null;
       var task = {};
       sandbox.stub(messages, 'parser', function(fn) {
-        return function () {
+        return function() {
           fn({task:task})
         };
       });
@@ -243,7 +242,7 @@ describe('Wallet Writer Worker', function() {
 
       var task = {};
       sandbox.stub(messages, 'parser', function(fn) {
-        return function () {
+        return function() {
           fn({task:task, priority: 5})
         };
       });
@@ -275,7 +274,7 @@ describe('Wallet Writer Worker', function() {
 
       var task = {id:2};
       sandbox.stub(messages, 'parser', function(fn) {
-        return function () {
+        return function() {
           fn({task:task, priority: 5})
         };
       });
@@ -305,9 +304,9 @@ describe('Wallet Writer Worker', function() {
       server.listen = sinon.stub().callsArg(1);
       sandbox.stub(net, 'createServer').callsArgWith(0, socket).returns(server);
 
-      var task = {id:2};
+      var task = {id: 2};
       sandbox.stub(messages, 'parser', function(fn) {
-        return function () {
+        return function() {
           fn({task:task, priority: 5})
         };
       });
@@ -512,7 +511,7 @@ describe('Wallet Writer Worker', function() {
   });
   describe('#_addUTXO', function() {
     var sandbox = sinon.sandbox.create();
-    afterEach(function () {
+    afterEach(function() {
       sandbox.restore();
     });
     it('will add utxos by txid ouput index, satoshis and height', function() {
@@ -576,7 +575,7 @@ describe('Wallet Writer Worker', function() {
   });
   describe('#_undoAddUTXO', function() {
     var sandbox = sinon.sandbox.create();
-    afterEach(function () {
+    afterEach(function() {
       sandbox.restore();
     });
     it('will del utxos by txid ouput index, satoshis and height', function() {
@@ -636,7 +635,7 @@ describe('Wallet Writer Worker', function() {
   });
   describe('#_removeUTXO', function() {
     var sandbox = sinon.sandbox.create();
-    afterEach(function () {
+    afterEach(function() {
       sandbox.restore();
     });
     it('will remove utxo by txid ouput index, satoshis and height', function() {
@@ -645,8 +644,7 @@ describe('Wallet Writer Worker', function() {
         prevtxid: '90e262c7baaf4a5a8eb910d075e945d5a27f856f71a06ff8681128115a07441a',
         prevout: 100
       };
-      var spentOutputs = {
-      };
+      var spentOutputs = {};
       var expectedGetBinary = new Buffer('buffer', 'hex');
       var txn = {
         getBinary: sinon.stub().returns(expectedGetBinary),
@@ -697,7 +695,7 @@ describe('Wallet Writer Worker', function() {
   });
   describe('#_undoRemoveUTXO', function() {
     var sandbox = sinon.sandbox.create();
-    afterEach(function () {
+    afterEach(function() {
       sandbox.restore();
     });
     it('will undo remove utxos by txid ouput index, satoshis and height', function() {
@@ -938,7 +936,7 @@ describe('Wallet Writer Worker', function() {
       worker._connectUTXO = sinon.stub();
       var callback = sinon.stub();
 
-      worker._connectTransaction(txn, wallets, height, transaction, spentOutputs, function () {
+      worker._connectTransaction(txn, wallets, height, transaction, spentOutputs, function() {
 
         models.WalletAddressMap.getKey.callCount.should.equal(2);
         models.WalletAddressMap.getKey.args[0][0].should.equal(transaction.inputs[0].address);
@@ -1065,9 +1063,7 @@ describe('Wallet Writer Worker', function() {
       var wallets = {
         walletkey: wallet
       };
-      var walletDbi = {};
       worker.db = {
-        worker: walletDbi,
         env: {
           sync: sinon.stub().callsArg(0)
         },
@@ -1081,7 +1077,6 @@ describe('Wallet Writer Worker', function() {
         }
         clone.callCount.should.equal(1);
         txn.putBinary.callCount.should.equal(2);
-        console.log(txn.putBinary.args[0]);
         txn.putBinary.args[0][0].should.equal(worker.db.blocks);
         txn.putBinary.args[0][1].should.equal('test key');
         txn.putBinary.args[0][2].should.equal('test value');
@@ -1127,9 +1122,7 @@ describe('Wallet Writer Worker', function() {
       var wallets = {
         walletkey: wallet
       };
-      var walletDbi = {};
       worker.db = {
-        worker: walletDbi,
         env: {
           sync: sinon.stub().callsArgWith(0, new Error('test error'))
         },
@@ -1147,7 +1140,7 @@ describe('Wallet Writer Worker', function() {
   });
   describe('#_connectBlock', function() {
     var sandbox = sinon.sandbox.create();
-    afterEach(function () {
+    afterEach(function() {
       sandbox.restore();
     });
     it('will parse addresses in block belonging to wallet', function(done) {
@@ -1172,7 +1165,7 @@ describe('Wallet Writer Worker', function() {
       };
       sandbox.stub(worker, '_connectTransaction').callsArg(5);
       sandbox.stub(worker, '_connectBlockCommit').callsArg(4);
-      worker._connectBlock(block, function () {
+      worker._connectBlock(block, function() {
         worker.blockFilter.filterDeltas.callCount.should.equal(1);
         worker.blockFilter.filterDeltas.args[0][0].should.deep.equal(block);
         worker.db.env.beginTxn.callCount.should.equal(1);
@@ -1203,7 +1196,7 @@ describe('Wallet Writer Worker', function() {
       };
       sandbox.stub(worker, '_connectTransaction').callsArgWith(5, new Error('test error message'));
       sandbox.stub(worker, '_connectBlockCommit').callsArg(4);
-      worker._connectBlock(block, function (err) {
+      worker._connectBlock(block, function(err) {
         txn.abort.callCount.should.equal(1);
         should.exist(err);
         err.should.be.instanceOf(Error);
@@ -1270,7 +1263,7 @@ describe('Wallet Writer Worker', function() {
       worker._disconnectUTXO = sinon.stub();
       var callback = sinon.stub();
 
-      worker._disconnectTransaction(txn, wallets, height, transaction, spentOutputs, function () {
+      worker._disconnectTransaction(txn, wallets, height, transaction, spentOutputs, function() {
 
         models.WalletAddressMap.getKey.callCount.should.equal(2);
         models.WalletAddressMap.getKey.args[0][0].should.equal(transaction.inputs[0].address);
@@ -1285,7 +1278,6 @@ describe('Wallet Writer Worker', function() {
         txn.getBinary.args[0][0].should.deep.equal(worker.db.addressesMap);
         txn.getBinary.args[0][1].should.equal('address map key');
 
-        console.log(txn.getBinary.args[1]);
         txn.getBinary.args[1][0].should.deep.equal(worker.db.wallets);
         txn.getBinary.args[1][1].should.equal(walletId.toString('hex'));
 
@@ -1402,9 +1394,7 @@ describe('Wallet Writer Worker', function() {
       var wallets = {
         walletkey: wallet
       };
-      var walletDbi = {};
       worker.db = {
-        worker: walletDbi,
         env: {
           sync: sinon.stub().callsArg(0)
         },
@@ -1467,9 +1457,7 @@ describe('Wallet Writer Worker', function() {
       var wallets = {
         walletkey: wallet
       };
-      var walletDbi = {};
       worker.db = {
-        worker: walletDbi,
         env: {
           sync: sinon.stub().callsArgWith(0, new Error('test error'))
         },
@@ -1514,7 +1502,7 @@ describe('Wallet Writer Worker', function() {
       };
       sandbox.stub(worker, '_disconnectTransaction').callsArg(5);
       sandbox.stub(worker, '_disconnectBlockCommit').callsArg(3);
-      worker._disconnectTip(function () {
+      worker._disconnectTip(function() {
         worker.db.env.beginTxn.callCount.should.equal(1);
         worker._disconnectTransaction.callCount.should.equal(1);
         worker._disconnectBlockCommit.callCount.should.equal(1);
@@ -1552,7 +1540,7 @@ describe('Wallet Writer Worker', function() {
       };
       sandbox.stub(worker, '_disconnectTransaction').callsArgWith(5, new Error('test error message'));
       sandbox.stub(worker, '_disconnectBlockCommit').callsArg(3);
-      worker._disconnectTip(function (err) {
+      worker._disconnectTip(function(err) {
         txn.abort.callCount.should.equal(1);
         should.exist(err);
         err.should.be.instanceOf(Error);
@@ -1650,7 +1638,7 @@ describe('Wallet Writer Worker', function() {
       worker._tryAllClients = function(fn, callback) {
         fn(client, callback);
       }
-      worker._getBlockDeltas('something', function (err, deltas) {
+      worker._getBlockDeltas('something', function(err, deltas) {
         should.exist(err);
         err.should.be.instanceOf(Error);
         err.message.should.equal('error message');
@@ -1667,7 +1655,7 @@ describe('Wallet Writer Worker', function() {
       worker._tryAllClients = function(fn, callback) {
         fn(client, callback);
       }
-      worker._getBlockDeltas('something', function (err, deltas) {
+      worker._getBlockDeltas('something', function(err, deltas) {
         if (err) {
           return done(err);
         }
@@ -1678,7 +1666,7 @@ describe('Wallet Writer Worker', function() {
     it('will error from maybeGetBlockHash', function(done) {
       var worker = new WriterWorker(options);
       worker._maybeGetBlockHash = sinon.stub().callsArgWith(1, new Error('error message'));
-      worker._getBlockDeltas('something', function (err, deltas) {
+      worker._getBlockDeltas('something', function(err, deltas) {
         should.exist(err);
         err.should.be.instanceOf(Error);
         err.message.should.equal('error message');
@@ -2312,7 +2300,7 @@ describe('Wallet Writer Worker', function() {
         }
         wallet._updateTip.callCount.should.equal(0);
         done();
-      })
+      });
     });
     it('will update wallet height until it matches bitcoind height', function(done) {
       var wallet = new WriterWorker(options);
