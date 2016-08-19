@@ -16,7 +16,7 @@ var db = require('../lib/db');
 var WalletBlock = require('../lib/models/block');
 var messages = require('../lib/messages');
 var models = require('../lib/models');
-var Wallet = require('../lib/models/Wallet');
+var Wallet = require('../lib/models/wallet');
 
 describe('Wallet Writer Worker', function() {
   var options = {
@@ -115,8 +115,7 @@ describe('Wallet Writer Worker', function() {
     afterEach(function() {
       sandbox.restore();
     });
-    it
-    ('will load latest wallet block', function(done) {
+    it('will load latest wallet block', function(done) {
       var worker = new WriterWorker(options);
       var txn = {
         abort: sinon.stub()

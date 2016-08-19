@@ -179,7 +179,9 @@ describe('Wallet Service', function() {
         }
       });
       var wallet = new WalletStub(options);
-      wallet._writerCallbacks = {};
+      wallet._writerCallbacks = {
+        abcdef: true
+      };
       wallet._writerCallbacks.abcdef = function(err, result) {
         if (err) {
           return done(err);
@@ -232,17 +234,18 @@ describe('Wallet Service', function() {
         }
       });
       var wallet = new WalletStub(options);
-      wallet._writerCallbacks = {};
+      wallet._writerCallbacks = {
+        abcdef: true
+      };
       wallet._writerCallbacks.abcdef = function(err, result) {
-        if (err) {
-          return done(err);
-        }
-        result.should.deep.equal({hello: 'world'});
+        should.exist(err);
+        err.should.be.instanceOf(Error);
+        err.message.should.equal('test');
         done();
       };
       sandbox.stub(messages, 'parser', function(callback) {
         return function() {
-          callback({id: 'abcdef', error: null, result: {hello: 'world'}});
+          callback({id: 'abcdef', error: new Error('test')});
         };
       });
       wallet._connectWriterSocket(fn);
