@@ -130,7 +130,7 @@ describe('Wallet Service', function() {
       var spawnStub = sinon.stub().returns({once:temp});
       var Wallet = proxyquire('../lib/wallet-service', {
         'child_process': {
-          spawn : spawnStub
+          spawn: spawnStub
         }
       });
       var wallet = new Wallet(options);
@@ -179,7 +179,9 @@ describe('Wallet Service', function() {
         }
       });
       var wallet = new WalletStub(options);
-      wallet._writerCallbacks = {};
+      wallet._writerCallbacks = {
+        abcdef: true
+      };
       wallet._writerCallbacks.abcdef = function(err, result) {
         if (err) {
           return done(err);
@@ -197,6 +199,60 @@ describe('Wallet Service', function() {
       tempEmitter.emit('data');
       fn.callCount.should.equal(1);
     });
+    it('will throw error connecting to writer socket', function(done) {
+      var node = {
+        network: 'testnet',
+        services: {
+          bitcoind: {
+            height: 100,
+            tiphash: '00000000000000000495aa8f7662444b0e26cbcbe1a2311b10d604eaa7df319e',
+            options: {
+              connect: [{
+                rpcport: 18333,
+                rpcuser: 'testuser',
+                rpcpassword: 'testpassword'
+              }]
+            }
+          }
+        }
+      };
+      var options = {
+        configPath: process.env.HOME,
+        node: node
+      };
+      var fn = sinon.stub();
+      var tempEmitter = new EventEmitter();
+      var tempFunc;
+      var connect = function(path, func) {
+        tempFunc = func;
+        return tempEmitter;
+      };
+
+      var WalletStub = proxyquire('../lib/wallet-service', {
+        net: {
+          connect: connect
+        }
+      });
+      var wallet = new WalletStub(options);
+      wallet._writerCallbacks = {
+        abcdef: true
+      };
+      wallet._writerCallbacks.abcdef = function(err, result) {
+        should.exist(err);
+        err.should.be.instanceOf(Error);
+        err.message.should.equal('test');
+        done();
+      };
+      sandbox.stub(messages, 'parser', function(callback) {
+        return function() {
+          callback({id: 'abcdef', error: new Error('test')});
+        };
+      });
+      wallet._connectWriterSocket(fn);
+      tempFunc();
+      tempEmitter.emit('data', '{error: "some error"}');
+      fn.callCount.should.equal(1);
+    });    
   });
   describe('#_queueWriterSyncTask', function() {
     var sandbox = sinon.sandbox.create();
@@ -277,7 +333,7 @@ describe('Wallet Service', function() {
       var fn = sinon.stub();
       var Wallet = proxyquire('../lib/wallet-service', {
         'child_process': {
-          spawn : spawnStub
+          spawn: spawnStub
         }
       });
       var wallet = new Wallet(options);
