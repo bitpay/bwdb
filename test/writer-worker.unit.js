@@ -2191,15 +2191,19 @@ describe('Wallet Writer Worker', function() {
     it('adds UTXOs to wallet', function(done) {
       var worker = new WriterWorker(options);
       var response = {
-        result: [
-          {
-            height: 10,
-            address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r',
-            txid: '90e262c7baaf4a5a8eb910d075e945d5a27f856f71a06ff8681128115a07441a',
-            outputIndex: 50,
-            satoshis: 100000000
-          }
-        ]
+        result: {
+          utxos: [
+            {
+              height: 10,
+              address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r',
+              txid: '90e262c7baaf4a5a8eb910d075e945d5a27f856f71a06ff8681128115a07441a',
+              outputIndex: 50,
+              satoshis: 100000000
+            }
+          ],
+          hash: '00000000000cd5804bae7c5b938b7d68b8612e1a4eaee92a3849a607ff8e5539',
+          height: 400000
+        }
       };
       worker._clients[0] = {
         getAddressUtxos: sinon.stub().callsArgWith(1, null, response)
@@ -2209,9 +2213,12 @@ describe('Wallet Writer Worker', function() {
           address: 'first'
         }
       ];
+      var walletBlock = {
+        blockHash: new Buffer('00000000000cd5804bae7c5b938b7d68b8612e1a4eaee92a3849a607ff8e5539', 'hex')
+      };
       sandbox.stub(console, 'info');
       worker._addUTXO = sinon.stub();
-      worker._addUTXOSToWallet({}, '', newAddresses, function(err) {
+      worker._addUTXOSToWallet({}, walletBlock, '', newAddresses, function(err) {
         if (err) {
           return done(err);
         }
@@ -2221,12 +2228,39 @@ describe('Wallet Writer Worker', function() {
         worker._addUTXO.callCount.should.equal(1);
         worker._addUTXO.args[0][0].should.deep.equal({});
         worker._addUTXO.args[0][1].should.equal('');
-        worker._addUTXO.args[0][2].height.should.equal(response.result[0].height);
-        worker._addUTXO.args[0][2].address.should.equal(response.result[0].address);
-        worker._addUTXO.args[0][2].txid.should.equal(response.result[0].txid);
-        worker._addUTXO.args[0][2].satoshis.should.equal(response.result[0].satoshis);
-        worker._addUTXO.args[0][2].index.should.equal(response.result[0].outputIndex);
-
+        worker._addUTXO.args[0][2].height.should.equal(response.result.utxos[0].height);
+        worker._addUTXO.args[0][2].address.should.equal(response.result.utxos[0].address);
+        worker._addUTXO.args[0][2].txid.should.equal(response.result.utxos[0].txid);
+        worker._addUTXO.args[0][2].satoshis.should.equal(response.result.utxos[0].satoshis);
+        worker._addUTXO.args[0][2].index.should.equal(response.result.utxos[0].outputIndex);
+        done();
+      });
+    });
+    it('will give error if response chain hash does not equal expected hash', function(done) {
+      var worker = new WriterWorker(options);
+      var response = {
+        result: {
+          utxos: [],
+          hash: '00000000000cd5804bae7c5b938b7d68b8612e1a4eaee92a3849a607ff8e5539',
+          height: 400000
+        }
+      };
+      worker._clients[0] = {
+        getAddressUtxos: sinon.stub().callsArgWith(1, null, response)
+      };
+      var newAddresses = [
+        {
+          address: 'first'
+        }
+      ];
+      var walletBlock = {
+        blockHash: new Buffer('000000000006ce3dc6ff2fcc8753fbb6549c87f300061ce26f7d64a38a2a3120', 'hex')
+      };
+      sandbox.stub(console, 'info');
+      worker._addUTXO = sinon.stub();
+      worker._addUTXOSToWallet({}, walletBlock, '', newAddresses, function(err) {
+        err.should.be.instanceOf(Error);
+        err.message.should.equal('Unexpected chain hash from address utxos');
         done();
       });
     });
@@ -2242,7 +2276,8 @@ describe('Wallet Writer Worker', function() {
       ];
       sandbox.stub(console, 'info');
       worker._addUTXO = sinon.stub();
-      worker._addUTXOSToWallet({}, '', newAddresses, function(err) {
+      var walletBlock = {};
+      worker._addUTXOSToWallet({}, walletBlock, '', newAddresses, function(err) {
         should.exist(err);
         err.should.be.instanceOf(Error);
         err.message.should.equal('test');
@@ -2298,7 +2333,7 @@ describe('Wallet Writer Worker', function() {
       sandbox.stub(models, 'WalletAddress').returns('something');
       worker._filterNewAddresses = sinon.stub().returns('new addresses');
       worker._addAddressesToWallet = sinon.stub().callsArg(5);
-      worker._addUTXOSToWallet = sinon.stub().callsArg(3);
+      worker._addUTXOSToWallet = sinon.stub().callsArg(4);
       worker._commitWalletAddresses = sinon.stub().callsArg(5);
 
       worker.importWalletAddresses(walletId, [{address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'}], function(err) {
@@ -2345,6 +2380,7 @@ describe('Wallet Writer Worker', function() {
       };
       var txn = {
         getBinary: sinon.stub().returns(new Buffer('test buffer', 'utf8')),
+        abort: sinon.stub()
       };
       worker.db = {
         env: {
@@ -2355,9 +2391,11 @@ describe('Wallet Writer Worker', function() {
       sandbox.stub(models.Wallet, 'fromBuffer').returns('test fromBuffer');
       sandbox.stub(models, 'WalletAddress').returns('something');
       worker._filterNewAddresses = sinon.stub().returns(['new addresses']);
+      worker._addUTXOSToWallet = sinon.stub().callsArgWith(4);
       worker._addAddressesToWallet = sinon.stub().callsArgWith(5, new Error('test'));
       worker.importWalletAddresses(walletId, [{address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'}], function(err) {
         should.exist(err);
+        txn.abort.callCount.should.equal(1);
         err.should.be.instanceOf(Error);
         worker.syncing.should.equal(false);
         done();
@@ -2373,6 +2411,7 @@ describe('Wallet Writer Worker', function() {
       };
       var txn = {
         getBinary: sinon.stub().returns(new Buffer('test buffer', 'utf8')),
+        abort: sinon.stub()
       };
       worker.db = {
         env: {
@@ -2384,11 +2423,12 @@ describe('Wallet Writer Worker', function() {
       sandbox.stub(models, 'WalletAddress').returns('something');
       worker._filterNewAddresses = sinon.stub().returns(['new addresses']);
       worker._addAddressesToWallet = sinon.stub().callsArg(5);
-      worker._addUTXOSToWallet = sinon.stub().callsArgWith(3, new Error('test'));
+      worker._addUTXOSToWallet = sinon.stub().callsArgWith(4, new Error('test'));
       worker.importWalletAddresses(walletId, [{address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'}], function(err) {
         should.exist(err);
         err.should.be.instanceOf(Error);
         worker.syncing.should.equal(false);
+        txn.abort.callCount.should.equal(1);
         done();
       });
     });
@@ -2402,6 +2442,7 @@ describe('Wallet Writer Worker', function() {
       };
       var txn = {
         getBinary: sinon.stub().returns(new Buffer('test buffer', 'utf8')),
+        abort: sinon.stub()
       };
       worker.db = {
         env: {
@@ -2413,12 +2454,13 @@ describe('Wallet Writer Worker', function() {
       sandbox.stub(models, 'WalletAddress').returns('something');
       worker._filterNewAddresses = sinon.stub().returns(['new addresses']);
       worker._addAddressesToWallet = sinon.stub().callsArg(5);
-      worker._addUTXOSToWallet = sinon.stub().callsArgWith(3);
+      worker._addUTXOSToWallet = sinon.stub().callsArgWith(4);
       worker._commitWalletAddresses = sinon.stub().callsArgWith(5, new Error('test'));
       worker.importWalletAddresses(walletId, [{address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'}], function(err) {
         should.exist(err);
         err.should.be.instanceOf(Error);
         worker.syncing.should.equal(false);
+        txn.abort.callCount.should.equal(1);
         done();
       });
     });
