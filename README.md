@@ -16,7 +16,7 @@ Database    | Key | Value
 ----------- | ------------ | -------------
 Address | walletId, addressType, addressHash  | null
 Address Map | addressType, addressHash | walletId[]
-Block | height | blockHash, blockAddressFilter
+Block | height | blockHash, blockAddressFilter, deltas, spentOutputs
 Transaction | walletId, txid | walletTransaction
 Txid | walletId, height, blockIndex | txid
 UTXO | walletId, txid, outputIndex | height, satoshis, addressType, addressHash
@@ -41,6 +41,8 @@ balance | ? | BSON | Confirmed balance for the wallet
 blockHash | ? | BSON | Hash of the latest block
 blockAddressFilter | ? | BSON | Bloom filter with all addresses
 walletTransaction | ? | BSON | Wallet transaction JSON (see below)
+deltas | ? | BSON | All of the address deltas in the block
+spentOutputs | ? | BSON | All outputs that were spent in the block
 
 ### Wallet Transaction JSON Format
 
