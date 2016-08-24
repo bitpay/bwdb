@@ -3,12 +3,14 @@
 var chai = require('chai');
 var should = chai.should();
 var sinon = require('sinon');
+var bitcore = require('bitcore-lib');
 var EventEmitter = require('events').EventEmitter;
 var BloomFilter = require('bloom-filter');
 var lmdb = require('node-lmdb');
 var net = require('net');
 
 var WriterWorker = require('../lib/writer-worker.js');
+var BlockFilter = require('../lib/block-filter.js');
 var utils = require('../lib/utils');
 var db = require('../lib/db');
 var WalletBlock = require('../lib/models/block');
@@ -1732,90 +1734,149 @@ describe('Wallet Writer Worker', function() {
       });
     });
   });
-  describe.skip('#_addAddressesToWallet', function() {
-    it('', function() {
+  describe('#_addAddressesToWallet', function() {
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
     });
     it('will handle error from client query', function(done) {
-      var node = {
-        network: 'livenet'
+      sandbox.stub(console, 'info');
+      var worker = new WriterWorker(options);
+      worker._clients[0] = {
+        getAddressDeltas: sinon.stub().callsArgWith(1, {code: -1, message: 'test'})
       };
-      var wallet = new Wallet({node: node});
-      wallet.bitcoind = {
-        client: {
-          getAddressDeltas: sinon.stub().callsArgWith(1, {code: -1, message: 'test'})
+      var newAddresses = [{
+        address: {
+          toString: sinon.stub().returns('16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r')
         }
-      };
-      var walletTxids = {
-        insert: sinon.stub()
-      };
-      var walletData = {
-        addressFilter: {
-          insert: sinon.stub()
-        },
-        balance: 0,
+      }];
+      var wallet = {};
+      var txn = {};
+      var walletBlock = {
         height: 100
       };
-      var keyData = {
-        address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'
-      };
-      wallet._addKeyToWallet(walletTxids, walletData, keyData, function(err) {
+      var walletId = '6c547c4c54c3c26bf156bf3f424d255889544a65c2edeab0b30559b8364da6ea';
+      worker._addAddressesToWallet(txn, walletBlock, walletId, wallet, newAddresses, function(err) {
         err.should.be.instanceOf(Error);
+        err.code.should.equal(-1);
+        console.info.callCount.should.equal(1);
         done();
       });
     });
     it('will insert txids, update bloom filter and add to balance', function(done) {
+      sandbox.stub(console, 'info');
+      var worker = new WriterWorker(options);
       var deltas = [{
         satoshis: 50000000,
         height: 198,
         blockindex: 12,
         txid: '90e262c7baaf4a5a8eb910d075e945d5a27f856f71a06ff8681128115a07441a'
       }];
-      var node = {
-        network: 'livenet'
+      worker._clients[0] = {
+        getAddressDeltas: sinon.stub().callsArgWith(1, null, {
+          result: {
+            deltas: deltas,
+            start: {
+              height: 1,
+              hash: '00000000df45bc11904610790c41ab1acd8ef1d188ddb304eb131fb3ad45a697',
+            },
+            end: {
+              height: 200,
+              hash: '00000000158c4d9cd3650eff793544532057450c260208e293dd1a146e8076c9'
+            }
+          }
+        })
       };
-      var wallet = new Wallet({node: node});
-      var txidsDbi = {};
-      wallet.db = {
-        txids: txidsDbi
-      };
-      wallet.bitcoind = {
-        client: {
-          getAddressDeltas: sinon.stub().callsArgWith(1, null, {
-            result: deltas
-          })
+      worker._addAddressesToWalletTxid = sinon.stub();
+      var txn = {};
+      var walletBlock = {
+        blockHash: new Buffer('00000000158c4d9cd3650eff793544532057450c260208e293dd1a146e8076c9', 'hex'),
+        height: 1000,
+        addressFilter: {
+          insert: sinon.stub()
         }
       };
-      var walletData = {
+      var walletId = '62519ece6db96384fd0f6254ec156d3c71f63d8d535823ba1b5c17fa798c4864';
+      var wallet = {
         addressFilter: {
           insert: sinon.stub()
         },
-        balance: 50000000,
-        height: 200
+        balance: 10000
       };
-      var keyData = {
-        address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'
-      };
-      var txn = {
-        putBinary: sinon.stub()
-      };
-      wallet._addKeyToWallet(txn, walletData, keyData, function(err) {
+      var newAddresses = [{
+        address: bitcore.Address('16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r')
+      }];
+      worker._addAddressesToWallet(txn, walletBlock, walletId, wallet, newAddresses, function(err) {
         if (err) {
           return done(err);
         }
-        var getAddressDeltas = wallet.bitcoind.client.getAddressDeltas;
-        getAddressDeltas.callCount.should.equal(1);
-        var query = getAddressDeltas.args[0][0];
-        query.should.deep.equal({addresses: ['16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'], start: 1, end: 200});
-        txn.putBinary.callCount.should.equal(1);
-        txn.putBinary.args[0][0].should.equal(txidsDbi);
-        txn.putBinary.args[0][1].should.equal('000000c60000000c');
-        txn.putBinary.args[0][2].should.deep.equal(
-          new Buffer('90e262c7baaf4a5a8eb910d075e945d5a27f856f71a06ff8681128115a07441a', 'hex')
-        );
-        walletData.addressFilter.insert.callCount.should.equal(1);
-        var hashBuffer = walletData.addressFilter.insert.args[0][0].toString('hex');
-        hashBuffer.should.equal('3c3fa3d4adcaf8f52d5b1843975e122548269937');
-        walletData.balance.should.equal(100000000);
+        worker._clients[0].getAddressDeltas.callCount.should.equal(1);
+        worker._clients[0].getAddressDeltas.args[0][0].should.deep.equal({
+          addresses: [
+            '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'
+          ],
+          chainInfo: true,
+          end: 1000,
+          start: 1
+        });
+        worker._addAddressesToWalletTxid.callCount.should.equal(1);
+        wallet.balance.should.equal(50000000 + 10000);
+        walletBlock.addressFilter.insert.callCount.should.equal(1);
+        walletBlock.addressFilter.insert.args[0][0].toString('hex').should.equal('3c3fa3d4adcaf8f52d5b1843975e122548269937');
+        wallet.addressFilter.insert.callCount.should.equal(1);
+        wallet.addressFilter.insert.args[0][0].toString('hex').should.equal('3c3fa3d4adcaf8f52d5b1843975e122548269937');
+        console.info.callCount.should.equal(1);
+        done();
+      });
+    });
+    it('will give error if end hash does not match the current block height/hash', function(done) {
+      sandbox.stub(console, 'info');
+      var worker = new WriterWorker(options);
+      var deltas = [{
+        satoshis: 50000000,
+        height: 198,
+        blockindex: 12,
+        txid: '90e262c7baaf4a5a8eb910d075e945d5a27f856f71a06ff8681128115a07441a'
+      }];
+      worker._clients[0] = {
+        getAddressDeltas: sinon.stub().callsArgWith(1, null, {
+          result: {
+            deltas: deltas,
+            start: {
+              height: 1,
+              hash: '00000000df45bc11904610790c41ab1acd8ef1d188ddb304eb131fb3ad45a697',
+            },
+            end: {
+              height: 200,
+              hash: '00000000158c4d9cd3650eff793544532057450c260208e293dd1a146e8076c9'
+            }
+          }
+        })
+      };
+      worker._addAddressesToWalletTxid = sinon.stub();
+      var txn = {};
+      var walletBlock = {
+        blockHash: new Buffer('000000000001ad19b6c2395bb48411abcf5f87216bbd0e3936d660b7742a660c', 'hex'),
+        height: 1000,
+        addressFilter: {
+          insert: sinon.stub()
+        }
+      };
+      var walletId = '62519ece6db96384fd0f6254ec156d3c71f63d8d535823ba1b5c17fa798c4864';
+      var wallet = {
+        addressFilter: {
+          insert: sinon.stub()
+        },
+        balance: 10000
+      };
+      var newAddresses = [{
+        address: bitcore.Address('16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r')
+      }];
+      worker._addAddressesToWallet(txn, walletBlock, walletId, wallet, newAddresses, function(err) {
+        should.exist(err);
+        err.should.be.instanceOf(Error);
+        err.message.should.equal('Unexpected chain hash from address deltas');
+        console.info.callCount.should.equal(1);
         done();
       });
     });
@@ -1826,6 +1887,7 @@ describe('Wallet Writer Worker', function() {
       sandbox.restore();
     });
     it('will send expected operations to batch command', function(done) {
+      sandbox.stub(console, 'info');
       var walletId = '7e5a548623edccd9e18c4e515ba5e7380307f28463b4b90ea863aa34efa22a6d';
       var worker = new WriterWorker(options);
       var txn = {
@@ -1868,7 +1930,6 @@ describe('Wallet Writer Worker', function() {
       };
       sandbox.stub(models.WalletAddressMap, 'getKey').returns('test key');
       sandbox.stub(models.WalletAddressMap, 'fromBuffer').returns(addressMap);
-      sandbox.stub(console, 'info');
       worker._commitWalletAddresses(txn, walletBlock, walletId, wallet, newAddresses, function(err) {
         if (err) {
           return done(err);
@@ -1900,125 +1961,73 @@ describe('Wallet Writer Worker', function() {
         done();
       });
     });
-    it.skip('will handle error from batch and leave wallet references unchanged', function(done) {
+    it('will handle error from batch and leave wallet references unchanged', function(done) {
+      sandbox.stub(console, 'info');
       var worker = new WriterWorker(options);
-      worker.walletTxids = null;
-      worker.walletData = null;
-      var walletDbi = {};
-      var keysDbi = {};
       worker.db = {
-        wallet: walletDbi,
-        keys: keysDbi,
         env: {
           sync: sinon.stub().callsArgWith(0, new Error('test'))
-        }
+        },
+        wallets: {}
       };
-      var walletData = {
-        toBuffer: sinon.stub()
+      var walletId = '7e5a548623edccd9e18c4e515ba5e7380307f28463b4b90ea863aa34efa22a6d';
+      var walletBlock = {
+        getKey: sinon.stub().returns('wallet block key'),
+        getValue: sinon.stub().returns('wallet block value')
       };
-      var keyData = {
-        getKey: sinon.stub().returns(new Buffer('03', 'hex')),
-        getValue: sinon.stub()
+      var wallet = {
+        getKey: sinon.stub().returns('wallet key'),
+        getValue: sinon.stub().returns('wallet value')
       };
+      var newAddresses = [];
       var txn = {
         putBinary: sinon.stub(),
         commit: sinon.stub()
       };
-      worker._commitWalletKey(txn, walletData, keyData, function(err) {
+      worker._commitWalletAddresses(txn, walletBlock, walletId, wallet, newAddresses, function(err) {
         err.should.be.instanceOf(Error);
         err.message.should.equal('test');
-        should.equal(worker.walletData, null);
+        should.equal(worker.walletBlock, null);
+        should.equal(worker.blockFilter, null);
         done();
       });
     });
-    it.skip('will update wallet references with updated data', function(done) {
+    it('will update wallet references with updated data', function(done) {
+      sandbox.stub(console, 'info');
       var worker = new WriterWorker(options);
-      var walletDbi = {};
-      var keysDbi = {};
       worker.db = {
-        wallet: walletDbi,
-        keys: keysDbi,
         env: {
           sync: sinon.stub().callsArg(0)
-        }
+        },
+        wallets: {}
       };
-      var walletData = {
-        toBuffer: sinon.stub()
+      var walletId = '7e5a548623edccd9e18c4e515ba5e7380307f28463b4b90ea863aa34efa22a6d';
+      var walletBlock = {
+        addressFilter: BloomFilter.create(100, 0.1),
+        getKey: sinon.stub().returns('wallet block key'),
+        getValue: sinon.stub().returns('wallet block value')
       };
-      var keyData = {
-        getKey: sinon.stub().returns(new Buffer('03', 'hex')),
-        getValue: sinon.stub()
+      var wallet = {
+        getKey: sinon.stub().returns('wallet key'),
+        getValue: sinon.stub().returns('wallet value')
       };
+      var newAddresses = [];
       var txn = {
         putBinary: sinon.stub(),
         commit: sinon.stub()
       };
-      worker._commitWalletKey(txn, walletData, keyData, function(err) {
+      worker._commitWalletAddresses(txn, walletBlock, walletId, wallet, newAddresses, function(err) {
         if (err) {
-          return done(err);
+          done(err);
         }
-        worker.walletData.should.equal(walletData);
+        should.exist(worker.walletBlock);
+        worker.walletBlock.should.equal(walletBlock);
+        worker.blockFilter.should.instanceOf(BlockFilter);
+        worker.blockFilter.addressFilter.should.equal(walletBlock.addressFilter);
         done();
       });
     });
   });
-  describe.skip('#_connectBlockAddressDeltas', function() {
-    var deltaData = {
-      blockHeight: 10,
-      address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r',
-      deltas: [
-        {
-          blockIndex: 2,
-          txid: 'd51a988ab4ed0cb80cdf228a1e657857708a6205c7037493010144441d60c676'
-        }
-      ],
-    };
-    it('will get database key for address', function(done) {
-      var wallet = new Wallet({node: testNode});
-      var txidsDbi = {};
-      wallet.db = {
-        txids: txidsDbi
-      };
-      var txn = {
-        getBinary: sinon.stub().returns(true),
-        putBinary: sinon.stub()
-      };
-      var walletData = {};
-      wallet._connectBlockAddressDeltas(txn, walletData, deltaData, function(err) {
-        if (err) {
-          return done(err);
-        }
-        txn.putBinary.callCount.should.equal(1);
-        txn.putBinary.args[0][0].should.equal(txidsDbi);
-        txn.putBinary.args[0][1].should.equal('0000000a00000002');
-        txn.putBinary.args[0][2].should.be.instanceOf(Buffer);
-        txn.putBinary.args[0][2].toString('hex').should.equal(deltaData.deltas[0].txid);
-        done();
-      });
-    });
-    it('will skip if address does not exist', function(done) {
-      var wallet = new Wallet({node: testNode});
-      var txidsDbi = {};
-      wallet.db = {
-        txids: txidsDbi
-      };
-      var txn = {
-        getBinary: sinon.stub().returns(false),
-        putBinary: sinon.stub()
-      };
-      var walletData = {};
-      wallet._connectBlockAddressDeltas(txn, walletData, deltaData, function(err) {
-        if (err) {
-          return done(err);
-        }
-        txn.putBinary.callCount.should.equal(0);
-        done();
-      });
-    });
-    it('will update balance of walletData', function() {
-    });
-  });
-
   describe('#sync', function() {
     var sandbox = sinon.sandbox.create();
     afterEach(function() {
@@ -2182,7 +2191,7 @@ describe('Wallet Writer Worker', function() {
       walletAddress.should.deep.equal(ret);
       done();
     });
-  });  
+  });
   describe('#_addUTXOSToWallet', function() {
     var sandbox = sinon.sandbox.create();
     afterEach(function() {
