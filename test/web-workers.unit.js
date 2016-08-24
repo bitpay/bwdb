@@ -17,6 +17,7 @@ var messages = require('../lib/messages');
 var utils = require('../lib/utils');
 var models = require('../lib/models');
 var validators = require('../lib/validators');
+var version = require('../package.json').version;
 
 var transactionData = require('./data/transactions.json');
 
@@ -1321,6 +1322,213 @@ describe('Wallet Web Worker', function() {
       worker._setupRoutes.args[0][0].should.equal(app);
       listen.callCount.should.equal(1);
       listen.args[0][0].should.equal(20001);
+    });
+  });
+  describe('#_endpointGetInfo', function() {
+    it('will return function that will give response with version', function() {
+      var worker = new WebWorker(options);
+      var endpoint = worker._endpointGetInfo();
+      var req = {};
+      var res = {
+        jsonp: sinon.stub()
+      };
+      endpoint(req, res);
+      res.jsonp.callCount.should.equal(1);
+      res.jsonp.args[0][0].should.deep.equal({
+        version: version
+      });
+    });
+  });
+  describe('#_endpointNotfound', function() {
+    it('will set status code of 404 and give json response', function() {
+      var worker = new WebWorker(options);
+      var endpoint = worker._endpointNotFound();
+      var req = {};
+      var jsonp = sinon.stub();
+      var res = {
+        status: sinon.stub().returns({jsonp: jsonp})
+      };
+      endpoint(req, res);
+      res.status.callCount.should.equal(1);
+      res.status.args[0][0].should.equal(404);
+      jsonp.callCount.should.equal(1);
+      jsonp.args[0][0].should.deep.equal({
+        status: 404,
+        url: req.originalUrl,
+        error: 'Not found'
+      });
+    });
+  });
+  describe('#_middlewareHeaders', function() {
+    it('will return function that will set response headers', function(done) {
+      var worker = new WebWorker(options);
+      var middleware = worker._middlewareHeaders();
+      var req = {
+        networkName: 'testnet',
+        bitcoinHeight: 100,
+        bitcoinHash: '0000000000000000acfc75c88c569e4f087a614b584180f19c8b39f16a6a24f3'
+      };
+      var res = {
+        header: sinon.stub()
+      };
+      middleware(req, res, function() {
+        res.header.callCount.should.equal(4);
+
+        res.header.args[0][0].should.equal('x-bitcoin-network');
+        res.header.args[0][1].should.equal('testnet');
+
+        res.header.args[1][0].should.equal('x-bitcoin-height');
+        res.header.args[1][1].should.equal(100);
+
+        res.header.args[2][0].should.equal('x-bitcoin-hash');
+        res.header.args[2][1].should.equal('0000000000000000acfc75c88c569e4f087a614b584180f19c8b39f16a6a24f3');
+
+        res.header.args[3][0].should.equal('x-powered-by');
+        res.header.args[3][1].should.equal('bwdb');
+        done();
+      });
+    });
+  });
+  describe('#_middlewareChainInfo', function() {
+    it('will set chain info properties on the request object', function(done) {
+      var worker = new WebWorker(options);
+      worker.network = bitcore.Networks.testnet;
+      worker.config = {
+        getNetworkName: sinon.stub().returns('testnet')
+      };
+      worker._updateLatestTip = sinon.stub();
+      worker.bitcoinHeight = 100;
+      worker.bitcoinHash = '0000000000000000d33b25b34da5bc2968e149ecf44e5b794e1ec45700d0be3e';
+      var middleware = worker._middlewareChainInfo();
+      var req = {};
+      var res = {};
+      middleware(req, res, function() {
+        req.network.should.equal(bitcore.Networks.testnet);
+        req.networkName.should.equal('testnet');
+        req.bitcoinHeight.should.equal(100);
+        req.bitcoinHash.should.equal('0000000000000000d33b25b34da5bc2968e149ecf44e5b794e1ec45700d0be3e');
+        done();
+      });
+    });
+  });
+  describe('#_setupMiddleware', function() {
+    it('will setup express application with all the middleware functions', function() {
+      var compression = sinon.stub().returns('compression');
+      var bodyParser = {
+        json: sinon.stub().returns('bodyparser-json'),
+        urlencoded: sinon.stub().returns('bodyparser-urlencoded')
+      };
+      var WebWorkerStubbed = proxyquire('../lib/web-workers', {
+        'compression': compression,
+        'body-parser': bodyParser
+      });
+      var worker = new WebWorkerStubbed(options);
+
+      var middlewareChainInfo = sinon.stub();
+      worker._middlewareChainInfo = sinon.stub().returns(middlewareChainInfo);
+
+      var middlewareLogger = sinon.stub();
+      worker._middlewareLogger = sinon.stub().returns(middlewareLogger);
+
+      var middlewareHeaders = sinon.stub();
+      worker._middlewareHeaders = sinon.stub().returns(middlewareHeaders);
+
+      var app = {
+        use: sinon.stub()
+      };
+      worker._setupMiddleware(app);
+      app.use.callCount.should.equal(7);
+      app.use.args[0][0].should.equal(middlewareChainInfo);
+      app.use.args[1][0].should.equal(middlewareLogger);
+      app.use.args[2][0].should.equal('compression');
+      app.use.args[3][0].should.equal('bodyparser-json');
+      app.use.args[4][0].should.equal('bodyparser-urlencoded');
+      app.use.args[5][0].should.equal(utils.enableCORS);
+      app.use.args[6][0].should.equal(middlewareHeaders);
+    });
+  });
+  describe('#_setupRoutes', function() {
+    it('will setup endpoint handlers with middleware', function() {
+      var worker = new WebWorker(options);
+
+      var endpointGetInfo = sinon.stub();
+      worker._endpointGetInfo = sinon.stub().returns(endpointGetInfo);
+
+      var endpointBalance = sinon.stub();
+      worker._endpointBalance = sinon.stub().returns(endpointBalance);
+
+      var endpointTxids = sinon.stub();
+      worker._endpointTxids = sinon.stub().returns(endpointTxids);
+
+      var endpointTransactions = sinon.stub();
+      worker._endpointTransactions = sinon.stub().returns(endpointTransactions);
+
+      var endpointUTXOs = sinon.stub();
+      worker._endpointUTXOs = sinon.stub().returns(endpointUTXOs);
+
+      var endpointPutAddress = sinon.stub();
+      worker._endpointPutAddress = sinon.stub().returns(endpointPutAddress);
+
+      var endpointPutWallet = sinon.stub();
+      worker._endpointPutWallet = sinon.stub().returns(endpointPutWallet);
+
+      var endpointPostAddresses = sinon.stub();
+      worker._endpointPostAddresses = sinon.stub().returns(endpointPostAddresses);
+
+      var endpointNotFound = sinon.stub();
+      worker._endpointNotFound = sinon.stub().returns(endpointNotFound);
+
+      var app = {
+        get: sinon.stub(),
+        put: sinon.stub(),
+        post: sinon.stub(),
+        use: sinon.stub()
+      };
+
+      worker._setupRoutes(app);
+
+      app.put.callCount.should.equal(2);
+      app.post.callCount.should.equal(1);
+      app.use.callCount.should.equal(1);
+      app.get.callCount.should.equal(5);
+
+      app.get.args[0][0].should.equal('/info');
+      app.get.args[0][1].should.equal(endpointGetInfo);
+
+      app.get.args[1][0].should.equal('/wallets/:walletId/balance');
+      app.get.args[1][1].should.equal(validators.checkWalletId);
+      app.get.args[1][2].should.equal(endpointBalance);
+
+      app.get.args[2][0].should.equal('/wallets/:walletId/txids');
+      app.get.args[2][1].should.equal(validators.checkWalletId);
+      app.get.args[2][2].should.equal(validators.checkRangeParams);
+      app.get.args[2][3].should.equal(endpointTxids);
+
+      app.get.args[3][0].should.equal('/wallets/:walletId/transactions');
+      app.get.args[3][1].should.equal(validators.checkWalletId);
+      app.get.args[3][2].should.equal(validators.checkRangeParams);
+      app.get.args[3][3].should.equal(endpointTransactions);
+
+      app.get.args[4][0].should.equal('/wallets/:walletId/utxos');
+      app.get.args[4][1].should.equal(validators.checkWalletId);
+      app.get.args[4][2].should.equal(endpointUTXOs);
+
+      app.put.args[0][0].should.equal('/wallets/:walletId/addresses/:address');
+      app.put.args[0][1].should.equal(validators.checkWalletId);
+      app.put.args[0][2].should.equal(validators.checkAddress);
+      app.put.args[0][3].should.equal(endpointPutAddress);
+
+      app.put.args[1][0].should.equal('/wallets/:walletId');
+      app.put.args[1][1].should.equal(validators.checkWalletId);
+      app.put.args[1][2].should.equal(endpointPutWallet);
+
+      app.post.args[0][0].should.equal('/wallets/:walletId/addresses');
+      app.post.args[0][1].should.equal(validators.checkWalletId);
+      app.post.args[0][2].should.equal(validators.checkAddresses);
+      app.post.args[0][3].should.equal(endpointPostAddresses);
+
+      app.use.args[0][0].should.equal(endpointNotFound);
+
     });
   });
 });
