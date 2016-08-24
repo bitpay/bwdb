@@ -46,6 +46,7 @@ describe('Wallet Writer Worker', function() {
       worker.bitcoinHash.should.equal('00000000000000000495aa8f7662444b0e26cbcbe1a2311b10d604eaa7df319e');
       worker.bitcoinHeight.should.equal(100);
       worker.clientsConfig.should.deep.equal(options.clientsConfig);
+      worker.queue.concurrency.should.equal(1);
     });
   });
   describe('#_tryAllClients', function() {
@@ -422,6 +423,9 @@ describe('Wallet Writer Worker', function() {
   });
   describe('#_queueWorkerIterator', function() {
     var sandbox = sinon.sandbox.create();
+    beforeEach(function() {
+      sandbox.stub(console, 'info');
+    });
     afterEach(function() {
       sandbox.restore();
     });
@@ -499,6 +503,39 @@ describe('Wallet Writer Worker', function() {
       worker._sendResponse.args[0][0].should.equal(socket);
       worker._sendResponse.args[0][1].should.equal(task.id);
       worker._sendResponse.args[0][2].should.deep.equal({message: 'error message'});
+    });
+    it('will defer task if error has deferrable flag', function(done) {
+      var worker = new WriterWorker(options);
+      var error = new Error('test');
+      error.deferrable = true;
+      worker._sendResponse = sinon.stub();
+      worker.methodsMap = {
+        'someTask': {
+          fn: sinon.stub().callsArgWith(2, error),
+          args: 2
+        }
+      };
+      worker.queue = {
+        push: sinon.stub()
+      };
+      var task = {
+        id: utils.getTaskId(),
+        method: 'someTask',
+        params: ['first', 'second']
+      };
+      worker._queueWorkerIterator(task, function() {
+        console.info.callCount.should.equal(1);
+        worker.queue.push.callCount.should.equal(1);
+        worker.queue.push.args[0][0].should.equal(task);
+        worker.queue.push.args[0][1].should.equal(100);
+        worker._sendResponse.callCount.should.equal(0);
+        task.deferred.should.equal(true);
+        worker._queueWorkerIterator(task, function() {
+          worker._sendResponse.callCount.should.equal(1);
+          worker.queue.push.callCount.should.equal(1);
+          done();
+        });
+      });
     });
   });
   describe('#_addUTXO', function() {
@@ -2192,6 +2229,26 @@ describe('Wallet Writer Worker', function() {
       done();
     });
   });
+  describe('#_queueSyncTask', function() {
+    it('will push a sync task to the top of the priority queue', function() {
+      var worker = new WriterWorker(options);
+      var otherTask = {
+        id: utils.getTaskId(),
+        method: 'otherTask',
+        params: []
+      };
+      worker._queueWorkerIterator = sinon.stub().callsArg(1);
+      worker.queue.push(otherTask, 10);
+      worker._queueSyncTask(400000, '00000000000cd5804bae7c5b938b7d68b8612e1a4eaee92a3849a607ff8e5539');
+      worker.queue.length().should.equal(2);
+      var headTask = worker.queue._tasks.head.data;
+      headTask.method.should.equal('sync');
+      headTask.params.should.deep.equal([{
+        bitcoinHeight: 400000,
+        bitcoinHash: '00000000000cd5804bae7c5b938b7d68b8612e1a4eaee92a3849a607ff8e5539'
+      }]);
+    });
+  });
   describe('#_addUTXOSToWallet', function() {
     var sandbox = sinon.sandbox.create();
     afterEach(function() {
@@ -2263,13 +2320,48 @@ describe('Wallet Writer Worker', function() {
         }
       ];
       var walletBlock = {
-        blockHash: new Buffer('000000000006ce3dc6ff2fcc8753fbb6549c87f300061ce26f7d64a38a2a3120', 'hex')
+        blockHash: new Buffer('000000000006ce3dc6ff2fcc8753fbb6549c87f300061ce26f7d64a38a2a3120', 'hex'),
+        height: 400000
       };
       sandbox.stub(console, 'info');
       worker._addUTXO = sinon.stub();
       worker._addUTXOSToWallet({}, walletBlock, '', newAddresses, function(err) {
         err.should.be.instanceOf(Error);
-        err.message.should.equal('Unexpected chain hash from address utxos');
+        err.message.should.equal('Unexpected chain tip hash from address utxos bitcoind query');
+        done();
+      });
+    });
+    it('will give error with "deferrable" and call queueSyncTask with height greater than current', function(done) {
+      var worker = new WriterWorker(options);
+      worker._queueSyncTask = sinon.stub();
+      var response = {
+        result: {
+          utxos: [],
+          hash: '00000000000cd5804bae7c5b938b7d68b8612e1a4eaee92a3849a607ff8e5539',
+          height: 400001
+        }
+      };
+      worker._clients[0] = {
+        getAddressUtxos: sinon.stub().callsArgWith(1, null, response)
+      };
+      var newAddresses = [
+        {
+          address: 'first'
+        }
+      ];
+      var walletBlock = {
+        blockHash: new Buffer('000000000006ce3dc6ff2fcc8753fbb6549c87f300061ce26f7d64a38a2a3120', 'hex'),
+        height: 400000
+      };
+      sandbox.stub(console, 'info');
+      worker._addUTXO = sinon.stub();
+      worker._addUTXOSToWallet({}, walletBlock, '', newAddresses, function(err) {
+        worker._queueSyncTask.callCount.should.equal(1);
+        worker._queueSyncTask.args[0][0].should.equal(400001);
+        worker._queueSyncTask.args[0][1].should.equal('00000000000cd5804bae7c5b938b7d68b8612e1a4eaee92a3849a607ff8e5539');
+        err.should.be.instanceOf(Error);
+        err.message.should.equal('Unexpected greater chain tip height from bitcoind query');
+        err.deferrable.should.equal(true);
         done();
       });
     });

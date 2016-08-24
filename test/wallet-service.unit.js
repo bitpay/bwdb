@@ -298,7 +298,7 @@ describe('Wallet Service', function() {
         }
       ];
       messages.encodeWriterMessage.args[0][2].should.deep.equal(params);
-      messages.encodeWriterMessage.args[0][3].should.equal(1);
+      messages.encodeWriterMessage.args[0][3].should.equal(0);
       write.args[0][0].toString().should.equal('buffer');
     });
   });
