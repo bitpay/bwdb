@@ -6,6 +6,30 @@
 
 A database for high and low volume bitcoin wallets
 
+## Development and Testing
+
+Installing:
+```bash
+git clone https://github.com/bitpay/bwdb
+cd bwdb
+npm install
+```
+
+Running all of the tests, coverage and linting:
+```bash
+npm run test
+npm run coverage
+npm run integration
+npm run regtest
+npm run jshint
+```
+
+Running the daemon and utilities:
+```bash
+./bin/bwdb --help
+./bin/bwdb-cli --help
+```
+
 ## Database Design
 
 Wallet data is stored in a [B+ tree](https://en.wikipedia.org/wiki/B%2B_tree) using the key/value pairs shown below. The design is optimized for wallet queries for balances, txids, transactions, addresses and utxos. Multiple wallets are supported, each with several million addresses and transactions.
