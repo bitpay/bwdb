@@ -46,8 +46,7 @@
     "morgan": "^1.7.0",
     "node-lmdb": "Venemo/node-lmdb#847ad58e7c1c881635d0f296696b8e6f0d7463c5",
     "progress": "^1.1.8",
-    "request": "^2.72.0",
-    "socket.io-client": "^1.4.8"
+    "request": "^2.72.0"
   },
   "devDependencies": {
     "chai": "^3.5.0",

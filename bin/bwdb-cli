@@ -44,7 +44,7 @@ program
   .command('createWallet <walletId>')
   .description('Create a new wallet')
   .action(function(walletId) {
-    client.createWallet(walletId, function(err, body) {
+    client.createWallet(walletId, function(err, res, body) {
       if (err) {
         throw err;
       }
@@ -56,7 +56,7 @@ program
   .command('getBalance <walletId>')
   .description('Get the balance of the wallet')
   .action(function(walletId) {
-    client.getBalance(walletId, function(err, body) {
+    client.getBalance(walletId, function(err, res, body) {
       if (err) {
         throw err;
       }
@@ -68,7 +68,7 @@ program
   .command('importAddress <walletId> <address>')
   .description('Import a new address')
   .action(function(walletId, address) {
-    client.importAddress(walletId, address, function(err, body) {
+    client.importAddress(walletId, address, function(err, res, body) {
       if (err) {
         throw err;
       }
@@ -95,7 +95,7 @@ program
       var chunkSize = 2000;
       var chunks = utils.splitArray(addresses, chunkSize);
       async.eachSeries(chunks, function(chunk, next) {
-        client.importAddresses(walletId, chunk, function(err, body) {
+        client.importAddresses(walletId, chunk, function(err) {
           if (err) {
             throw err;
           }
@@ -118,7 +118,7 @@ program
     if (limit) {
       options.limit = limit;
     }
-    client.getTransactions(walletId, options, function(err, body) {
+    client.getTransactions(walletId, options, function(err, res, body) {
       if (err) {
         throw err;
       }
@@ -131,7 +131,7 @@ program
   .description('View utxos for a wallet')
   .action(function(walletId) {
     var options = {};
-    client.getUTXOs(walletId, options, function(err, body) {
+    client.getUTXOs(walletId, options, function(err, res, body) {
       if (err) {
         throw err;
       }
@@ -195,7 +195,7 @@ program
     if (limit) {
       options.limit = limit;
     }
-    client.getTxids(walletId, options, function(err, body) {
+    client.getTxids(walletId, options, function(err, res, body) {
       if (err) {
         throw err;
       }
