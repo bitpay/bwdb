@@ -39,7 +39,7 @@ describe('Wallet Server & Client', function() {
 
     async.series([
       function(next) {
-        client.getTxids(walletId, {}, function(err, result) {
+        client.getTxids(walletId, {}, function(err, res, result) {
           if (err) {
             return next(err);
           }
@@ -47,7 +47,7 @@ describe('Wallet Server & Client', function() {
           next();
         });
       }, function(next) {
-        client.getBalance(walletId, function(err, result) {
+        client.getBalance(walletId, function(err, res, result) {
           if (err) {
             return next(err);
           }
@@ -55,7 +55,7 @@ describe('Wallet Server & Client', function() {
           next();
         });
       }, function(next) {
-        client.getUTXOs(walletId, {}, function(err, result) {
+        client.getUTXOs(walletId, {}, function(err, res, result) {
           if (err) {
             return next(err);
           }
@@ -266,7 +266,7 @@ describe('Wallet Server & Client', function() {
 
   var walletId = 'f4c4dd2e316dd51f962dba79816f4f36e1b371f81e9c33be456ed091c4107d3a';
   it('will create a wallet', function(done) {
-    client.createWallet(walletId, function(err, result) {
+    client.createWallet(walletId, function(err, res, result) {
       if (err) {
         return done(err);
       }
@@ -274,7 +274,7 @@ describe('Wallet Server & Client', function() {
     });
   });
   it('will import an address', function(done) {
-    client.importAddress(walletId, testAddress, function(err, result) {
+    client.importAddress(walletId, testAddress, function(err, res, result) {
       if (err) {
         return done(err);
       }
@@ -296,7 +296,7 @@ describe('Wallet Server & Client', function() {
       });
     });
     it('will update the balance for the wallet', function(done) {
-      client.getBalance(walletId, function(err, result) {
+      client.getBalance(walletId, function(err, res, result) {
         if (err) {
           return done(err);
         }
@@ -305,7 +305,7 @@ describe('Wallet Server & Client', function() {
       });
     });
     it('will get the latest txids', function(done) {
-      client.getTxids(walletId, {}, function(err, result) {
+      client.getTxids(walletId, {}, function(err, res, result) {
         if (err) {
           return done(err);
         }
@@ -315,7 +315,7 @@ describe('Wallet Server & Client', function() {
       });
     });
     it('will get the latest transactions', function(done) {
-      client.getTransactions(walletId, {}, function(err, result) {
+      client.getTransactions(walletId, {}, function(err, res, result) {
         if (err) {
           return done(err);
         }
@@ -325,7 +325,7 @@ describe('Wallet Server & Client', function() {
       });
     });
     it('will get utxos', function(done) {
-      client.getUTXOs(walletId, {}, function(err, result) {
+      client.getUTXOs(walletId, {}, function(err, res, result) {
         if (err) {
           return done(err);
         }
@@ -340,7 +340,7 @@ describe('Wallet Server & Client', function() {
     });
     it('will remove utxo after being spent', function(done) {
       this.timeout(5000);
-      client.getUTXOs(walletId, {}, function(err, result1) {
+      client.getUTXOs(walletId, {}, function(err, res, result1) {
         if (err) {
           return done(err);
         }
@@ -362,7 +362,7 @@ describe('Wallet Server & Client', function() {
           if (err) {
             return done(err);
           }
-          client.getUTXOs(walletId, {}, function(err, result2) {
+          client.getUTXOs(walletId, {}, function(err, res, result2) {
             if (err) {
               return done(err);
             }
@@ -424,7 +424,7 @@ describe('Wallet Server & Client', function() {
       ], done);
     });
     it('will have the correct txids', function(done) {
-      client.getTxids(walletId, {}, function(err, result) {
+      client.getTxids(walletId, {}, function(err, res, result) {
         if (err) {
           return done(err);
         }
@@ -433,7 +433,7 @@ describe('Wallet Server & Client', function() {
       });
     });
     it('will have the correct balance', function(done) {
-      client.getBalance(walletId, function(err, result) {
+      client.getBalance(walletId, function(err, res, result) {
         if (err) {
           return done(err);
         }
@@ -442,7 +442,7 @@ describe('Wallet Server & Client', function() {
       });
     });
     it('will have the correct utxos', function(done) {
-      client.getUTXOs(walletId, {}, function(err, result) {
+      client.getUTXOs(walletId, {}, function(err, res, result) {
         if (err) {
           return done(err);
         }
