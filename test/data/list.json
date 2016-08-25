@@ -1,0 +1,277 @@
+[
+  {
+    "comment": "sending transaction",
+    "transaction": {
+      "hash": "5aa8e36f9423ee5fcf17c1d0d45d6988b8a5773eae8ad25d945bf34352040009",
+      "blockHash": "000000000000265dad8db0728e318aabd0098e69a82984f8c1c5b9d55de5fd9a",
+      "height": 105001,
+      "blockTimestamp": 1296211474,
+      "blockIndex": 100,
+      "locktime": 0,
+      "version": 1,
+      "inputSatoshis": 1888000000,
+      "outputSatoshis": 1887000000,
+      "feeSatoshis": 1000000,
+      "inputs": [
+        {
+          "wallet": true,
+          "prevTxId": "791dca118db6358e66f15a5cafafe762f06ce909baee235685f03a0fefbe3382",
+          "outputIndex": 1,
+          "satoshis": 1888000000,
+          "address": "1LMoKwPnH4zuXd48kmHprGJeQkJqGoNsQT",
+          "sequence": 4294967295
+        }
+      ],
+      "outputs": [
+        {
+          "wallet": false,
+          "satoshis": 1887000000,
+          "script": "76a9149490023a1f27c8f0956a963f365f726872dc359288ac",
+          "address": "1EYXXHs5gV4pc7QAddmDj5z7m14QPHGvWL"
+        }
+      ]
+    },
+    "list": [
+      {
+        "height": 105001,
+        "txid": "5aa8e36f9423ee5fcf17c1d0d45d6988b8a5773eae8ad25d945bf34352040009",
+        "address": "1EYXXHs5gV4pc7QAddmDj5z7m14QPHGvWL",
+        "blockHash": "000000000000265dad8db0728e318aabd0098e69a82984f8c1c5b9d55de5fd9a",
+        "blockIndex": 100,
+        "blockTime": 1296211474,
+        "category": "send",
+        "outputIndex": 0,
+        "confirmations": 6,
+        "satoshis": -1887000000,
+        "feeSatoshis": 1000000
+      }
+    ]
+  },
+  {
+    "options": {
+      "showBitcoinAmount": true
+    },
+    "comment": "sending transaction, with bitcoin amounts",
+    "transaction": {
+      "hash": "5aa8e36f9423ee5fcf17c1d0d45d6988b8a5773eae8ad25d945bf34352040009",
+      "blockHash": "000000000000265dad8db0728e318aabd0098e69a82984f8c1c5b9d55de5fd9a",
+      "height": 105001,
+      "blockTimestamp": 1296211474,
+      "blockIndex": 100,
+      "locktime": 0,
+      "version": 1,
+      "inputSatoshis": 1888000000,
+      "outputSatoshis": 1887000000,
+      "feeSatoshis": 1000000,
+      "inputs": [
+        {
+          "wallet": true,
+          "prevTxId": "791dca118db6358e66f15a5cafafe762f06ce909baee235685f03a0fefbe3382",
+          "outputIndex": 1,
+          "satoshis": 1888000000,
+          "address": "1LMoKwPnH4zuXd48kmHprGJeQkJqGoNsQT",
+          "sequence": 4294967295
+        }
+      ],
+      "outputs": [
+        {
+          "wallet": false,
+          "satoshis": 1887000000,
+          "script": "76a9149490023a1f27c8f0956a963f365f726872dc359288ac",
+          "address": "1EYXXHs5gV4pc7QAddmDj5z7m14QPHGvWL"
+        }
+      ]
+    },
+    "list": [
+      {
+        "height": 105001,
+        "txid": "5aa8e36f9423ee5fcf17c1d0d45d6988b8a5773eae8ad25d945bf34352040009",
+        "address": "1EYXXHs5gV4pc7QAddmDj5z7m14QPHGvWL",
+        "blockHash": "000000000000265dad8db0728e318aabd0098e69a82984f8c1c5b9d55de5fd9a",
+        "blockIndex": 100,
+        "blockTime": 1296211474,
+        "category": "send",
+        "outputIndex": 0,
+        "confirmations": 6,
+        "amount": -18.87,
+        "fee": 0.01
+      }
+    ]
+  },
+  {
+    "comment": "receiving transaction",
+    "transaction": {
+      "hash": "5aa8e36f9423ee5fcf17c1d0d45d6988b8a5773eae8ad25d945bf34352040009",
+      "blockHash": "000000000000265dad8db0728e318aabd0098e69a82984f8c1c5b9d55de5fd9a",
+      "height": 105001,
+      "blockTimestamp": 1296211474,
+      "blockIndex": 100,
+      "locktime": 0,
+      "version": 1,
+      "inputSatoshis": 1888000000,
+      "outputSatoshis": 1887000000,
+      "feeSatoshis": 1000000,
+      "inputs": [
+        {
+          "wallet": false,
+          "prevTxId": "791dca118db6358e66f15a5cafafe762f06ce909baee235685f03a0fefbe3382",
+          "outputIndex": 1,
+          "satoshis": 1888000000,
+          "address": "1LMoKwPnH4zuXd48kmHprGJeQkJqGoNsQT",
+          "sequence": 4294967295
+        }
+      ],
+      "outputs": [
+        {
+          "wallet": false,
+          "satoshis": 1000,
+          "script": "76a9149490023a1f27c8f0956a963f365f726872dc359288ac",
+          "address": "1FvzCLoTPGANNjWoUo6jUGuAG3wg1w4YjR"
+        },
+        {
+          "wallet": true,
+          "satoshis": 1886999000,
+          "script": "76a9149490023a1f27c8f0956a963f365f726872dc359288ac",
+          "address": "1EYXXHs5gV4pc7QAddmDj5z7m14QPHGvWL"
+        }
+      ]
+    },
+    "list": [
+      {
+        "height": 105001,
+        "txid": "5aa8e36f9423ee5fcf17c1d0d45d6988b8a5773eae8ad25d945bf34352040009",
+        "address": "1EYXXHs5gV4pc7QAddmDj5z7m14QPHGvWL",
+        "blockHash": "000000000000265dad8db0728e318aabd0098e69a82984f8c1c5b9d55de5fd9a",
+        "blockIndex": 100,
+        "blockTime": 1296211474,
+        "category": "receive",
+        "outputIndex": 1,
+        "confirmations": 6,
+        "satoshis": 1886999000
+      }
+    ]
+  },
+  {
+    "comment": "join transaction, and receiving",
+    "transaction": {
+      "hash": "5aa8e36f9423ee5fcf17c1d0d45d6988b8a5773eae8ad25d945bf34352040009",
+      "blockHash": "000000000000265dad8db0728e318aabd0098e69a82984f8c1c5b9d55de5fd9a",
+      "height": 105001,
+      "blockTimestamp": 1296211474,
+      "blockIndex": 100,
+      "locktime": 0,
+      "version": 1,
+      "inputSatoshis": 2000,
+      "outputSatoshis": 2000,
+      "feeSatoshis": 0,
+      "inputs": [
+        {
+          "wallet": true,
+          "prevTxId": "791dca118db6358e66f15a5cafafe762f06ce909baee235685f03a0fefbe3382",
+          "outputIndex": 1,
+          "satoshis": 1000,
+          "address": "1LMoKwPnH4zuXd48kmHprGJeQkJqGoNsQT",
+          "sequence": 4294967295
+        },
+        {
+          "wallet": false,
+          "prevTxId": "791dca118db6358e66f15a5cafafe762f06ce909baee235685f03a0fefbe3382",
+          "outputIndex": 2,
+          "satoshis": 2000,
+          "address": "15ubicBBWFnvoZLT7GiU2qxjRaKJPdkDMG",
+          "sequence": 4294967295
+        }
+      ],
+      "outputs": [
+        {
+          "wallet": true,
+          "satoshis": 1500,
+          "script": "76a9149490023a1f27c8f0956a963f365f726872dc359288ac",
+          "address": "1EYXXHs5gV4pc7QAddmDj5z7m14QPHGvWL"
+        },
+        {
+          "wallet": false,
+          "satoshis": 1500,
+          "script": "76a9149490023a1f27c8f0956a963f360f726872dc359288ac",
+          "address": "1JfbZRwdDHKZmuiZgYArJZhcuuzuw2HuMu"
+        }
+      ]
+    },
+    "list": [
+      {
+        "height": 105001,
+        "txid": "5aa8e36f9423ee5fcf17c1d0d45d6988b8a5773eae8ad25d945bf34352040009",
+        "address": "1EYXXHs5gV4pc7QAddmDj5z7m14QPHGvWL",
+        "blockHash": "000000000000265dad8db0728e318aabd0098e69a82984f8c1c5b9d55de5fd9a",
+        "blockIndex": 100,
+        "blockTime": 1296211474,
+        "category": "join",
+        "outputIndex": 0,
+        "confirmations": 6,
+        "satoshis": 500
+      }
+    ]
+  },
+  {
+    "comment": "join transaction, and sending",
+    "transaction": {
+      "hash": "5aa8e36f9423ee5fcf17c1d0d45d6988b8a5773eae8ad25d945bf34352040009",
+      "blockHash": "000000000000265dad8db0728e318aabd0098e69a82984f8c1c5b9d55de5fd9a",
+      "height": 105001,
+      "blockTimestamp": 1296211474,
+      "blockIndex": 100,
+      "locktime": 0,
+      "version": 1,
+      "inputSatoshis": 2000,
+      "outputSatoshis": 2000,
+      "feeSatoshis": 0,
+      "inputs": [
+        {
+          "wallet": true,
+          "prevTxId": "791dca118db6358e66f15a5cafafe762f06ce909baee235685f03a0fefbe3382",
+          "outputIndex": 1,
+          "satoshis": 1000,
+          "address": "1LMoKwPnH4zuXd48kmHprGJeQkJqGoNsQT",
+          "sequence": 4294967295
+        },
+        {
+          "wallet": false,
+          "prevTxId": "791dca118db6358e66f15a5cafafe762f06ce909baee235685f03a0fefbe3382",
+          "outputIndex": 2,
+          "satoshis": 2000,
+          "address": "15ubicBBWFnvoZLT7GiU2qxjRaKJPdkDMG",
+          "sequence": 4294967295
+        }
+      ],
+      "outputs": [
+        {
+          "wallet": true,
+          "satoshis": 500,
+          "script": "76a9149490023a1f27c8f0956a963f365f726872dc359288ac",
+          "address": "1EYXXHs5gV4pc7QAddmDj5z7m14QPHGvWL"
+        },
+        {
+          "wallet": false,
+          "satoshis": 2500,
+          "script": "76a9149490023a1f27c8f0956a963f360f726872dc359288ac",
+          "address": "1JfbZRwdDHKZmuiZgYArJZhcuuzuw2HuMu"
+        }
+      ]
+    },
+    "list": [
+      {
+        "height": 105001,
+        "txid": "5aa8e36f9423ee5fcf17c1d0d45d6988b8a5773eae8ad25d945bf34352040009",
+        "address": "1JfbZRwdDHKZmuiZgYArJZhcuuzuw2HuMu",
+        "blockHash": "000000000000265dad8db0728e318aabd0098e69a82984f8c1c5b9d55de5fd9a",
+        "blockIndex": 100,
+        "blockTime": 1296211474,
+        "category": "join",
+        "outputIndex": 1,
+        "confirmations": 6,
+        "satoshis": -500,
+        "feeSatoshis": 0
+      }
+    ]
+  }
+]
