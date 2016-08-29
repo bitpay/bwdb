@@ -208,8 +208,12 @@ describe('Wallet Server & Client', function() {
       server = new Server({network: 'regtest', configPath: configPath});
 
       var config = new Config({network: 'regtest', path: configPath});
-      var url = config.getURLSync();
-      client = new Client({network: 'regtest', url: url});
+      config.getURL(function(err, url) {
+        if (err) {
+          return done(err);
+        }
+        client = new Client({network: 'regtest', url: url});
+      });
 
       regtest = bitcore.Networks.get('regtest');
       should.exist(regtest);

@@ -243,8 +243,12 @@ describe('Wallet Config', function() {
         }
       });
       var config = new Config({network: 'livenet'});
-      var url = config.getURLSync();
-      url.should.equal('https://localhost:18333');
+      config.getURL(function(err, url) {
+        if (err) {
+          return done(err);
+        }
+        url.should.equal('https://localhost:18333');
+      });
     });
     it('will return URL sync http', function() {
       var readFileSync = sinon.stub().returns('{"wallet": {"http":true,"port":18333}}');
@@ -254,8 +258,12 @@ describe('Wallet Config', function() {
         }
       });
       var config = new Config({network: 'livenet'});
-      var url = config.getURLSync();
-      url.should.equal('http://localhost:18333');
+      config.getURL(function(err, url) {
+        if (err) {
+          return done(err);
+        }
+        url.should.equal('http://localhost:18333');
+      });
     });
   });
 });
