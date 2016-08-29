@@ -30,6 +30,12 @@ Running the daemon and utilities:
 ./bin/bwdb-cli --help
 ```
 
+And with testnet *(or regtest)*:
+```bash
+./bin/bwdb --testnet <command>
+./bin/bwdb-cli --testnet <command>
+```
+
 ## Database Design
 
 Wallet data is stored in a [B+ tree](https://en.wikipedia.org/wiki/B%2B_tree) using the key/value pairs shown below. The design is optimized for wallet queries for balances, txids, transactions, addresses and utxos. Multiple wallets are supported, each with several million addresses and transactions.
