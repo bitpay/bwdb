@@ -21,4 +21,5 @@ coverage/*
 **/*.config
 **/*.creator
 *.log
+regtest/data/*.lmdb
 .DS_Store

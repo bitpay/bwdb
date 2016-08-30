@@ -207,52 +207,51 @@ describe('Wallet Server & Client', function() {
 
       server = new Server({network: 'regtest', configPath: configPath});
 
-      var config = new Config({network: 'regtest', path: configPath});
-      config.getURL(function(err, url) {
+      client = new Client({network: 'regtest', configPath: configPath});
+
+      client.connect(function(err) {
         if (err) {
           return done(err);
         }
-        client = new Client({network: 'regtest', url: url});
-      });
+        regtest = bitcore.Networks.get('regtest');
+        should.exist(regtest);
 
-      regtest = bitcore.Networks.get('regtest');
-      should.exist(regtest);
-
-      server.on('error', function(err) {
-        console.error(err);
-      });
-
-      server.start(function(err) {
-        if (err) {
-          return done(err);
-        }
-
-        bitcoinClient = new BitcoinRPC({
-          protocol: 'http',
-          host: '127.0.0.1',
-          port: 30331,
-          user: 'bitcoin',
-          pass: 'local321',
-          rejectUnauthorized: false
+        server.on('error', function(err) {
+          console.error(err);
         });
 
-        var syncedHandler = function(height) {
-          // check that the block chain is generated
-          if (height >= 150) {
-            server.node.services.bitcoind.removeListener('synced', syncedHandler);
-
-            // check that client can connect
-            async.retry({times: 5, interval: 2000}, function(next) {
-              client.getInfo(next);
-            }, done);
-          }
-        };
-
-        server.node.services.bitcoind.on('synced', syncedHandler);
-        bitcoinClient.generate(150, function(err) {
+        server.start(function(err) {
           if (err) {
-            throw err;
+            return done(err);
           }
+
+          bitcoinClient = new BitcoinRPC({
+            protocol: 'http',
+            host: '127.0.0.1',
+            port: 30331,
+            user: 'bitcoin',
+            pass: 'local321',
+            rejectUnauthorized: false
+          });
+
+          var syncedHandler = function(height) {
+            // check that the block chain is generated
+            if (height >= 150) {
+              server.node.services.bitcoind.removeListener('synced', syncedHandler);
+
+              // check that client can connect
+              async.retry({times: 5, interval: 2000}, function(next) {
+                client.getInfo(next);
+              }, done);
+            }
+          };
+
+          server.node.services.bitcoind.on('synced', syncedHandler);
+          bitcoinClient.generate(150, function(err) {
+            if (err) {
+              throw err;
+            }
+          });
         });
       });
     });

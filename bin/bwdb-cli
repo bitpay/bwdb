@@ -22,7 +22,7 @@ program
   .option('-r, --regtest', 'Use regtest network')
   .parse(process.argv);
 
-var network = 'livenet';
+var network;
 if (program.testnet) {
   network = 'testnet';
 } else if (program.regtest) {
@@ -34,16 +34,16 @@ if (program.config && program.url) {
   throw new Error('--config and --url are mutually exclusive, please use one or the other.');
 } else if (program.url) {
   client = new Client({network: network, url: program.url});
-  main();
+  client.connect(main);
 } else {
-  var config = new Config({network: network});
-  config.getURL(function(err, url) {
-    client = new Client({network: network, url: url});
-    main();
-  });
+  client = new Client({network: network, configPath: program.config});
+  client.connect(main);
 }
 
-function main() {
+function main(err) {
+  if (err) {
+    throw err
+  }
   program
     .command('createWallet <walletId>')
     .description('Create a new wallet')
