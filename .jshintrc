@@ -12,9 +12,9 @@
   "latedef": "nofunc",
   "maxcomplexity": 10,
   "maxdepth": 4,
-  "maxerr": 99999, // so that jshint doesn't give up on a file with tons of errors
+  "maxerr": 99999,
   "maxlen": 120,
-  "maxparams": 5,
+  "maxparams": 6,
   "maxstatements": 20,
   "mocha": true,
   "newcap": true,

@@ -5,8 +5,6 @@ var should = chai.should();
 var sinon = require('sinon');
 var proxyquire = require('proxyquire');
 
-var bitcore = require('bitcore-lib');
-
 var Client = require('../../lib/client');
 var db = require('../../lib/client/db');
 var utils = require('../../lib/utils');

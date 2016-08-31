@@ -16,3 +16,4 @@ script:
   - npm run test
   - npm run integration
   - npm run regtest
+  - npm run jshint
