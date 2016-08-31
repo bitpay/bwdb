@@ -46,7 +46,9 @@
     "morgan": "^1.7.0",
     "node-lmdb": "Venemo/node-lmdb#34e7a34ad795d2d1740ec6e7c299fe57bf8f1621",
     "progress": "^1.1.8",
-    "request": "^2.72.0"
+    "request": "^2.72.0",
+    "scrypt": "^6.0.3",
+    "ttyread": "^1.0.2"
   },
   "devDependencies": {
     "chai": "^3.5.0",

@@ -656,4 +656,41 @@ describe('Wallet Utils', function() {
       utils.satoshisToBitcoin(1999, 0.00001999);
     });
   });
+
+  describe('#encryptSecret', function() {
+    it('will encrypt a hashed passphrase', function(done) {
+      var passphrase = 'abc123';
+      var salt = 'NaCl';
+      var secret = new Buffer('bf0ecd712189f385a846c333c1985b18f140046dec9246869ca9404f1c8cfe62', 'hex');
+      utils.encryptSecret({
+        secret:secret,
+        passphrase: passphrase,
+        salt: salt }, function(err, res) {
+          if (err) {
+            return done(err);
+          }
+          res.should.equal('079a0bbe107462f5dc8761126cc968e6aa489d2dafce16d93a174b7e21e0e77ce1bdd38e6d6f6654f7acd9f4a7470a11');
+          done();
+      });
+    });
+  });
+  describe('#decryptSecret', function() {
+    it('will decrypt a hashed passphrase', function(done) {
+      var passphrase = 'abc123';
+      var salt = 'NaCl';
+      var cipherText = '079a0bbe107462f5dc8761126cc968e6aa489d2dafce16d93a174b7e21e0e77ce1bdd38e6d6f6654f7acd9f4a7470a11';
+      var iv = 'a2a87c569ba552a5b615ff60e691a8a0';
+      utils.decryptSecret({
+        cipherText: cipherText,
+        passphrase: passphrase,
+        salt: salt,
+        iv: iv }, function(err, res) {
+          if (err) {
+            return done(err);
+          }
+          res.toString('hex').should.equal('bf0ecd712189f385a846c333c1985b18f140046dec9246869ca9404f1c8cfe62');
+          done();
+      });
+    });
+  });
 });

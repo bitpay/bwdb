@@ -45,6 +45,15 @@ function main(err) {
     throw err
   }
   program
+    .command('generateKey')
+    .description('Generate a key pair')
+    .action(function() {
+      utils.acquirePassphrase(function(err, passphrase){
+        //hash, generate a random seed
+      });
+    });
+
+  program
     .command('createWallet <walletId>')
     .description('Create a new wallet')
     .action(function(walletId) {
