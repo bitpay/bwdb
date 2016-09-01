@@ -693,4 +693,82 @@ describe('Wallet Utils', function() {
       });
     });
   });
+  describe('#generateSecret', function() {
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
+    });
+    it('should generate a cipherText and salt', function(done) {
+      sandbox.stub(utils, 'acquirePassphrase').callsArgWith(0, null, 'passphrase');
+      sandbox.stub(utils, 'encryptSecret').callsArgWith(1, null, 'cipherText');
+      utils.generateSecret(function(err, cipherText, salt) {
+        if (err) {
+          return done(err);
+        }
+        cipherText.should.equal('cipherText');
+        salt.should.be.a('string');
+        salt.length.should.equal(64);
+        utils.acquirePassphrase.callCount.should.equal(1);
+        utils.encryptSecret.callCount.should.equal(1);
+        utils.encryptSecret.args[0][0].passphrase.should.equal('passphrase');
+        done();
+      });
+    });
+    it('should give error from acquirePassphrase', function(done) {
+      sandbox.stub(utils, 'acquirePassphrase').callsArgWith(0, new Error('test message'));
+      sandbox.stub(utils, 'encryptSecret');
+      utils.generateSecret(function(err, cipherText, salt) {
+        err.message.should.equal('test message');
+        utils.acquirePassphrase.callCount.should.equal(1);
+        utils.encryptSecret.callCount.should.equal(0);
+        done();
+      });
+    });
+    it('should give error from encryptSecret', function(done) {
+      sandbox.stub(utils, 'acquirePassphrase').callsArgWith(0, null, 'passphrase');
+      sandbox.stub(utils, 'encryptSecret').callsArgWith(1, new Error('test message from encryptSecret'));
+      utils.generateSecret(function(err, cipherText, salt) {
+        err.message.should.equal('test message from encryptSecret');
+        utils.acquirePassphrase.callCount.should.equal(1);
+        utils.encryptSecret.callCount.should.equal(1);
+        done();
+      });
+    });
+  });
+  describe('#confirm', function() {
+    it('confirm', function(done) {
+      var utils = proxyquire('../lib/utils', {
+        ttyread: sinon.stub().callsArgWith(1, null, 'y')
+      });
+      utils.confirm('some question', function(err, answer) {
+        if (err) {
+          return done(err);
+        }
+        answer.should.equal(true);
+        done();
+      });
+    });
+    it('not confirm', function(done) {
+      var utils = proxyquire('../lib/utils', {
+        ttyread: sinon.stub().callsArgWith(1, null, 'N')
+      });
+      utils.confirm('some question', function(err, answer) {
+        if (err) {
+          return done(err);
+        }
+        answer.should.equal(false);
+        done();
+      });
+    });
+    it('error', function(done) {
+      var utils = proxyquire('../lib/utils', {
+        ttyread: sinon.stub().callsArgWith(1, new Error('some error'))
+      });
+      utils.confirm('some question', function(err, answer) {
+        err.message.should.equal('some error');
+        answer.should.equal(false);
+        done();
+      });
+    });
+  });
 });

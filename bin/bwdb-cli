@@ -48,9 +48,31 @@ function main(err) {
     .command('generateKey')
     .description('Generate a key pair')
     .action(function() {
-      utils.acquirePassphrase(function(err, passphrase){
-        //hash, generate a random seed
-      });
+      function finish() {
+        utils.generateSecret(function(err, cipherText, salt) {
+          if (err) {
+            throw err;
+          }
+          client.config.writeApiKey(cipherText, salt, function(err) {
+            if (err) {
+              throw err;
+            }
+            console.log('Encrypted key written to ' + client.config.getConfigFilePath());
+          });
+        });
+      }
+      if (client.config.data.apiKey) {
+        utils.confirm('API Key exists, confirm overwrite?', function(err, answer) {
+          if (err) {
+            throw err;
+          }
+          if (answer) {
+            finish();
+          }
+        });
+      } else {
+        finish();
+      }
     });
 
   program
