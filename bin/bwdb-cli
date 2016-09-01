@@ -62,7 +62,7 @@ function main(err) {
         });
       }
       if (client.config.data.apiKey) {
-        utils.confirm('API Key exists, confirm overwrite?', function(err, answer) {
+        utils.confirm('Api Key exists, confirm overwrite?', function(err, answer) {
           if (err) {
             throw err;
           }
@@ -79,11 +79,16 @@ function main(err) {
     .command('createWallet <walletId>')
     .description('Create a new wallet')
     .action(function(walletId) {
-      client.createWallet(walletId, function(err, res, body) {
+      client.config.unlockApiKey(function(err) {
         if (err) {
           throw err;
         }
-        console.log(body);
+        client.createWallet(walletId, function(err, res, body) {
+          if (err) {
+            throw err;
+          }
+          console.log(body);
+        });
       });
     });
 

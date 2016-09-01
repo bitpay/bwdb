@@ -48,6 +48,7 @@
     "progress": "^1.1.8",
     "request": "^2.72.0",
     "scrypt": "^6.0.3",
+    "secp256k1": "^3.2.0",
     "ttyread": "^1.0.2"
   },
   "devDependencies": {

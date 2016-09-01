@@ -145,13 +145,11 @@ describe('Wallet Client', function() {
       };
       var body = {};
       var request = sinon.stub().callsArgWith(1, null, res, body);
-      var ClientStubbed = proxyquire('../../lib/client', {
-        request: request
-      });
-      var client = new ClientStubbed({
+      var client = new Client({
         network: 'testnet',
         configPath: '/tmp'
       });
+      client._signRequest = request;
       var params = {hello: 'world'};
       client.config = {
         url: 'something',
@@ -176,13 +174,11 @@ describe('Wallet Client', function() {
       };
       var body = {};
       var request = sinon.stub().callsArgWith(1, null, res, body);
-      var ClientStubbed = proxyquire('../../lib/client', {
-        request: request
-      });
-      var client = new ClientStubbed({
+      var client = new Client({
         network: 'testnet',
         configPath: '/tmp'
       });
+      client._signRequest = request;
       var params = {hello: 'world'};
       client.config = {
         url: 'something',
@@ -200,13 +196,11 @@ describe('Wallet Client', function() {
     });
     it('will handle error from request', function(done) {
       var request = sinon.stub().callsArgWith(1, new Error('test'));
-      var ClientStubbed = proxyquire('../../lib/client', {
-        request: request
-      });
-      var client = new ClientStubbed({
+      var client = new Client({
         network: 'testnet',
         configPath: '/tmp'
       });
+      client._signRequest = request;
       client._request('POST', '/info', {}, function(err) {
         should.exist(err);
         err.should.be.instanceOf(Error);
@@ -220,13 +214,11 @@ describe('Wallet Client', function() {
       };
       var body = {};
       var request = sinon.stub().callsArgWith(1, null, res, body);
-      var ClientStubbed = proxyquire('../../lib/client', {
-        request: request
-      });
-      var client = new ClientStubbed({
+      var client = new Client({
         network: 'testnet',
         configPath: '/tmp'
       });
+      client._signRequest = request;
       client._request('GET', '/info', {}, function(err) {
         err.should.be.instanceOf(Error);
         err.statusCode.should.equal(404);
@@ -239,13 +231,11 @@ describe('Wallet Client', function() {
       };
       var body = {};
       var request = sinon.stub().callsArgWith(1, null, res, body);
-      var ClientStubbed = proxyquire('../../lib/client', {
-        request: request
-      });
-      var client = new ClientStubbed({
+      var client = new Client({
         network: 'testnet',
         configPath: '/tmp'
       });
+      client._signRequest = request;
       client._request('GET', '/info', {}, function(err) {
         err.should.be.instanceOf(Error);
         err.statusCode.should.equal(400);
@@ -258,13 +248,11 @@ describe('Wallet Client', function() {
       };
       var body = {};
       var request = sinon.stub().callsArgWith(1, null, res, body);
-      var ClientStubbed = proxyquire('../../lib/client', {
-        request: request
-      });
-      var client = new ClientStubbed({
+      var client = new Client({
         network: 'testnet',
         configPath: '/tmp'
       });
+      client._signRequest = request;
       client._request('GET', '/info', {}, function(err) {
         err.should.be.instanceOf(Error);
         err.statusCode.should.equal(500);
@@ -277,13 +265,11 @@ describe('Wallet Client', function() {
       };
       var body = {};
       var request = sinon.stub().callsArgWith(1, null, res, body);
-      var ClientStubbed = proxyquire('../../lib/client', {
-        request: request
-      });
-      var client = new ClientStubbed({
+      var client = new Client({
         network: 'testnet',
         configPath: '/tmp'
       });
+      client._signRequest = request;
       client._request('GET', '/info', {}, function(err) {
         err.should.be.instanceOf(Error);
         err.statusCode.should.equal(501);
@@ -301,13 +287,11 @@ describe('Wallet Client', function() {
       };
       var body = {};
       var request = sinon.stub().callsArgWith(1, null, res, body);
-      var ClientStubbed = proxyquire('../../lib/client', {
-        request: request
-      });
-      var client = new ClientStubbed({
+      var client = new Client({
         network: 'testnet',
         configPath: '/tmp'
       });
+      client._signRequest = request;
       client.config = {
         url: 'something',
         getNetworkName: sinon.stub().returns('testnet')
@@ -328,13 +312,11 @@ describe('Wallet Client', function() {
       };
       var body = {};
       var request = sinon.stub().callsArgWith(1, null, res, body);
-      var ClientStubbed = proxyquire('../../lib/client', {
-        request: request
-      });
-      var client = new ClientStubbed({
+      var client = new Client({
         network: 'testnet',
         configPath: '/tmp'
       });
+      client._signRequest = request;
       var params = {hello: 'world'};
       client.config = {
         url: 'something',
