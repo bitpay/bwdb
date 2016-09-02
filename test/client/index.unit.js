@@ -144,7 +144,7 @@ describe('Wallet Client', function() {
         }
       };
       var body = {};
-      var request = sinon.stub().callsArgWith(1, null, res, body);
+      var request = sinon.stub().callsArgWith(1, null, res, JSON.stringify(body));
       var client = new Client({
         network: 'testnet',
         configPath: '/tmp'
@@ -173,7 +173,7 @@ describe('Wallet Client', function() {
         }
       };
       var body = {};
-      var request = sinon.stub().callsArgWith(1, null, res, body);
+      var request = sinon.stub().callsArgWith(1, null, res, JSON.stringify(body));
       var client = new Client({
         network: 'testnet',
         configPath: '/tmp'
@@ -213,7 +213,7 @@ describe('Wallet Client', function() {
         statusCode: 404
       };
       var body = {};
-      var request = sinon.stub().callsArgWith(1, null, res, body);
+      var request = sinon.stub().callsArgWith(1, null, res, JSON.stringify(body));
       var client = new Client({
         network: 'testnet',
         configPath: '/tmp'
@@ -230,7 +230,7 @@ describe('Wallet Client', function() {
         statusCode: 400
       };
       var body = {};
-      var request = sinon.stub().callsArgWith(1, null, res, body);
+      var request = sinon.stub().callsArgWith(1, null, res, JSON.stringify(body));
       var client = new Client({
         network: 'testnet',
         configPath: '/tmp'
@@ -247,7 +247,7 @@ describe('Wallet Client', function() {
         statusCode: 500
       };
       var body = {};
-      var request = sinon.stub().callsArgWith(1, null, res, body);
+      var request = sinon.stub().callsArgWith(1, null, res, JSON.stringify(body));
       var client = new Client({
         network: 'testnet',
         configPath: '/tmp'
@@ -264,7 +264,7 @@ describe('Wallet Client', function() {
         statusCode: 501
       };
       var body = {};
-      var request = sinon.stub().callsArgWith(1, null, res, body);
+      var request = sinon.stub().callsArgWith(1, null, res, JSON.stringify(body));
       var client = new Client({
         network: 'testnet',
         configPath: '/tmp'
@@ -286,7 +286,7 @@ describe('Wallet Client', function() {
         }
       };
       var body = {};
-      var request = sinon.stub().callsArgWith(1, null, res, body);
+      var request = sinon.stub().callsArgWith(1, null, res, JSON.stringify(body));
       var client = new Client({
         network: 'testnet',
         configPath: '/tmp'
@@ -311,7 +311,7 @@ describe('Wallet Client', function() {
         }
       };
       var body = {};
-      var request = sinon.stub().callsArgWith(1, null, res, body);
+      var request = sinon.stub().callsArgWith(1, null, res, JSON.stringify(body));
       var client = new Client({
         network: 'testnet',
         configPath: '/tmp'
@@ -327,7 +327,7 @@ describe('Wallet Client', function() {
           return done(err);
         }
         res1.should.equal(res);
-        body1.should.equal(body);
+        body1.should.deep.equal(body);
         client.bitcoinHeight.should.equal(400000);
         client.bitcoinHash.should.equal('000000000007daca1852c480344ba1c24749780e06c3d4321ca04df545eb7363');
         done();
