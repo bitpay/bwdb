@@ -89,13 +89,16 @@ function main(err) {
     });
 
   program
-    .command('createWallet <walletId>')
+    .command('createWallet <walletName>')
     .description('Create a new wallet')
-    .action(function(walletId) {
+    .action(function(walletName) {
       client.config.unlockApiKey(function(err) {
         if (err) {
           throw err;
         }
+
+        var walletId = utils.getWalletIdFromName(walletName);
+
         client.createWallet(walletId, function(err, res, body) {
           if (err) {
             throw err;
@@ -106,9 +109,10 @@ function main(err) {
     });
 
   program
-    .command('getBalance <walletId>')
+    .command('getBalance <walletName>')
     .description('Get the balance of the wallet')
-    .action(function(walletId) {
+    .action(function(walletName) {
+      var walletId = utils.getWalletIdFromName(walletName);
       client.config.unlockApiKey(function(err) {
         if (err) {
           throw err;
@@ -123,9 +127,10 @@ function main(err) {
     });
 
   program
-    .command('importAddress <walletId> <address>')
+    .command('importAddress <walletName> <address>')
     .description('Import a new address')
-    .action(function(walletId, address) {
+    .action(function(walletName, address) {
+      var walletId = utils.getWalletIdFromName(walletName);
       client.config.unlockApiKey(function(err) {
         if (err) {
           throw err;
@@ -140,9 +145,10 @@ function main(err) {
     });
 
   program
-    .command('importAddresses <walletId> <filepath>')
+    .command('importAddresses <walletName> <filepath>')
     .description('Import new addresses from a JSON or Bitcoin wallet.dat file')
-    .action(function(walletId, filepath) {
+    .action(function(walletName, filepath) {
+      var walletId = utils.getWalletIdFromName(walletName);
       client.config.unlockApiKey(function(err) {
         if (err) {
           throw err;
@@ -175,9 +181,10 @@ function main(err) {
     });
 
   program
-    .command('getTransactions <walletId> [start] [limit]')
+    .command('getTransactions <walletName> [start] [limit]')
     .description('View latest transactions for a wallet')
-    .action(function(walletId, start, limit) {
+    .action(function(walletName, start, limit) {
+      var walletId = utils.getWalletIdFromName(walletName);
       var options = {};
       if (start) {
         options.height = start;
@@ -200,9 +207,10 @@ function main(err) {
     });
 
   program
-    .command('getUTXOs <walletId>')
+    .command('getUTXOs <walletName>')
     .description('View utxos for a wallet')
-    .action(function(walletId) {
+    .action(function(walletName) {
+      var walletId = utils.getWalletIdFromName(walletName);
       client.config.unlockApiKey(function(err) {
         if (err) {
           throw err;
@@ -220,7 +228,8 @@ function main(err) {
   program
     .command('getTransactionsStream <walletId> [start]')
     .description('View continuous stream of latest transactions for a wallet')
-    .action(function(walletId, start) {
+    .action(function(walletName, start) {
+      var walletId = utils.getWalletIdFromName(walletName);
       client.config.unlockApiKey(function(err) {
         if (err) {
           throw err;
@@ -239,9 +248,10 @@ function main(err) {
     });
 
   program
-    .command('getTransactionsCSV <walletId> <start> <end>')
+    .command('getTransactionsCSV <walletName> <start> <end>')
     .description('View transaction CSV history within block height range')
-    .action(function(walletId, start, end) {
+    .action(function(walletName, start, end) {
+      var walletId = utils.getWalletIdFromName(walletName);
       client.config.unlockApiKey(function(err) {
         if (err) {
           throw err;
@@ -258,9 +268,10 @@ function main(err) {
     });
 
   program
-    .command('getTransactionsList <walletId> <start> <end>')
+    .command('getTransactionsList <walletName> <start> <end>')
     .description('View transaction list history within block height range')
-    .action(function(walletId, start, end) {
+    .action(function(walletName, start, end) {
+      var walletId = utils.getWalletIdFromName(walletName);
       client.config.unlockApiKey(function(err) {
         if (err) {
           throw err;
@@ -277,9 +288,10 @@ function main(err) {
     });
 
   program
-    .command('getTxids <walletId> [start] [limit]')
+    .command('getTxids <walletName> [start] [limit]')
     .description('View latest txids for a wallet')
-    .action(function(walletId, start, limit) {
+    .action(function(walletName, start, limit) {
+      var walletId = utils.getWalletIdFromName(walletName);
       client.config.unlockApiKey(function(err) {
         if (err) {
           throw err;
@@ -302,9 +314,10 @@ function main(err) {
     });
 
   program
-    .command('getTxidsStream <walletId> [start]')
+    .command('getTxidsStream <walletName> [start]')
     .description('View continuous stream of latest txids for a wallet')
-    .action(function(walletId, start) {
+    .action(function(walletName, start) {
+      var walletId = utils.getWalletIdFromName(walletName);
       client.config.unlockApiKey(function(err) {
         if (err) {
           throw err;
