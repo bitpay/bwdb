@@ -1,5 +1,7 @@
 'use strict';
 
+var crypto = require('crypto');
+
 var chai = require('chai');
 var should = chai.should();
 var sinon = require('sinon');
@@ -693,7 +695,8 @@ describe('Wallet Utils', function() {
       });
     });
   });
-  describe('#generateSecret', function() {
+  describe('#encryptSecretWithPassphrase', function() {
+    var secret = crypto.randomBytes(32);
     var sandbox = sinon.sandbox.create();
     afterEach(function() {
       sandbox.restore();
@@ -701,7 +704,7 @@ describe('Wallet Utils', function() {
     it('should generate a cipherText and salt', function(done) {
       sandbox.stub(utils, 'acquirePassphrase').callsArgWith(0, null, 'passphrase');
       sandbox.stub(utils, 'encryptSecret').callsArgWith(1, null, 'cipherText');
-      utils.generateSecret(function(err, cipherText, salt) {
+      utils.encryptSecretWithPassphrase(secret, function(err, cipherText, salt) {
         if (err) {
           return done(err);
         }
@@ -717,7 +720,7 @@ describe('Wallet Utils', function() {
     it('should give error from acquirePassphrase', function(done) {
       sandbox.stub(utils, 'acquirePassphrase').callsArgWith(0, new Error('test message'));
       sandbox.stub(utils, 'encryptSecret');
-      utils.generateSecret(function(err, cipherText, salt) {
+      utils.encryptSecretWithPassphrase(secret, function(err, cipherText, salt) {
         err.message.should.equal('test message');
         utils.acquirePassphrase.callCount.should.equal(1);
         utils.encryptSecret.callCount.should.equal(0);
@@ -727,7 +730,7 @@ describe('Wallet Utils', function() {
     it('should give error from encryptSecret', function(done) {
       sandbox.stub(utils, 'acquirePassphrase').callsArgWith(0, null, 'passphrase');
       sandbox.stub(utils, 'encryptSecret').callsArgWith(1, new Error('test message from encryptSecret'));
-      utils.generateSecret(function(err, cipherText, salt) {
+      utils.encryptSecretWithPassphrase(secret, function(err, cipherText, salt) {
         err.message.should.equal('test message from encryptSecret');
         utils.acquirePassphrase.callCount.should.equal(1);
         utils.encryptSecret.callCount.should.equal(1);

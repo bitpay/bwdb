@@ -117,13 +117,14 @@ describe('Wallet Client Config', function() {
       var config = new Config();
       config.getConfigFilePath = sinon.stub().returns('some path');
       config.data = {};
-      config.writeApiKey('cipher', 'salt', function(err) {
+      config.writeApiKey('cipher', 'public', 'salt', function(err) {
         if (err) {
           return done(err);
         }
         JSON.parse(fs.writeFile.args[0][1]).should.deep.equal({
           apiKey: {
             cipherText: 'cipher',
+            publicKey: 'public',
             salt: 'salt'
           }
         });

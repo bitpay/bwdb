@@ -4,13 +4,15 @@
 
 process.title = 'bwdb-cli';
 
+var crypto = require('crypto');
+
 var async = require('async');
+var bitcore = require('bitcore-lib');
 var program = require('commander');
 var ProgressBar = require('progress');
 
 var version = require('../package.json').version;
 var Client = require('../lib/client');
-var Config = require('../lib/config');
 var utils = require('../lib/utils');
 
 program
@@ -22,7 +24,7 @@ program
   .option('-r, --regtest', 'Use regtest network')
   .parse(process.argv);
 
-var network;
+var network = 'livenet';
 if (program.testnet) {
   network = 'testnet';
 } else if (program.regtest) {
@@ -42,25 +44,35 @@ if (program.config && program.url) {
 
 function main(err) {
   if (err) {
-    throw err
+    throw err;
   }
   program
     .command('generateKey')
     .description('Generate a key pair')
     .action(function() {
+
       function finish() {
-        utils.generateSecret(function(err, cipherText, salt) {
+        var secret = crypto.randomBytes(32);
+        var publicKey = bitcore.PrivateKey.fromObject({
+          bn: secret,
+          compressed: true,
+          network: network
+        }).toPublicKey().toBuffer().toString('hex');
+
+        utils.encryptSecretWithPassphrase(secret, function(err, cipherText, salt) {
           if (err) {
             throw err;
           }
-          client.config.writeApiKey(cipherText, salt, function(err) {
+          client.config.writeApiKey(cipherText, publicKey, salt, function(err) {
             if (err) {
               throw err;
             }
+            console.log('Public key: ' + publicKey);
             console.log('Encrypted key written to ' + client.config.getConfigFilePath());
           });
         });
       }
+
       if (client.config.data.apiKey) {
         utils.confirm('Api Key exists, confirm overwrite?', function(err, answer) {
           if (err) {
@@ -73,6 +85,7 @@ function main(err) {
       } else {
         finish();
       }
+
     });
 
   program
