@@ -75,7 +75,7 @@ describe('Wallet Config', function() {
     it('will return config file path', function() {
       var config = new Config({network: 'testnet'});
       var configFilePath = config.getConfigFilePath();
-      configFilePath.should.equal(process.env.HOME + '/.bwdb/config.json');
+      configFilePath.should.equal(process.env.HOME + '/.bwdb/server.json');
     });
   });
 

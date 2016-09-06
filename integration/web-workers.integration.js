@@ -34,7 +34,7 @@ describe('Web Workers Cluster', function() {
   var port = 19921;
   var tmpDirectory = '/tmp/bwdb-' + crypto.randomBytes(4).toString('hex');
   var dbPath = tmpDirectory + '/testnet3.lmdb';
-  var configPath = tmpDirectory + '/config.json';
+  var configPath = tmpDirectory + '/server.json';
   var writerPath = tmpDirectory + '/writer.sock';
 
   var config = {
