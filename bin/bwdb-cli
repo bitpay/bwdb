@@ -335,6 +335,18 @@ function main(err) {
       });
     });
 
+  program
+    .command('*', false, {noHelp: true})
+    .action(function(cmd) {
+      console.log('"' + cmd + '" is not a bwdb command. Run "bwdb-cli" for list of commands.');
+    });
+
+  program
+    .command('help', false, {noHelp: true})
+    .action(function() {
+      program.outputHelp();
+    });
+
   program.parse(process.argv);
 
   if (process.argv.length === 2) {
