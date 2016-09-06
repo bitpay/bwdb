@@ -1,5 +1,6 @@
 'use strict';
 
+var fs = require('fs');
 var net = require('net');
 var path = require('path');
 var crypto = require('crypto');
@@ -33,7 +34,21 @@ describe('Web Workers Cluster', function() {
   var port = 19921;
   var tmpDirectory = '/tmp/bwdb-' + crypto.randomBytes(4).toString('hex');
   var dbPath = tmpDirectory + '/testnet3.lmdb';
+  var configPath = tmpDirectory + '/config.json';
   var writerPath = tmpDirectory + '/writer.sock';
+
+  var config = {
+    bitcoind: {
+      spawn: {
+        datadir: tmpDirectory,
+        exec: path.resolve(__dirname, '../node_modules/.bin/bitcoind')
+      }
+    },
+    wallet: {
+      port: port
+    }
+  };
+
   before(function(done) {
     // Create the directory
     mkdirp(dbPath, function(err) {
@@ -43,8 +58,16 @@ describe('Web Workers Cluster', function() {
       // Create the database
       db.open(dbPath, false);
 
-      // Open writer socket
-      mockWriter(writerPath, done);
+      // Write a config
+      fs.writeFile(configPath, JSON.stringify(config, false, 2), function(err) {
+        if (err) {
+          return done(err);
+        }
+        // Open writer socket
+        mockWriter(writerPath, done);
+      });
+
+
     });
   });
   after(function(done) {

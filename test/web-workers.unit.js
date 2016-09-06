@@ -1436,11 +1436,14 @@ describe('Wallet Web Worker', function() {
       var middlewareCheckSignature = sinon.stub();
       worker._middlewareCheckSignature = sinon.stub().returns(middlewareCheckSignature);
 
+      var middlewareCheckAuth = sinon.stub();
+      worker._middlewareCheckAuth = sinon.stub().returns(middlewareCheckAuth);
+
       var app = {
         use: sinon.stub()
       };
       worker._setupMiddleware(app);
-      app.use.callCount.should.equal(8);
+      app.use.callCount.should.equal(9);
       app.use.args[0][0].should.equal(middlewareChainInfo);
       app.use.args[1][0].should.equal(middlewareLogger);
       app.use.args[2][0].should.equal('compression');
@@ -1448,7 +1451,8 @@ describe('Wallet Web Worker', function() {
       app.use.args[4][0].should.equal('bodyparser-urlencoded');
       app.use.args[5][0].should.equal(utils.enableCORS);
       app.use.args[6][0].should.equal(middlewareCheckSignature);
-      app.use.args[7][0].should.equal(middlewareHeaders);
+      app.use.args[7][0].should.equal(middlewareCheckAuth);
+      app.use.args[8][0].should.equal(middlewareHeaders);
     });
   });
   describe('#_setupRoutes', function() {
