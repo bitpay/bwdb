@@ -6,6 +6,7 @@
     }
   },
   "wallet": {
-    "port": 13002
+    "port": 13002,
+    "workers": 3
   }
 }
