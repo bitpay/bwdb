@@ -3,6 +3,7 @@
 'use strict';
 
 process.title = 'bwdb-cli';
+process.env.BWDB_CLI = true;
 
 var crypto = require('crypto');
 

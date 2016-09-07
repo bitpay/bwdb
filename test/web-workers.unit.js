@@ -1308,11 +1308,21 @@ describe('Wallet Web Worker', function() {
   describe('#_startListener', function() {
     it('will create express application, setup and start listening on port', function() {
       var listen = sinon.stub();
-      var app = {listen: listen};
+      var app = sinon.stub();
+      var server = {
+        listen: listen
+      };
+      var http = {
+        createServer: sinon.stub().returns(server)
+      };
       var WebWorkerStubbed = proxyquire('../lib/web-workers', {
-        express: sinon.stub().returns(app)
+        express: sinon.stub().returns(app),
+        http: http
       });
       var worker = new WebWorkerStubbed(options);
+      worker.config = {
+        hasTLS: sinon.stub().returns(false)
+      };
       worker._setupMiddleware = sinon.stub();
       worker._setupRoutes = sinon.stub();
       worker._startListener();
@@ -1320,8 +1330,8 @@ describe('Wallet Web Worker', function() {
       worker._setupMiddleware.args[0][0].should.equal(app);
       worker._setupRoutes.callCount.should.equal(1);
       worker._setupRoutes.args[0][0].should.equal(app);
-      listen.callCount.should.equal(1);
-      listen.args[0][0].should.equal(20001);
+      server.listen.callCount.should.equal(1);
+      server.listen.args[0][0].should.equal(20001);
     });
   });
   describe('#_endpointGetInfo', function() {
