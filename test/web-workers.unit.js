@@ -21,6 +21,8 @@ var version = require('../package.json').version;
 
 var transactionData = require('./data/transactions.json');
 
+var MAX_INT = Math.pow(2, 32) - 1;
+
 describe('Wallet Web Worker', function() {
   var options = {
     network: 'testnet',
@@ -579,7 +581,7 @@ describe('Wallet Web Worker', function() {
         txids: {}
       };
       var cursor = {
-        goToRange: sinon.stub().returns(null),
+        goToKey: sinon.stub().returns(null),
         goToPrev: sinon.stub().returns(null),
         close: sinon.stub()
       };
@@ -605,7 +607,7 @@ describe('Wallet Web Worker', function() {
       var key = 'key';
       var value = 'value';
       var cursor = {
-        goToRange: sinon.stub().returns(new Buffer(new Array(0))),
+        goToKey: sinon.stub().returns(new Buffer(new Array(0))),
         goToPrev: sinon.stub().returns(new Buffer(new Array(0))),
         getCurrentBinary: sinon.stub().callsArgWith(0, key, value),
         close: sinon.stub()
@@ -643,9 +645,9 @@ describe('Wallet Web Worker', function() {
           [400, 9, 'value']
         ]);
         result.start.height.should.equal(400);
-        result.start.index.should.equal(0);
+        result.start.index.should.equal(MAX_INT);
         result.end.height.should.equal(400);
-        result.end.index.should.equal(9);
+        result.end.index.should.equal(8);
         cursor.close.callCount.should.equal(1);
         done();
       });
@@ -659,7 +661,7 @@ describe('Wallet Web Worker', function() {
       var value = 'value';
       var c = 0;
       var cursor = {
-        goToRange: sinon.stub().returns(new Buffer(new Array(0))),
+        goToKey: sinon.stub().returns(new Buffer(new Array(0))),
         goToPrev: function() {
           var result = null;
           if (c < 6) {
@@ -701,7 +703,7 @@ describe('Wallet Web Worker', function() {
           [400, 6, 'value']
         ]);
         result.start.height.should.equal(400);
-        result.start.index.should.equal(0);
+        result.start.index.should.equal(MAX_INT);
         should.not.exist(result.end);
         cursor.close.callCount.should.equal(1);
         done();

@@ -10,12 +10,14 @@ var utils = require('../lib/utils');
 
 describe('Wallet Validators', function() {
 
+  var MAX_INT = Math.pow(2, 32) - 1;
+
   describe('@sanitizeRangeOptions', function() {
     function testDefaultOptions(options) {
       var query = validators.sanitizeRangeOptions(options, 100);
       query.limit.should.equal(10);
       query.height.should.equal(100);
-      query.index.should.equal(0);
+      query.index.should.equal(MAX_INT);
     }
     it('will set default options', function() {
       testDefaultOptions(null);

@@ -24,6 +24,10 @@ var test3WIF = 'cNDGTzXC45gTf9jh5JiRuNbiF4GovNHEhZe1rjDK6WhA7H1pem9c';
 var test3Key = bitcore.PrivateKey(test3WIF);
 var test3Address = test3Key.toAddress('regtest').toString();
 
+var test4WIF = 'cRfdMLrk8BL3dKmJTUtJQMRuE4rTmqe8nDpgAzPV6GNZhP6gkqdi';
+var test4Key = bitcore.PrivateKey(test4WIF);
+var test4Address = test4Key.toAddress('regtest').toString();
+
 var bitcoinClient;
 var server;
 var client;
@@ -146,6 +150,34 @@ describe('Wallet Server & Client', function() {
             }, 2000);
           });
         });
+      });
+    });
+  }
+
+  function sendManyAndGenerate(address, amount, times, done) {
+    async.timesSeries(times, function(n, next) {
+      bitcoinClient.sendToAddress(address, amount, function(err, response) {
+        if (err) {
+          return next(err);
+        }
+        setTimeout(function() {
+          next(null, response.result);
+        }, 200);
+      });
+    }, function(err, result) {
+      if (err) {
+        return done(err);
+      }
+      bitcoinClient.generate(1, function(err, response) {
+        if (err) {
+          return done(err);
+        }
+        setTimeout(function() {
+          done(null, {
+            txids: result,
+            blockHash: response.result
+          });
+        }, 5000);
       });
     });
   }
@@ -451,6 +483,48 @@ describe('Wallet Server & Client', function() {
         }
         result.utxos.should.deep.equal(starting.utxos);
         done();
+      });
+    });
+  });
+  describe('pagination', function() {
+    var walletId2 = 'c31c6dd5cab0702ede238711f160abee8ef6670436764279baeedd1894a54e47';
+    var expectedTxids;
+    before(function(done) {
+      this.timeout(20000);
+      async.series([
+        function(next) {
+          client.createWallet(walletId2, next);
+        },
+        function(next) {
+          client.importAddress(walletId2, test4Address, next);
+        },
+        function(next) {
+          sendManyAndGenerate(test4Address, 0.001, 20, function(err, result) {
+            if (err) {
+              return next(err);
+            }
+            expectedTxids = result.txids;
+            next();
+          });
+        }
+      ], done);
+    });
+    it('end should not be inclusive', function(done) {
+      var allTxids = [];
+      client.getTxids(walletId2, {}, function(err, res, body) {
+        body.txids.length.should.equal(10);
+        should.exist(body.end);
+        allTxids = allTxids.concat(body.txids);
+        var options = {
+          height: body.end.height,
+          index: body.end.index,
+          limit: 100
+        };
+        client.getTxids(walletId2, options, function(err2, res2, body2) {
+          allTxids = allTxids.concat(body2.txids);
+          allTxids.sort().should.deep.equal(expectedTxids.sort());
+          done();
+        });
       });
     });
   });
