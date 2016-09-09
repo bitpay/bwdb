@@ -1483,6 +1483,9 @@ describe('Wallet Web Worker', function() {
       var endpointTransactions = sinon.stub();
       worker._endpointTransactions = sinon.stub().returns(endpointTransactions);
 
+      var endpointRawTransactions = sinon.stub();
+      worker._endpointRawTransactions = sinon.stub().returns(endpointRawTransactions);
+
       var endpointUTXOs = sinon.stub();
       worker._endpointUTXOs = sinon.stub().returns(endpointUTXOs);
 
@@ -1510,7 +1513,7 @@ describe('Wallet Web Worker', function() {
       app.put.callCount.should.equal(2);
       app.post.callCount.should.equal(1);
       app.use.callCount.should.equal(1);
-      app.get.callCount.should.equal(5);
+      app.get.callCount.should.equal(6);
 
       app.get.args[0][0].should.equal('/info');
       app.get.args[0][1].should.equal(endpointGetInfo);
@@ -1529,9 +1532,14 @@ describe('Wallet Web Worker', function() {
       app.get.args[3][2].should.equal(validators.checkRangeParams);
       app.get.args[3][3].should.equal(endpointTransactions);
 
-      app.get.args[4][0].should.equal('/wallets/:walletId/utxos');
+      app.get.args[4][0].should.equal('/wallets/:walletId/rawtransactions');
       app.get.args[4][1].should.equal(validators.checkWalletId);
-      app.get.args[4][2].should.equal(endpointUTXOs);
+      app.get.args[4][2].should.equal(validators.checkRangeParams);
+      app.get.args[4][3].should.equal(endpointRawTransactions);
+
+      app.get.args[5][0].should.equal('/wallets/:walletId/utxos');
+      app.get.args[5][1].should.equal(validators.checkWalletId);
+      app.get.args[5][2].should.equal(endpointUTXOs);
 
       app.put.args[0][0].should.equal('/wallets/:walletId/addresses/:address');
       app.put.args[0][1].should.equal(validators.checkWalletId);

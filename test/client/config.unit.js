@@ -10,38 +10,6 @@ var Config = require('../../lib/client/config');
 
 describe('Wallet Client Config', function() {
 
-  describe('#getDatabasePath', function() {
-    afterEach(function() {
-      bitcore.Networks.disableRegtest();
-    });
-    it('will give database path for livenet', function() {
-      var config = new Config({network: 'livenet'});
-      config.defineProperties();
-      var dbPath = config.getDatabasePath();
-      dbPath.should.equal(process.env.HOME + '/.bwdb/livenet-client.lmdb');
-    });
-    it('will give database path for regtest', function() {
-      bitcore.Networks.enableRegtest();
-      var config = new Config({network: 'regtest'});
-      config.defineProperties();
-      var dbPath = config.getDatabasePath();
-      dbPath.should.equal(process.env.HOME + '/.bwdb/regtest-client.lmdb');
-    });
-    it('will give database path for testnet', function() {
-      var config = new Config({network: 'testnet'});
-      config.defineProperties();
-      var dbPath = config.getDatabasePath();
-      dbPath.should.equal(process.env.HOME + '/.bwdb/testnet3-client.lmdb');
-    });
-    it('will give error with unknown network', function() {
-      var config = new Config({network: 'testnet'});
-      config.network = 'unknown';
-      (function() {
-        config.getDatabasePath();
-      }).should.throw(TypeError);
-    });
-  });
-
   describe('#getNetworkName', function() {
     afterEach(function() {
       bitcore.Networks.disableRegtest();
@@ -133,7 +101,7 @@ describe('Wallet Client Config', function() {
       });
     });
   });
-  describe('#setupConfig', function() {
+  describe('#setupConfigData', function() {
     it('should give error if jsoni parse fails', function(done) {
       var readFile = sinon.stub().callsArgWith(2, null, 'something');
       var Config = proxyquire('../../lib/client/config', {
@@ -142,7 +110,7 @@ describe('Wallet Client Config', function() {
         }
       });
       var config = new Config({network: 'livenet'});
-      config.setupConfig(function(err) {
+      config.setupConfigData(function(err) {
         should.exist(err);
         err.should.be.instanceOf(SyntaxError);
         readFile.callCount.should.equal(1);
@@ -157,7 +125,7 @@ describe('Wallet Client Config', function() {
         }
       });
       var config = new Config({network: 'livenet'});
-      config.setupConfig(function(err) {
+      config.setupConfigData(function(err) {
         should.exist(err);
         err.message.should.equal('error message');
       });
@@ -174,7 +142,7 @@ describe('Wallet Client Config', function() {
       });
       var config = new Config({network: 'livenet'});
       config.writeDefaultConfig = sinon.stub().callsArg(0);
-      config.setupConfig(function(err) {
+      config.setupConfigData(function(err) {
         should.not.exist(err);
         readFile.callCount.should.equal(1);
         config.writeDefaultConfig.callCount.should.equal(1);

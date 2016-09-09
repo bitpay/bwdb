@@ -3,117 +3,37 @@
 var chai = require('chai');
 var should = chai.should();
 var sinon = require('sinon');
-var proxyquire = require('proxyquire');
 
 var Client = require('../../lib/client');
-var db = require('../../lib/client/db');
-var utils = require('../../lib/utils');
 
 describe('Wallet Client', function() {
   describe('@constructor', function() {
-    function Config(options) {
-      options.should.deep.equal({
-        network: 'testnet',
-        path: '/tmp',
-        url: 'somenet'
-      });
-    }
     function checkProperties(client) {
       should.exist(client);
-      client.config.should.instanceOf(Config);
       should.equal(client.bitcoinHeight, null);
       should.equal(client.bitcoinHash, null);
       should.equal(client.socket, null);
-      should.equal(client.db, null);
     }
     it('will construct and set properties', function() {
-      var ClientStubbed = proxyquire('../../lib/client', {
-        './config': Config
-      });
-      var client = new ClientStubbed({
+      var client = new Client({
         network: 'testnet',
-        configPath: '/tmp',
         url: 'somenet'
       });
       checkProperties(client);
     });
     it('will construct and set properties (without new)', function() {
-      var ClientStubbed = proxyquire('../../lib/client', {
-        './config': Config
-      });
-      var client = ClientStubbed({
+      var client = Client({
         network: 'testnet',
-        configPath: '/tmp',
         url: 'somenet'
       });
       checkProperties(client);
-    });
-  });
-  describe('#connect', function() {
-    var sandbox = sinon.sandbox.create();
-    afterEach(function() {
-      sandbox.restore();
-    });
-    it('should setup base directory, config and database directories', function(done) {
-      sandbox.stub(utils, 'setupDirectory').callsArg(1);
-      var client = new Client();
-      client.config = {
-        setupConfig: sinon.stub().callsArg(0),
-        getDatabasePath: sinon.stub().returns('somepath'),
-        path: '/tmp'
-      };
-      sandbox.stub(db, 'open').returns({});
-      client.connect(function(err) {
-        if (err) {
-          return done(err);
-        }
-        utils.setupDirectory.callCount.should.equal(2);
-        utils.setupDirectory.args[0][0].should.equal('/tmp');
-        utils.setupDirectory.args[1][0].should.equal('somepath');
-        db.open.callCount.should.equal(1);
-        db.open.args[0][0].should.equal('somepath');
-        done();
-      });
-    });
-    it('should handle error', function(done) {
-      sandbox.stub(utils, 'setupDirectory').callsArg(1);
-      utils.setupDirectory.onSecondCall().callsArgWith(1, new Error('test'));
-      var client = new Client();
-      client.config = {
-        setupConfig: sinon.stub().callsArg(0),
-        getDatabasePath: sinon.stub().returns('somepath'),
-        path: '/tmp'
-      };
-      sandbox.stub(db, 'open').returns({});
-      client.connect(function(err) {
-        utils.setupDirectory.callCount.should.equal(2);
-        err.message.should.equal('test');
-        done();
-      });
-    });
-  });
-  describe('#disconnect', function() {
-    var sandbox = sinon.sandbox.create();
-    afterEach(function() {
-      sandbox.restore();
-    });
-    it('should disconnect if db', function() {
-      sandbox.stub(db, 'close');
-      var client = new Client();
-      client.db = {};
-      client.disconnect();
-      db.close.callCount.should.equal(1);
-    });
-    it('should err if no db', function() {
-      var client = new Client();
-      client.disconnect();
     });
   });
   describe('#_maybeCallback', function() {
     it('will call the callback with error if callback exists', function(done) {
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       client.emit = sinon.stub();
       client._maybeCallback(function(err) {
@@ -125,7 +45,7 @@ describe('Wallet Client', function() {
     it('will emit error if callback does not exist', function(done) {
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       client.on('error', function(err) {
         err.message.should.equal('test');
@@ -147,14 +67,11 @@ describe('Wallet Client', function() {
       var request = sinon.stub().callsArgWith(1, null, res, JSON.stringify(body));
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'something'
       });
       client._signRequest = request;
       var params = {hello: 'world'};
-      client.config = {
-        url: 'something',
-        getNetworkName: sinon.stub().returns('testnet')
-      };
+      client.getNetworkName = sinon.stub().returns('testnet');
       client._request('GET', '/info', params, function(err) {
         if (err) {
           return done(err);
@@ -176,14 +93,11 @@ describe('Wallet Client', function() {
       var request = sinon.stub().callsArgWith(1, null, res, JSON.stringify(body));
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'something'
       });
       client._signRequest = request;
       var params = {hello: 'world'};
-      client.config = {
-        url: 'something',
-        getNetworkName: sinon.stub().returns('testnet')
-      };
+      client.getNetworkName = sinon.stub().returns('testnet');
       client._request('POST', '/info', params, function(err) {
         if (err) {
           return done(err);
@@ -198,7 +112,7 @@ describe('Wallet Client', function() {
       var request = sinon.stub().callsArgWith(1, new Error('test'));
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       client._signRequest = request;
       client._request('POST', '/info', {}, function(err) {
@@ -216,7 +130,7 @@ describe('Wallet Client', function() {
       var request = sinon.stub().callsArgWith(1, null, res, JSON.stringify(body));
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       client._signRequest = request;
       client._request('GET', '/info', {}, function(err) {
@@ -233,7 +147,7 @@ describe('Wallet Client', function() {
       var request = sinon.stub().callsArgWith(1, null, res, JSON.stringify(body));
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       client._signRequest = request;
       client._request('GET', '/info', {}, function(err) {
@@ -250,7 +164,7 @@ describe('Wallet Client', function() {
       var request = sinon.stub().callsArgWith(1, null, res, JSON.stringify(body));
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       client._signRequest = request;
       client._request('GET', '/info', {}, function(err) {
@@ -267,7 +181,7 @@ describe('Wallet Client', function() {
       var request = sinon.stub().callsArgWith(1, null, res, JSON.stringify(body));
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       client._signRequest = request;
       client._request('GET', '/info', {}, function(err) {
@@ -289,13 +203,10 @@ describe('Wallet Client', function() {
       var request = sinon.stub().callsArgWith(1, null, res, JSON.stringify(body));
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'something'
       });
       client._signRequest = request;
-      client.config = {
-        url: 'something',
-        getNetworkName: sinon.stub().returns('testnet')
-      };
+      client.getNetworkName = sinon.stub().returns('testnet');
       client._request('GET', '/info', {}, function(err) {
         err.should.be.instanceOf(Error);
         err.message.should.match(/^Network mismatch/);
@@ -314,14 +225,11 @@ describe('Wallet Client', function() {
       var request = sinon.stub().callsArgWith(1, null, res, JSON.stringify(body));
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'something'
       });
       client._signRequest = request;
       var params = {hello: 'world'};
-      client.config = {
-        url: 'something',
-        getNetworkName: sinon.stub().returns('testnet')
-      };
+      client.getNetworkName = sinon.stub().returns('testnet');
       client._request('GET', '/info', params, function(err, res1, body1) {
         if (err) {
           return done(err);
@@ -338,7 +246,7 @@ describe('Wallet Client', function() {
     it('will call request with correct arguments', function(done) {
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       client._request = sinon.stub().callsArg(3);
       client._put('/info', function(err) {
@@ -357,7 +265,7 @@ describe('Wallet Client', function() {
     it('will call request with correct arguments', function(done) {
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       client._request = sinon.stub().callsArg(3);
       var params = {};
@@ -377,7 +285,7 @@ describe('Wallet Client', function() {
     it('will call request with correct arguments', function(done) {
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       client._request = sinon.stub().callsArg(3);
       var params = {};
@@ -397,7 +305,7 @@ describe('Wallet Client', function() {
     it('will call put to wallets endpoint', function(done) {
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       var walletId = '2b5848038f5fac0b67badd525d43b62d848a0ee9afd27f9672e4dc3962370b6b';
       var expectedRes = {};
@@ -420,7 +328,7 @@ describe('Wallet Client', function() {
     it('will call put to wallet addresses endpoint', function(done) {
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       var walletId = '2b5848038f5fac0b67badd525d43b62d848a0ee9afd27f9672e4dc3962370b6b';
       var expectedRes = {};
@@ -445,7 +353,7 @@ describe('Wallet Client', function() {
     it('will call post to wallet addresses endpoint', function(done) {
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       var walletId = '2b5848038f5fac0b67badd525d43b62d848a0ee9afd27f9672e4dc3962370b6b';
       var expectedRes = {};
@@ -470,7 +378,7 @@ describe('Wallet Client', function() {
     it('will call get to wallet transactions endpoint', function(done) {
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       var walletId = '2b5848038f5fac0b67badd525d43b62d848a0ee9afd27f9672e4dc3962370b6b';
       var expectedRes = {};
@@ -496,7 +404,7 @@ describe('Wallet Client', function() {
     it('will call get to wallet utxos endpoint', function(done) {
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       var walletId = '2b5848038f5fac0b67badd525d43b62d848a0ee9afd27f9672e4dc3962370b6b';
       var expectedRes = {};
@@ -522,7 +430,7 @@ describe('Wallet Client', function() {
     it('will call get to wallet txids endpoint', function(done) {
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       var walletId = '2b5848038f5fac0b67badd525d43b62d848a0ee9afd27f9672e4dc3962370b6b';
       var expectedRes = {};
@@ -548,7 +456,7 @@ describe('Wallet Client', function() {
     it('will call get to the wallet balance endpoint', function(done) {
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       var walletId = '2b5848038f5fac0b67badd525d43b62d848a0ee9afd27f9672e4dc3962370b6b';
       var expectedRes = {};
@@ -572,7 +480,7 @@ describe('Wallet Client', function() {
     it('will call get to the info endpoint', function(done) {
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       var expectedRes = {};
       var expectedBody = {};
@@ -594,7 +502,7 @@ describe('Wallet Client', function() {
     it('will return a TransactionsStream instance', function() {
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       var walletId = '2b5848038f5fac0b67badd525d43b62d848a0ee9afd27f9672e4dc3962370b6b';
       var options = {};
@@ -606,7 +514,7 @@ describe('Wallet Client', function() {
     it('will return a TxidsStream instance', function() {
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       var walletId = '2b5848038f5fac0b67badd525d43b62d848a0ee9afd27f9672e4dc3962370b6b';
       var options = {};
@@ -618,7 +526,7 @@ describe('Wallet Client', function() {
     it('will return a CSVStream instance', function() {
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       var walletId = '2b5848038f5fac0b67badd525d43b62d848a0ee9afd27f9672e4dc3962370b6b';
       var options = {};
@@ -630,7 +538,7 @@ describe('Wallet Client', function() {
     it('will return a ListStream instance', function() {
       var client = new Client({
         network: 'testnet',
-        configPath: '/tmp'
+        url: 'somenet'
       });
       var walletId = '2b5848038f5fac0b67badd525d43b62d848a0ee9afd27f9672e4dc3962370b6b';
       var options = {};

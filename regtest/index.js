@@ -9,8 +9,7 @@ var should = chai.should();
 
 var index = require('..');
 var Server = index.Server;
-var Client = index.Client;
-var Config = index.Config;
+var ClientConfig = index.ClientConfig;
 
 var testWIF = 'cSdkPxkAjA4HDr5VHgsebAPDEh9Gyub4HK8UJr2DFGGqKKy4K5sG';
 var testKey = bitcore.PrivateKey(testWIF);
@@ -224,6 +223,7 @@ describe('Wallet Server & Client', function() {
     this.timeout(60000);
 
     var configPath = __dirname + '/data';
+    var config = new ClientConfig({path: configPath});
 
     async.series([
       function(next) {
@@ -231,6 +231,20 @@ describe('Wallet Server & Client', function() {
       },
       function(next) {
         rimraf(configPath + '/regtest.lmdb', next);
+      },
+      function(next) {
+        config.setup(function(err) {
+          if (err) {
+            next(err);
+          }
+          config.unlockClient(function(err, _client) {
+            if (err) {
+              next(err);
+            }
+            client = _client;
+            next();
+          });
+        });
       }
     ], function(err) {
       if (err) {
@@ -239,53 +253,47 @@ describe('Wallet Server & Client', function() {
 
       server = new Server({network: 'regtest', configPath: configPath});
 
-      client = new Client({network: 'regtest', configPath: configPath});
+      regtest = bitcore.Networks.get('regtest');
+      should.exist(regtest);
 
-      client.connect(function(err) {
+      server.on('error', function(err) {
+        console.error(err);
+      });
+
+      server.start(function(err) {
         if (err) {
           return done(err);
         }
-        regtest = bitcore.Networks.get('regtest');
-        should.exist(regtest);
 
-        server.on('error', function(err) {
-          console.error(err);
+        bitcoinClient = new BitcoinRPC({
+          protocol: 'http',
+          host: '127.0.0.1',
+          port: 30331,
+          user: 'bitcoin',
+          pass: 'local321',
+          rejectUnauthorized: false
         });
 
-        server.start(function(err) {
-          if (err) {
-            return done(err);
+        var syncedHandler = function(height) {
+          // check that the block chain is generated
+          if (height >= 150) {
+            server.node.services.bitcoind.removeListener('synced', syncedHandler);
+
+            // check that client can connect
+            async.retry({times: 5, interval: 2000}, function(next) {
+              client.getInfo(next);
+            }, done);
           }
+        };
 
-          bitcoinClient = new BitcoinRPC({
-            protocol: 'http',
-            host: '127.0.0.1',
-            port: 30331,
-            user: 'bitcoin',
-            pass: 'local321',
-            rejectUnauthorized: false
-          });
-
-          var syncedHandler = function(height) {
-            // check that the block chain is generated
-            if (height >= 150) {
-              server.node.services.bitcoind.removeListener('synced', syncedHandler);
-
-              // check that client can connect
-              async.retry({times: 5, interval: 2000}, function(next) {
-                client.getInfo(next);
-              }, done);
-            }
-          };
-
-          server.node.services.bitcoind.on('synced', syncedHandler);
-          bitcoinClient.generate(150, function(err) {
-            if (err) {
-              throw err;
-            }
-          });
+        server.node.services.bitcoind.on('synced', syncedHandler);
+        bitcoinClient.generate(150, function(err) {
+          if (err) {
+            throw err;
+          }
         });
       });
+
     });
   });
 
