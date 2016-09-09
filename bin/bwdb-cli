@@ -14,39 +14,38 @@ var ProgressBar = require('progress');
 
 var version = require('../package.json').version;
 var Client = require('../lib/client');
+var ClientConfig  = require('../lib/client/config');
 var utils = require('../lib/utils');
 
 program
   .version(version)
   .description('Bitcoin Wallet CLI')
-  .option('-u, --url <url>', 'Specify the URL for the wallet server.')
   .option('-c, --config <dir>', 'Specify the data directory that has the configuration file.')
   .option('-t, --testnet', 'Use testnet network')
   .option('-r, --regtest', 'Use regtest network')
   .parse(process.argv);
 
-var network = 'livenet';
+var network;
 if (program.testnet) {
   network = 'testnet';
 } else if (program.regtest) {
   network = 'regtest';
 }
 
-var client;
-if (program.config && program.url) {
-  throw new Error('--config and --url are mutually exclusive, please use one or the other.');
-} else if (program.url) {
-  client = new Client({network: network, url: program.url});
-  client.connect(main);
-} else {
-  client = new Client({network: network, configPath: program.config});
-  client.connect(main);
-}
+var config = new ClientConfig({
+  path: program.config,
+  network: network
+});
+
+config.setup(function() {
+  config.unlockApiKey(main);
+});
 
 function main(err) {
   if (err) {
     throw err;
   }
+  var client = new Client(config);
   program
     .command('generateKey')
     .description('Generate a key pair')
@@ -57,24 +56,24 @@ function main(err) {
         var publicKey = bitcore.PrivateKey.fromObject({
           bn: secret,
           compressed: true,
-          network: network
+          network: config.network
         }).toPublicKey().toBuffer().toString('hex');
 
         utils.encryptSecretWithPassphrase(secret, function(err, cipherText, salt) {
           if (err) {
             throw err;
           }
-          client.config.writeApiKey(cipherText, publicKey, salt, function(err) {
+          config.writeApiKey(cipherText, publicKey, salt, function(err) {
             if (err) {
               throw err;
             }
             console.log('Public key: ' + publicKey);
-            console.log('Encrypted key written to ' + client.config.getConfigFilePath());
+            console.log('Encrypted key written to ' + config.getConfigFilePath());
           });
         });
       }
 
-      if (client.config.data.apiKey) {
+      if (config.data.apiKey) {
         utils.confirm('Api Key exists, confirm overwrite?', function(err, answer) {
           if (err) {
             throw err;
@@ -93,19 +92,13 @@ function main(err) {
     .command('createWallet <walletName>')
     .description('Create a new wallet')
     .action(function(walletName) {
-      client.config.unlockApiKey(function(err) {
+      var walletId = utils.getWalletIdFromName(walletName);
+
+      client.createWallet(walletId, function(err, res, body) {
         if (err) {
           throw err;
         }
-
-        var walletId = utils.getWalletIdFromName(walletName);
-
-        client.createWallet(walletId, function(err, res, body) {
-          if (err) {
-            throw err;
-          }
-          console.log(body);
-        });
+        console.log(body);
       });
     });
 
@@ -114,16 +107,11 @@ function main(err) {
     .description('Get the balance of the wallet')
     .action(function(walletName) {
       var walletId = utils.getWalletIdFromName(walletName);
-      client.config.unlockApiKey(function(err) {
+      client.getBalance(walletId, function(err, res, body) {
         if (err) {
           throw err;
         }
-        client.getBalance(walletId, function(err, res, body) {
-          if (err) {
-            throw err;
-          }
-          console.log(body);
-        });
+        console.log(body);
       });
     });
 
@@ -132,16 +120,11 @@ function main(err) {
     .description('Import a new address')
     .action(function(walletName, address) {
       var walletId = utils.getWalletIdFromName(walletName);
-      client.config.unlockApiKey(function(err) {
+      client.importAddress(walletId, address, function(err, res, body) {
         if (err) {
           throw err;
         }
-        client.importAddress(walletId, address, function(err, res, body) {
-          if (err) {
-            throw err;
-          }
-          console.log(body);
-        });
+        console.log(body);
       });
     });
 
@@ -150,32 +133,27 @@ function main(err) {
     .description('Import new addresses from a JSON or Bitcoin wallet.dat file')
     .action(function(walletName, filepath) {
       var walletId = utils.getWalletIdFromName(walletName);
-      client.config.unlockApiKey(function(err) {
+      utils.readWalletFile(filepath, config.getNetworkName(), function(err, addresses) {
         if (err) {
           throw err;
         }
-        utils.readWalletFile(filepath, network, function(err, addresses) {
-          if (err) {
-            throw err;
-          }
-          var total = addresses.length;
-          var progress = new ProgressBar('Importing addresses [:bar] :percent :current/:total', {
-            complete: '=',
-            incomplete: ' ',
-            width: 20,
-            total: total
-          });
+        var total = addresses.length;
+        var progress = new ProgressBar('Importing addresses [:bar] :percent :current/:total', {
+          complete: '=',
+          incomplete: ' ',
+          width: 20,
+          total: total
+        });
 
-          var chunkSize = 2000;
-          var chunks = utils.splitArray(addresses, chunkSize);
-          async.eachSeries(chunks, function(chunk, next) {
-            client.importAddresses(walletId, chunk, function(err) {
-              if (err) {
-                throw err;
-              }
-              progress.tick(chunkSize);
-              next();
-            });
+        var chunkSize = 2000;
+        var chunks = utils.splitArray(addresses, chunkSize);
+        async.eachSeries(chunks, function(chunk, next) {
+          client.importAddresses(walletId, chunk, function(err) {
+            if (err) {
+              throw err;
+            }
+            progress.tick(chunkSize);
+            next();
           });
         });
       });
@@ -194,16 +172,11 @@ function main(err) {
       if (limit) {
         options.limit = limit;
       }
-      client.config.unlockApiKey(function(err) {
+      client.getTransactions(walletId, options, function(err, res, body) {
         if (err) {
           throw err;
         }
-        client.getTransactions(walletId, options, function(err, res, body) {
-          if (err) {
-            throw err;
-          }
-          console.log(JSON.stringify(body, null, 2));
-        });
+        console.log(JSON.stringify(body, null, 2));
       });
     });
 
@@ -212,17 +185,12 @@ function main(err) {
     .description('View utxos for a wallet')
     .action(function(walletName) {
       var walletId = utils.getWalletIdFromName(walletName);
-      client.config.unlockApiKey(function(err) {
+      var options = {};
+      client.getUTXOs(walletId, options, function(err, res, body) {
         if (err) {
           throw err;
         }
-        var options = {};
-        client.getUTXOs(walletId, options, function(err, res, body) {
-          if (err) {
-            throw err;
-          }
-          console.log(JSON.stringify(body, null, 2));
-        });
+        console.log(JSON.stringify(body, null, 2));
       });
     });
 
@@ -231,20 +199,15 @@ function main(err) {
     .description('View continuous stream of latest transactions for a wallet')
     .action(function(walletName, start) {
       var walletId = utils.getWalletIdFromName(walletName);
-      client.config.unlockApiKey(function(err) {
-        if (err) {
-          throw err;
-        }
-        var options = {};
-        if (start) {
-          options.height = start;
-          options.index = 0;
-        }
-        options.limit = 50;
-        var stream = client.getTransactionsStream(walletId, options);
-        stream.on('data', function(transactions) {
-          console.log(transactions);
-        });
+      var options = {};
+      if (start) {
+        options.height = start;
+        options.index = 0;
+      }
+      options.limit = 50;
+      var stream = client.getTransactionsStream(walletId, options);
+      stream.on('data', function(transactions) {
+        console.log(transactions);
       });
     });
 
@@ -253,19 +216,14 @@ function main(err) {
     .description('View transaction CSV history within block height range')
     .action(function(walletName, start, end) {
       var walletId = utils.getWalletIdFromName(walletName);
-      client.config.unlockApiKey(function(err) {
-        if (err) {
-          throw err;
-        }
-        var options = {
-          height: start,
-          index: 0,
-          limit: 10,
-          end: end
-        };
-        var stream = client.getTransactionsCSVStream(walletId, options);
-        stream.pipe(process.stdout);
-      });
+      var options = {
+        height: start,
+        index: 0,
+        limit: 10,
+        end: end
+      };
+      var stream = client.getTransactionsCSVStream(walletId, options);
+      stream.pipe(process.stdout);
     });
 
   program
@@ -273,19 +231,14 @@ function main(err) {
     .description('View transaction list history within block height range')
     .action(function(walletName, start, end) {
       var walletId = utils.getWalletIdFromName(walletName);
-      client.config.unlockApiKey(function(err) {
-        if (err) {
-          throw err;
-        }
-        var options = {
-          height: start,
-          index: 0,
-          limit: 10,
-          end: end
-        };
-        var stream = client.getTransactionsListStream(walletId, options);
-        stream.pipe(process.stdout);
-      });
+      var options = {
+        height: start,
+        index: 0,
+        limit: 10,
+        end: end
+      };
+      var stream = client.getTransactionsListStream(walletId, options);
+      stream.pipe(process.stdout);
     });
 
   program
@@ -293,24 +246,19 @@ function main(err) {
     .description('View latest txids for a wallet')
     .action(function(walletName, start, limit) {
       var walletId = utils.getWalletIdFromName(walletName);
-      client.config.unlockApiKey(function(err) {
+      var options = {};
+      if (start) {
+        options.height = start;
+        options.index = 0;
+      }
+      if (limit) {
+        options.limit = limit;
+      }
+      client.getTxids(walletId, options, function(err, res, body) {
         if (err) {
           throw err;
         }
-        var options = {};
-        if (start) {
-          options.height = start;
-          options.index = 0;
-        }
-        if (limit) {
-          options.limit = limit;
-        }
-        client.getTxids(walletId, options, function(err, res, body) {
-          if (err) {
-            throw err;
-          }
-          console.log(body);
-        });
+        console.log(body);
       });
     });
 
@@ -319,20 +267,15 @@ function main(err) {
     .description('View continuous stream of latest txids for a wallet')
     .action(function(walletName, start) {
       var walletId = utils.getWalletIdFromName(walletName);
-      client.config.unlockApiKey(function(err) {
-        if (err) {
-          throw err;
-        }
-        var options = {};
-        if (start) {
-          options.height = start;
-          options.index = 0;
-        }
-        options.limit = 500;
-        var stream = client.getTxidsStream(walletId, options);
-        stream.on('data', function(txids) {
-          console.log(txids);
-        });
+      var options = {};
+      if (start) {
+        options.height = start;
+        options.index = 0;
+      }
+      options.limit = 500;
+      var stream = client.getTxidsStream(walletId, options);
+      stream.on('data', function(txids) {
+        console.log(txids);
       });
     });
 
