@@ -13,7 +13,6 @@ var program = require('commander');
 var ProgressBar = require('progress');
 
 var version = require('../package.json').version;
-var Client = require('../lib/client');
 var ClientConfig  = require('../lib/client/config');
 var utils = require('../lib/utils');
 
@@ -37,15 +36,10 @@ var config = new ClientConfig({
   network: network
 });
 
-config.setup(function() {
-  config.unlockApiKey(main);
-});
-
-function main(err) {
+config.setup(function(err) {
   if (err) {
     throw err;
   }
-  var client = new Client(config);
   program
     .command('generateKey')
     .description('Generate a key pair')
@@ -91,7 +85,7 @@ function main(err) {
   program
     .command('createWallet <walletName>')
     .description('Create a new wallet')
-    .action(function(walletName) {
+    .action(config.unlockClientThrough(function(client, walletName) {
       var walletId = utils.getWalletIdFromName(walletName);
 
       client.createWallet(walletId, function(err, res, body) {
@@ -100,12 +94,12 @@ function main(err) {
         }
         console.log(body);
       });
-    });
+    }));
 
   program
     .command('getBalance <walletName>')
     .description('Get the balance of the wallet')
-    .action(function(walletName) {
+    .action(config.unlockClientThrough(function(client, walletName) {
       var walletId = utils.getWalletIdFromName(walletName);
       client.getBalance(walletId, function(err, res, body) {
         if (err) {
@@ -113,12 +107,12 @@ function main(err) {
         }
         console.log(body);
       });
-    });
+    }));
 
   program
     .command('importAddress <walletName> <address>')
     .description('Import a new address')
-    .action(function(walletName, address) {
+    .action(config.unlockClientThrough(function(client, walletName, address) {
       var walletId = utils.getWalletIdFromName(walletName);
       client.importAddress(walletId, address, function(err, res, body) {
         if (err) {
@@ -126,12 +120,12 @@ function main(err) {
         }
         console.log(body);
       });
-    });
+    }));
 
   program
     .command('importAddresses <walletName> <filepath>')
     .description('Import new addresses from a JSON or Bitcoin wallet.dat file')
-    .action(function(walletName, filepath) {
+    .action(config.unlockClientThrough(function(client, walletName, filepath) {
       var walletId = utils.getWalletIdFromName(walletName);
       utils.readWalletFile(filepath, config.getNetworkName(), function(err, addresses) {
         if (err) {
@@ -157,12 +151,12 @@ function main(err) {
           });
         });
       });
-    });
+    }));
 
   program
     .command('getTransactions <walletName> [start] [limit]')
     .description('View latest transactions for a wallet')
-    .action(function(walletName, start, limit) {
+    .action(config.unlockClientThrough(function(client, walletName, start, limit) {
       var walletId = utils.getWalletIdFromName(walletName);
       var options = {};
       if (start) {
@@ -178,12 +172,12 @@ function main(err) {
         }
         console.log(JSON.stringify(body, null, 2));
       });
-    });
+    }));
 
   program
     .command('getUTXOs <walletName>')
     .description('View utxos for a wallet')
-    .action(function(walletName) {
+    .action(config.unlockClientThrough(function(client, walletName) {
       var walletId = utils.getWalletIdFromName(walletName);
       var options = {};
       client.getUTXOs(walletId, options, function(err, res, body) {
@@ -192,12 +186,12 @@ function main(err) {
         }
         console.log(JSON.stringify(body, null, 2));
       });
-    });
+    }));
 
   program
     .command('getTransactionsStream <walletId> [start]')
     .description('View continuous stream of latest transactions for a wallet')
-    .action(function(walletName, start) {
+    .action(config.unlockClientThrough(function(client, walletName, start) {
       var walletId = utils.getWalletIdFromName(walletName);
       var options = {};
       if (start) {
@@ -209,12 +203,12 @@ function main(err) {
       stream.on('data', function(transactions) {
         console.log(transactions);
       });
-    });
+    }));
 
   program
     .command('getTransactionsCSV <walletName> <start> <end>')
     .description('View transaction CSV history within block height range')
-    .action(function(walletName, start, end) {
+    .action(config.unlockClientThrough(function(client, walletName, start, end) {
       var walletId = utils.getWalletIdFromName(walletName);
       var options = {
         height: start,
@@ -224,12 +218,12 @@ function main(err) {
       };
       var stream = client.getTransactionsCSVStream(walletId, options);
       stream.pipe(process.stdout);
-    });
+    }));
 
   program
     .command('getTransactionsList <walletName> <start> <end>')
     .description('View transaction list history within block height range')
-    .action(function(walletName, start, end) {
+    .action(config.unlockClientThrough(function(client, walletName, start, end) {
       var walletId = utils.getWalletIdFromName(walletName);
       var options = {
         height: start,
@@ -239,12 +233,12 @@ function main(err) {
       };
       var stream = client.getTransactionsListStream(walletId, options);
       stream.pipe(process.stdout);
-    });
+    }));
 
   program
     .command('getTxids <walletName> [start] [limit]')
     .description('View latest txids for a wallet')
-    .action(function(walletName, start, limit) {
+    .action(config.unlockClientThrough(function(client, walletName, start, limit) {
       var walletId = utils.getWalletIdFromName(walletName);
       var options = {};
       if (start) {
@@ -260,12 +254,12 @@ function main(err) {
         }
         console.log(body);
       });
-    });
+    }));
 
   program
     .command('getTxidsStream <walletName> [start]')
     .description('View continuous stream of latest txids for a wallet')
-    .action(function(walletName, start) {
+    .action(config.unlockClientThrough(function(client, walletName, start) {
       var walletId = utils.getWalletIdFromName(walletName);
       var options = {};
       if (start) {
@@ -277,7 +271,7 @@ function main(err) {
       stream.on('data', function(txids) {
         console.log(txids);
       });
-    });
+    }));
 
   program
     .command('*', false, {noHelp: true})
@@ -296,4 +290,4 @@ function main(err) {
   if (process.argv.length === 2) {
     program.help();
   }
-}
+});
