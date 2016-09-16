@@ -378,7 +378,7 @@ describe('Wallet Web Worker', function() {
     it('will handle error from get latest txids', function(done) {
       var worker = new WebWorker(options);
       var txn = {
-        getBinary: sinon.stub().returns(new Buffer(new Array())),
+        getBinary: sinon.stub().returns(new Buffer([])),
         abort: sinon.stub()
       };
       worker.db = {
@@ -398,7 +398,7 @@ describe('Wallet Web Worker', function() {
     });
     it('will map over txids and get wallet transactions from db', function(done) {
       var worker = new WebWorker(options);
-      var getBinary = sinon.stub().returns(new Buffer(new Array()));
+      var getBinary = sinon.stub().returns(new Buffer([]));
       var txn = {
         getBinary: getBinary,
         abort: sinon.stub()
@@ -491,7 +491,7 @@ describe('Wallet Web Worker', function() {
         height: 400,
         index: 12
       };
-      worker.getWalletTransactions(walletId, opts, function(err, result) {
+      worker.getWalletTransactions(walletId, opts, function(err) {
         err.should.be.instanceOf(Error);
         err.message.should.equal('test');
         txn.abort.callCount.should.equal(1);
@@ -563,6 +563,38 @@ describe('Wallet Web Worker', function() {
     var sandbox = sinon.sandbox.create();
     afterEach(function() {
       sandbox.restore();
+    });
+    it('will end at the correct endpoint', function(done) {
+      sandbox.stub(utils, 'isRangeLessThan').returns(true);
+      sandbox.stub(models.WalletTxid, 'parseKey').returns({height: 399999, index: 0});
+      var cursor = {
+        goToKey: sinon.stub(),
+        goToPrev: sinon.stub(),
+        close: sinon.stub(),
+        getCurrentBinary: sinon.stub().callsArgWith(0, 'key', 'value')
+      };
+      var WebWorkerStubbed = proxyquire('../lib/web-workers', {
+        'node-lmdb': {
+          Cursor: sinon.stub().returns(cursor)
+        }
+      });
+      var worker = new WebWorkerStubbed(options);
+      worker.db = {};
+      worker._getLatestTxids({}, walletId, {
+        height: 401000,
+        index: MAX_INT,
+        end: {
+          height: 400000,
+          index: 18
+        }
+      }, function(err, data) {
+        if (err) {
+          return done(err);
+        }
+        data.txids.should.deep.equal([]);
+        data.start.should.deep.equal({height: 401000, index: MAX_INT});
+        done();
+      });
     });
     it('will give error from validator', function(done) {
       var worker = new WebWorker(options);
