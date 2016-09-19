@@ -694,6 +694,19 @@ describe('Wallet Utils', function() {
         done();
       });
     });
+    it('will deal with improper decryption', function(done) {
+      var salt = 'c59cf45974c2ec1f75f14755d3caa67da0a3ed18b91c717db5af024165e2aa11';
+      var cipherText = 'dbac44fe4c22aae8171d9ccf07407186c368b024a0027ba28530877863c056a5344369ea1a4b0e32db6cc886eb2c25ff';
+      utils.decryptSecret({
+        cipherText: cipherText,
+        passphrase: '',
+        salt: salt,
+      }, function(err, res) {
+        err.should.be.instanceOf(Error);
+        err.message.should.match(/^Secret to be xor\'ed/);
+        done();
+      });
+    });
   });
   describe('#encryptSecretWithPassphrase', function() {
     var secret = crypto.randomBytes(32);
