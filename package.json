@@ -32,7 +32,7 @@
   "homepage": "https://github.com/bitpay/bwdb#readme",
   "dependencies": {
     "async": "^2.0.0",
-    "bitcoind-rpc": "braydonf/bitcoind-rpc#f4a0e239392712336028228704d29831fe3aa1d5",
+    "bitcoind-rpc": "^0.7.0",
     "bitcore-lib": "^0.13.19",
     "bitcore-node": "braydonf/bitcore-node#6eac60a6e4218c758e03d8b18573492851f51716",
     "bloom-filter": "braydonf/bloom-filter#28a473273e276d3293f465308d6b7442167cbf0f",
