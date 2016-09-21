@@ -44,7 +44,7 @@
     "lodash": "^4.13.1",
     "mkdirp": "^0.5.1",
     "morgan": "^1.7.0",
-    "node-lmdb": "Venemo/node-lmdb#34e7a34ad795d2d1740ec6e7c299fe57bf8f1621",
+    "node-lmdb": "Venemo/node-lmdb#ffe29fc5ef8104109d4c0a595fced5986f35f6a1",
     "progress": "^1.1.8",
     "scrypt": "^6.0.3",
     "secp256k1": "^3.2.0",

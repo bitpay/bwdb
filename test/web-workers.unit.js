@@ -233,10 +233,10 @@ describe('Wallet Web Worker', function() {
     });
   });
   describe('#_transformRawTransaction', function() {
-    var walletId = 'bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0';
+    var walletId = new Buffer('bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0', 'hex');
     var txn = {
       getBinary: function(dbi, key) {
-        if (key === walletId + '01' + 'd459616bfac2fb02b3150dd83c8be25e7be5358a') {
+        if (key.toString('hex') === walletId.toString('hex') + '01' + 'd459616bfac2fb02b3150dd83c8be25e7be5358a') {
           return new Buffer(new Array(0));
         }
         return false;
@@ -269,7 +269,7 @@ describe('Wallet Web Worker', function() {
     });
   });
   describe('#_importTransaction', function() {
-    var walletId = 'bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0';
+    var walletId = new Buffer('bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0', 'hex');
     var sandbox = sinon.sandbox.create();
     afterEach(function() {
       sandbox.restore();
@@ -303,7 +303,7 @@ describe('Wallet Web Worker', function() {
         worker._clients[0].getRawTransaction.callCount.should.equal(1);
         worker._queueWriterTask.callCount.should.equal(1);
         worker._queueWriterTask.args[0][0].should.equal('saveTransaction');
-        worker._queueWriterTask.args[0][1].should.deep.equal([walletId, 'transaction']);
+        worker._queueWriterTask.args[0][1].should.deep.equal([walletId.toString('hex'), 'transaction']);
         worker._queueWriterTask.args[0][2].should.equal(1);
         transaction.should.equal('transaction');
         done();
@@ -350,7 +350,7 @@ describe('Wallet Web Worker', function() {
     });
   });
   describe('#getWalletTransactions', function() {
-    var walletId = 'bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0';
+    var walletId = new Buffer('bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0', 'hex');
     var sandbox = sinon.sandbox.create();
     afterEach(function() {
       sandbox.restore();
@@ -559,7 +559,7 @@ describe('Wallet Web Worker', function() {
     });
   });
   describe('#_getLatestTxids', function() {
-    var walletId = 'bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0';
+    var walletId = new Buffer('bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0', 'hex');
     var sandbox = sinon.sandbox.create();
     afterEach(function() {
       sandbox.restore();
@@ -747,7 +747,7 @@ describe('Wallet Web Worker', function() {
     afterEach(function() {
       sandbox.restore();
     });
-    var walletId = 'bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0';
+    var walletId = new Buffer('bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0', 'hex');
     it('will get 404 if wallet not found', function(done) {
       var worker = new WebWorker(options);
       var getBinary = sinon.stub().returns(null);
@@ -786,7 +786,7 @@ describe('Wallet Web Worker', function() {
     });
   });
   describe('#getWalletTxids', function() {
-    var walletId = 'bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0';
+    var walletId = new Buffer('bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0', 'hex');
     it('will give error if options are invalid', function(done) {
       var worker = new WebWorker(options);
       var txn = {
@@ -891,7 +891,7 @@ describe('Wallet Web Worker', function() {
     });
   });
   describe('#_endpointBalance', function() {
-    var walletId = 'bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0';
+    var walletId = new Buffer('bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0', 'hex');
     var sandbox = sinon.sandbox.create();
     afterEach(function() {
       sandbox.restore();
@@ -934,7 +934,7 @@ describe('Wallet Web Worker', function() {
     });
   });
   describe('#_endpointTxids', function() {
-    var walletId = 'bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0';
+    var walletId = new Buffer('bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0', 'hex');
     var sandbox = sinon.sandbox.create();
     afterEach(function() {
       sandbox.restore();
@@ -977,7 +977,7 @@ describe('Wallet Web Worker', function() {
     });
   });
   describe('#_endpointTransactions', function() {
-    var walletId = 'bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0';
+    var walletId = new Buffer('bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0', 'hex');
     var sandbox = sinon.sandbox.create();
     afterEach(function() {
       sandbox.restore();
@@ -1070,7 +1070,7 @@ describe('Wallet Web Worker', function() {
     });
   });
   describe('#_endpointPutAddress', function() {
-    var walletId = 'bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0';
+    var walletId = new Buffer('bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0', 'hex');
     var address = '12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX';
     var sandbox = sinon.sandbox.create();
     afterEach(function() {
@@ -1078,7 +1078,7 @@ describe('Wallet Web Worker', function() {
     });
     function checkWriterArgs(fn) {
       fn.args[0][0].should.equal('importWalletAddresses');
-      fn.args[0][1].should.deep.equal([walletId, [address]]);
+      fn.args[0][1].should.deep.equal([walletId.toString('hex'), [address]]);
       fn.args[0][2].should.equal(5);
     }
     it('will set status to 201 if new address created', function() {
@@ -1174,7 +1174,7 @@ describe('Wallet Web Worker', function() {
     });
   });
   describe('#_endpointPostAddresses', function() {
-    var walletId = 'bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0';
+    var walletId = new Buffer('bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0', 'hex');
     var addresses = [
       '12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX',
       '1HLoD9E4SDFFPDiYfNYnkBLQ85Y51J3Zb1'
@@ -1182,7 +1182,7 @@ describe('Wallet Web Worker', function() {
     function checkWriterArgs(fn) {
       fn.callCount.should.equal(1);
       fn.args[0][0].should.equal('importWalletAddresses');
-      fn.args[0][1].should.deep.equal([walletId, addresses]);
+      fn.args[0][1].should.deep.equal([walletId.toString('hex'), addresses]);
       fn.args[0][2].should.equal(10);
     }
     var sandbox = sinon.sandbox.create();
@@ -1255,7 +1255,7 @@ describe('Wallet Web Worker', function() {
     });
     it('will call sendError if error', function() {
       var worker = new WebWorker(options);
-      var walletId = 'bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0';
+      var walletId = new Buffer('bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0', 'hex');
       var error = new Error('test');
       worker._queueWriterTask = sinon.stub().callsArgWith(3, error);
       sandbox.stub(utils, 'sendError');
@@ -1273,7 +1273,7 @@ describe('Wallet Web Worker', function() {
     });
   });
   describe('#_endpointPutWallet', function() {
-    var walletId = 'bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0';
+    var walletId = new Buffer('bc3914647cfbfffb7b5f431d3d231e05c01c70ac72e47d992b885d596b87ead0', 'hex');
     var sandbox = sinon.sandbox.create();
     afterEach(function() {
       sandbox.restore();
@@ -1281,7 +1281,7 @@ describe('Wallet Web Worker', function() {
     function checkWriterArgs(fn) {
       fn.callCount.should.equal(1);
       fn.args[0][0].should.equal('createWallet');
-      fn.args[0][1].should.deep.equal([walletId]);
+      fn.args[0][1].should.deep.equal([walletId.toString('hex')]);
       fn.args[0][2].should.equal(20);
     }
     it('will set status to 204 if not a new walletId', function() {
@@ -1320,7 +1320,7 @@ describe('Wallet Web Worker', function() {
       status.args[0][0].should.equal(201);
       jsonp.callCount.should.equal(1);
       jsonp.args[0][0].should.deep.equal({
-        walletId: walletId
+        walletId: walletId.toString('hex')
       });
     });
     it('will call sendError if error', function() {

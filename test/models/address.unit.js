@@ -52,8 +52,6 @@ describe('Wallet Address Model', function() {
     it('will return database key', function() {
       var key = new WalletAddress(walletId, '2N2JD6wb56AfK4tfmM6PwdVmoYk2dCKf4Br');
       var dbKey = key.getKey();
-      var hexKey = key.getKey('hex');
-      dbKey.toString('hex').should.equal(hexKey);
       Buffer.isBuffer(dbKey).should.equal(true);
       var expectedKey = walletId.toString('hex');
       expectedKey += '02';

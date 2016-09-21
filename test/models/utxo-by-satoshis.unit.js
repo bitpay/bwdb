@@ -97,7 +97,6 @@ describe('Wallet UTXO By Satoshis Model', function() {
       expectedKey += '41124f8000000000'; // satoshis
       expectedKey += '5dde1b67c1a1dbc459f56a71efcedbd06c9516c51a9f901067253341175615bc'; // txid
       expectedKey += '00000003'; // index
-      utxo.getKey('hex').should.equal(expectedKey);
       utxo.getKey().toString('hex').should.equal(expectedKey);
     });
   });
@@ -109,7 +108,7 @@ describe('Wallet UTXO By Satoshis Model', function() {
       expectedKey += '41124f8000000000';
       expectedKey += '5dde1b67c1a1dbc459f56a71efcedbd06c9516c51a9f901067253341175615bc';
       expectedKey += '00000003';
-      key.should.equal(expectedKey);
+      key.should.deep.equal(new Buffer(expectedKey, 'hex'));
     });
   });
   describe('#getValue', function() {

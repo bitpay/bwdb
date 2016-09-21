@@ -170,12 +170,11 @@ describe('Wallet Transaction Model', function() {
   describe('#getKey', function() {
     it('will get the key', function() {
       var tx = new WalletTransaction(walletId, detailedData);
-      var key = tx.getKey('hex');
       var bufferKey = tx.getKey();
-
-      bufferKey.toString('hex').should.equal(key);
+      var hex = 'b4f97411dadf3882296997ade99f4a0891b07e768a76898b837ac41d2c2622e7477a1b4a632187319bfdf78675555ef18af554d2d7caa86b27a3a5230f7c6e98';
+      bufferKey.toString('hex').should.equal(hex);
       var expectedKey = walletId.toString('hex') + tx.value.hash;
-      key.should.equal(expectedKey);
+      bufferKey.toString('hex').should.equal(expectedKey);
     });
   });
   describe('@getKey', function() {

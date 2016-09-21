@@ -54,14 +54,8 @@ describe('Wallet Address Map Model', function() {
     });
   });
   describe('@getKey', function() {
-    it('will get the key with encoding', function() {
-      var key = WalletAddressMap.getKey(address, 'hex', bitcore.Networks.testnet);
-      var expectedKey = '02'; // address type
-      expectedKey += '6349a418fc4578d10a372b54b45c280cc8c4382f'; // address hash
-      key.should.equal(expectedKey);
-    });
     it('will get the key', function() {
-      var key = WalletAddressMap.getKey(address, '', bitcore.Networks.testnet);
+      var key = WalletAddressMap.getKey(address, bitcore.Networks.testnet);
       var expectedKey = '02'; // address type
       expectedKey += '6349a418fc4578d10a372b54b45c280cc8c4382f'; // address hash
       key.toString('hex').should.equal(expectedKey);
@@ -72,7 +66,7 @@ describe('Wallet Address Map Model', function() {
       var map = WalletAddressMap.create(address, walletIds, bitcore.Networks.testnet);
       var expectedKey = '02'; // address type
       expectedKey += '6349a418fc4578d10a372b54b45c280cc8c4382f'; // address hash
-      map.getKey('hex').should.equal(expectedKey);
+      map.getKey().toString('hex').should.equal(expectedKey);
     });
   });
   describe('#getValue', function() {

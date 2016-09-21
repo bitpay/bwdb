@@ -71,7 +71,6 @@ describe('Wallet Txids Model', function() {
       expectedKey += '00062d65'; // height
       expectedKey += '00000017'; // index
       txid.getKey().toString('hex').should.equal(expectedKey);
-      txid.getKey('hex').should.equal(expectedKey);
     });
   });
   describe('#parseKey', function() {
@@ -79,7 +78,7 @@ describe('Wallet Txids Model', function() {
       var key = 'b4f97411dadf3882296997ade99f4a0891b07e768a76898b837ac41d2c2622e7'; // walletId
       key += '00062d65'; // height
       key += '00000017'; // index
-      var items = WalletTxid.parseKey(key);
+      var items = WalletTxid.parseKey(new Buffer(key, 'hex'));
       items.walletId.toString('hex').should.equal('b4f97411dadf3882296997ade99f4a0891b07e768a76898b837ac41d2c2622e7');
       items.height.should.equal(404837);
       items.index.should.equal(23);

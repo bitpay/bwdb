@@ -93,7 +93,6 @@ describe('Wallet UTXO Model', function() {
       var expectedKey = 'b4f97411dadf3882296997ade99f4a0891b07e768a76898b837ac41d2c2622e7'; // walletId
       expectedKey += '5dde1b67c1a1dbc459f56a71efcedbd06c9516c51a9f901067253341175615bc'; // txid
       expectedKey += '00000003'; // index
-      utxo.getKey('hex').should.equal(expectedKey);
       utxo.getKey().toString('hex').should.equal(expectedKey);
     });
   });
@@ -104,7 +103,7 @@ describe('Wallet UTXO Model', function() {
       var expectedKey = 'b4f97411dadf3882296997ade99f4a0891b07e768a76898b837ac41d2c2622e7';
       expectedKey += '5dde1b67c1a1dbc459f56a71efcedbd06c9516c51a9f901067253341175615bc';
       expectedKey += '00000003';
-      key.should.equal(expectedKey);
+      key.should.deep.equal(new Buffer(expectedKey, 'hex'));
     });
   });
   describe('#getValue', function() {

@@ -582,7 +582,6 @@ describe('Wallet Writer Worker', function() {
       models.WalletUTXO.create.args[0][0].should.equal(walletId);
       models.WalletUTXO.create.args[0][1].should.deep.equal(utxoData);
       utxo.getKey.callCount.should.equal(3);
-      utxo.getKey.args[0][0].should.equal('hex');
       utxo.getValue.callCount.should.equal(3);
 
       txn.putBinary.args[1][0].should.deep.equal(utxosBySatoshis);
@@ -591,7 +590,6 @@ describe('Wallet Writer Worker', function() {
       models.WalletUTXO.create.callCount.should.equal(1);
       models.WalletUTXO.create.args[0][0].should.equal(walletId);
       models.WalletUTXO.create.args[0][1].should.deep.equal(utxoData);
-      utxo.getKey.args[1][0].should.equal('hex');
 
       txn.putBinary.args[0][0].should.deep.equal(utxos);
       txn.putBinary.args[0][1].should.equal('utxokey');
@@ -599,7 +597,6 @@ describe('Wallet Writer Worker', function() {
       models.WalletUTXO.create.callCount.should.equal(1);
       models.WalletUTXO.create.args[0][0].should.equal(walletId);
       models.WalletUTXO.create.args[0][1].should.deep.equal(utxoData);
-      utxo.getKey.args[2][0].should.equal('hex');
     });
   });
   describe('#_undoAddUTXO', function() {
@@ -645,21 +642,18 @@ describe('Wallet Writer Worker', function() {
       models.WalletUTXO.create.args[0][0].should.equal(walletId);
       models.WalletUTXO.create.args[0][1].should.deep.equal(utxoData);
       utxo.getKey.callCount.should.equal(3);
-      utxo.getKey.args[0][0].should.equal('hex');
 
       txn.del.args[1][0].should.deep.equal(utxosBySatoshis);
       txn.del.args[1][1].should.equal('utxokey');
       models.WalletUTXO.create.callCount.should.equal(1);
       models.WalletUTXO.create.args[0][0].should.equal(walletId);
       models.WalletUTXO.create.args[0][1].should.deep.equal(utxoData);
-      utxo.getKey.args[1][0].should.equal('hex');
 
       txn.del.args[0][0].should.deep.equal(utxos);
       txn.del.args[0][1].should.equal('utxokey');
       models.WalletUTXO.create.callCount.should.equal(1);
       models.WalletUTXO.create.args[0][0].should.equal(walletId);
       models.WalletUTXO.create.args[0][1].should.deep.equal(utxoData);
-      utxo.getKey.args[2][0].should.equal('hex');
     });
   });
   describe('#_removeUTXO', function() {
@@ -703,7 +697,6 @@ describe('Wallet Writer Worker', function() {
       models.WalletUTXO.getKey.args[0][0].should.equal(walletId);
       models.WalletUTXO.getKey.args[0][1].should.equal(delta.prevtxid);
       models.WalletUTXO.getKey.args[0][2].should.equal(delta.prevout);
-      models.WalletUTXO.getKey.args[0][3].should.equal('hex');
 
       txn.getBinary.callCount.should.equal(1);
       txn.getBinary.args[0][0].should.deep.equal(utxos);
@@ -774,7 +767,6 @@ describe('Wallet Writer Worker', function() {
       models.WalletUTXO.getKey.args[0][0].should.equal(walletId);
       models.WalletUTXO.getKey.args[0][1].should.equal(delta.prevtxid);
       models.WalletUTXO.getKey.args[0][2].should.equal(delta.prevout);
-      models.WalletUTXO.getKey.args[0][3].should.equal('hex');
 
       models.WalletUTXO.callCount.should.equal(1);
       models.WalletUTXO.args[0][0].should.equal('undo information is not available to restore utxo');
@@ -963,19 +955,17 @@ describe('Wallet Writer Worker', function() {
 
         models.WalletAddressMap.getKey.callCount.should.equal(2);
         models.WalletAddressMap.getKey.args[0][0].should.equal(transaction.inputs[0].address);
-        models.WalletAddressMap.getKey.args[0][1].should.equal('hex');
-        models.WalletAddressMap.getKey.args[0][2].name.should.equal(options.network);
+        models.WalletAddressMap.getKey.args[0][1].name.should.equal(options.network);
 
         models.WalletAddressMap.getKey.args[1][0].should.equal(transaction.outputs[0].address);
-        models.WalletAddressMap.getKey.args[1][1].should.equal('hex');
-        models.WalletAddressMap.getKey.args[1][2].name.should.equal(options.network);
+        models.WalletAddressMap.getKey.args[1][1].name.should.equal(options.network);
 
         txn.getBinary.callCount.should.equal(3);
         txn.getBinary.args[0][0].should.deep.equal(worker.db.addressesMap);
         txn.getBinary.args[0][1].should.equal('address map key');
 
         txn.getBinary.args[1][0].should.deep.equal(worker.db.wallets);
-        txn.getBinary.args[1][1].should.equal(walletId.toString('hex'));
+        txn.getBinary.args[1][1].should.equal(walletId);
 
         txn.getBinary.args[2][0].should.deep.equal(worker.db.addressesMap);
         txn.getBinary.args[2][1].should.equal('address map key');
@@ -1281,19 +1271,17 @@ describe('Wallet Writer Worker', function() {
 
         models.WalletAddressMap.getKey.callCount.should.equal(2);
         models.WalletAddressMap.getKey.args[0][0].should.equal(transaction.inputs[0].address);
-        models.WalletAddressMap.getKey.args[0][1].should.equal('hex');
-        models.WalletAddressMap.getKey.args[0][2].name.should.equal(options.network);
+        models.WalletAddressMap.getKey.args[0][1].name.should.equal(options.network);
 
         models.WalletAddressMap.getKey.args[1][0].should.equal(transaction.outputs[0].address);
-        models.WalletAddressMap.getKey.args[1][1].should.equal('hex');
-        models.WalletAddressMap.getKey.args[1][2].name.should.equal(options.network);
+        models.WalletAddressMap.getKey.args[1][1].name.should.equal(options.network);
 
         txn.getBinary.callCount.should.equal(3);
         txn.getBinary.args[0][0].should.deep.equal(worker.db.addressesMap);
         txn.getBinary.args[0][1].should.equal('address map key');
 
         txn.getBinary.args[1][0].should.deep.equal(worker.db.wallets);
-        txn.getBinary.args[1][1].should.equal(walletId.toString('hex'));
+        txn.getBinary.args[1][1].should.equal(walletId);
 
         txn.getBinary.args[2][0].should.deep.equal(worker.db.addressesMap);
         txn.getBinary.args[2][1].should.equal('address map key');
@@ -2395,7 +2383,7 @@ describe('Wallet Writer Worker', function() {
     it('will give error if wallet is currently syncing or importing another address', function(done) {
       var worker = new WriterWorker(options);
       worker.syncing = true;
-      worker.importWalletAddresses({}, {}, function(err) {
+      worker.importWalletAddresses(walletId, {}, function(err) {
         err.should.be.instanceOf(Error);
         done();
       });

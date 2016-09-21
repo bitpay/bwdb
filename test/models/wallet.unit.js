@@ -102,7 +102,7 @@ describe('Wallet Data Model', function() {
         balance: 100000000
       });
       var key = wallet.getKey('hex');
-      walletId.toString('hex').should.equal(key);
+      walletId.toString('hex').should.equal(key.toString('hex'));
       key = wallet.getKey();
       walletId.compare(key).should.equal(0);
     });

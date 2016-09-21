@@ -44,12 +44,11 @@ describe('WalletBlockModel', function () {
 
   describe('#fromBuffer', function () {
     it('will create a new object from buffer', function () {
-      var block = new WalletBlock(10, {blockHash: new Buffer('0b925ce878f804390cf4d845a150ee142a167339d3984796c01a2efb6b5a3ce4', 'hex')});
+      var block = new WalletBlock(10, {
+        blockHash: new Buffer('0b925ce878f804390cf4d845a150ee142a167339d3984796c01a2efb6b5a3ce4', 'hex')
+      });
       var key = block.getKey();
-      var hexKey = block.getKey('hex');
-
-      key.toString('hex').should.equal(hexKey);
-
+      key.toString('hex').should.equal('0000000a');
       var serialized = block.getValue();
       var returnedBlock = WalletBlock.fromBuffer(key, serialized);
       block.height.should.equal(returnedBlock.height);

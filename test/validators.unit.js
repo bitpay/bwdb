@@ -226,7 +226,8 @@ describe('Wallet Validators', function() {
       };
       var res = {};
       validators.checkWalletId(req, res, function() {
-        req.walletId.should.equal('9d340c9b8014d2b96e1b0ae71653fc4460b49513a8fbcc0578f0f3fcb9d964e6');
+        var buf = new Buffer('9d340c9b8014d2b96e1b0ae71653fc4460b49513a8fbcc0578f0f3fcb9d964e6', 'hex');
+        req.walletId.should.deep.equal(buf);
         done();
       });
     });
