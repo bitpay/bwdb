@@ -24,7 +24,7 @@ describe('Wallet Address Map Model', function() {
       checkMap(map);
     });
     it('will instantiate without new', function() {
-      var map = WalletAddressMap(address, walletIds, bitcore.Networks.testnet);
+      var map = new WalletAddressMap(address, walletIds, bitcore.Networks.testnet);
       should.exist(map);
       checkMap(map);
     });
@@ -44,10 +44,9 @@ describe('Wallet Address Map Model', function() {
   });
   describe('@fromBuffer', function() {
     it('will parse buffer', function() {
-      var keyString = '02'; // address type
-      keyString += '6349a418fc4578d10a372b54b45c280cc8c4382f'; // address hash
+      var keyBuffer = new Buffer('026349a418fc4578d10a372b54b45c280cc8c4382f', 'hex');
       var value = Buffer.concat([walletId1, walletId2]); // wallet ids
-      var map = WalletAddressMap.fromBuffer(keyString, value, bitcore.Networks.testnet);
+      var map = WalletAddressMap.fromBuffer(keyBuffer, value, bitcore.Networks.testnet);
       map.address.toString().should.equal('2N2JD6wb56AfK4tfmM6PwdVmoYk2dCKf4Br');
       map.walletIds[0].compare(walletId1).should.equal(0);
       map.walletIds[1].compare(walletId2).should.equal(0);
