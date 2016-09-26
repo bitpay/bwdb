@@ -126,8 +126,14 @@ describe('Wallet Service', function() {
       };
 
       var fn = sinon.stub();
-      var temp = function(msg, t){t('ready');};
-      var spawnStub = sinon.stub().returns({once:temp});
+      var temp = function(msg, t) {
+        t('ready');
+      };
+      var spawned = {
+        once: temp,
+        on: sinon.stub()
+      };
+      var spawnStub = sinon.stub().returns(spawned);
       var Wallet = proxyquire('../lib/wallet-service', {
         'child_process': {
           spawn: spawnStub
@@ -227,7 +233,6 @@ describe('Wallet Service', function() {
         tempFunc = func;
         return tempEmitter;
       };
-
       var WalletStub = proxyquire('../lib/wallet-service', {
         net: {
           connect: connect
@@ -447,6 +452,9 @@ describe('Wallet Service', function() {
     afterEach(function() {
       sandbox.restore();
     });
+    beforeEach(function() {
+      sandbox.stub(console, 'error');
+    });
 
     var exitWorker = sinon.stub().callsArg(2);
     var node = {
@@ -472,12 +480,23 @@ describe('Wallet Service', function() {
     it('will exit all workers', function(done) {
       sandbox.stub(utils, 'exitWorker', exitWorker);
       var wallet = new Wallet(options);
+      wallet._webWorkers = sinon.stub();
+      wallet._writerWorker = sinon.stub();
+      wallet.stop(done);
+    });
+    it('will exit only web workers', function(done) {
+      sandbox.stub(utils, 'exitWorker', exitWorker);
+      var wallet = new Wallet(options);
+      wallet._webWorkers = sinon.stub();
+      wallet._writerWorker = null;
       wallet.stop(done);
     });
     it('will exit all workers with error', function(done) {
       var exitWorker = sinon.stub().callsArgWith(2, new Error('error'));
       sandbox.stub(utils, 'exitWorker', exitWorker);
       var wallet = new Wallet(options);
+      wallet._webWorkers = sinon.stub();
+      wallet._writerWorker = sinon.stub();
       wallet.stop(function(err) {
         should.exist(err);
         err.message.should.equal('error');
