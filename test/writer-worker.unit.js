@@ -169,7 +169,7 @@ describe('Wallet Writer Worker', function() {
           var serialized = block.getValue();
           func(hexKey, serialized);
         },
-        goToLast: sinon.stub().returns(false),
+        goToLast: sinon.stub().returns(null),
         close: sinon.stub()
       };
       sandbox.stub(lmdb, 'Cursor', function() {
