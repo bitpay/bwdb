@@ -1053,6 +1053,291 @@ describe('Wallet Writer Worker', function() {
       });
     });
   });
+  describe('#_pruneWalletBlocks', function() {
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
+    });
+    it('will abort if no last block found', function(done) {
+      var cursor = {
+        goToLast: sinon.stub().returns(null),
+        close: sinon.stub()
+      };
+      sandbox.stub(lmdb, 'Cursor').returns(cursor);
+      var worker = new WriterWorker(options);
+      var txn = {
+        abort: sinon.stub()
+      };
+      worker.db = {
+        env: {
+          beginTxn: sinon.stub().returns(txn)
+        }
+      };
+      worker._pruneWalletBlocks(function(err) {
+        if (err) {
+          return done(err);
+        }
+        cursor.close.callCount.should.equal(1);
+        txn.abort.callCount.should.equal(1);
+        done();
+      });
+    });
+    it('will get the current latest block height', function(done) {
+      var key = new Buffer([]);
+      var value = new Buffer([]);
+      var cursor = {
+        del: sinon.stub(),
+        goToPrev: sinon.stub().returns(null),
+        goToKey: sinon.stub().returns('somekey'),
+        goToLast: sinon.stub().returns('somekey'),
+        close: sinon.stub(),
+        getCurrentBinary: sinon.stub().callsArgWith(0, key, value)
+      };
+      sandbox.stub(console, 'info');
+      sandbox.stub(lmdb, 'Cursor').returns(cursor);
+      sandbox.stub(models.WalletBlock, 'fromBuffer').returns({
+        height: 8064
+      });
+      var worker = new WriterWorker(options);
+      var txn = {
+        abort: sinon.stub(),
+        commit: sinon.stub()
+      };
+      worker.db = {
+        env: {
+          beginTxn: sinon.stub().returns(txn),
+          sync: sinon.stub().callsArg(0)
+        }
+      };
+      worker._pruneWalletBlocks(function(err) {
+        if (err) {
+          return done(err);
+        }
+        cursor.del.callCount.should.equal(1);
+        cursor.goToPrev.callCount.should.equal(1);
+        cursor.close.callCount.should.equal(1);
+        txn.abort.callCount.should.equal(0);
+        txn.commit.callCount.should.equal(1);
+        done();
+      });
+    });
+    it('will abort if prune block previous is not found', function(done) {
+      var key = new Buffer([]);
+      var value = new Buffer([]);
+      var cursor = {
+        del: sinon.stub(),
+        goToPrev: sinon.stub().returns(null),
+        goToKey: sinon.stub().returns(null),
+        goToLast: sinon.stub().returns('somekey1'),
+        close: sinon.stub(),
+        getCurrentBinary: sinon.stub().callsArgWith(0, key, value)
+      };
+      sandbox.stub(console, 'info');
+      sandbox.stub(lmdb, 'Cursor').returns(cursor);
+      sandbox.stub(models.WalletBlock, 'fromBuffer').returns({
+        height: 8064
+      });
+      var worker = new WriterWorker(options);
+      var txn = {
+        abort: sinon.stub(),
+        commit: sinon.stub()
+      };
+      worker.db = {
+        env: {
+          beginTxn: sinon.stub().returns(txn),
+          sync: sinon.stub().callsArg(0)
+        }
+      };
+      worker._pruneWalletBlocks(function(err) {
+        if (err) {
+          return done(err);
+        }
+        cursor.del.callCount.should.equal(0);
+        cursor.goToPrev.callCount.should.equal(1);
+        cursor.close.callCount.should.equal(1);
+        txn.abort.callCount.should.equal(1);
+        txn.commit.callCount.should.equal(0);
+        done();
+      });
+    });
+    it('will abort if block height is not less than from previous block', function(done) {
+      var key = new Buffer([]);
+      var value = new Buffer([]);
+      var cursor = {
+        del: sinon.stub(),
+        goToPrev: sinon.stub().returns('somekey2'),
+        goToKey: sinon.stub().returns(null),
+        goToLast: sinon.stub().returns('somekey1'),
+        close: sinon.stub(),
+        getCurrentBinary: sinon.stub().callsArgWith(0, key, value)
+      };
+      cursor.goToPrev.onSecondCall().returns(null);
+      sandbox.stub(console, 'info');
+      sandbox.stub(lmdb, 'Cursor').returns(cursor);
+      sandbox.stub(models.WalletBlock, 'fromBuffer').returns({
+        height: 8064
+      });
+      var worker = new WriterWorker(options);
+      var txn = {
+        abort: sinon.stub(),
+        commit: sinon.stub()
+      };
+      worker.db = {
+        env: {
+          beginTxn: sinon.stub().returns(txn),
+          sync: sinon.stub().callsArg(0)
+        }
+      };
+      worker._pruneWalletBlocks(function(err) {
+        if (err) {
+          return done(err);
+        }
+        cursor.del.callCount.should.equal(0);
+        cursor.goToPrev.callCount.should.equal(1);
+        cursor.close.callCount.should.equal(1);
+        txn.abort.callCount.should.equal(1);
+        txn.commit.callCount.should.equal(0);
+        done();
+      });
+    });
+    it('will prune and commit if previous block found is less than prune height', function(done) {
+      var key = new Buffer([]);
+      var value = new Buffer([]);
+      var cursor = {
+        del: sinon.stub(),
+        goToPrev: sinon.stub().returns('somekey2'),
+        goToKey: sinon.stub().returns(null),
+        goToLast: sinon.stub().returns('somekey1'),
+        close: sinon.stub(),
+        getCurrentBinary: sinon.stub().callsArgWith(0, key, value)
+      };
+      cursor.goToPrev.onSecondCall().returns(null);
+      sandbox.stub(console, 'info');
+      sandbox.stub(lmdb, 'Cursor').returns(cursor);
+      sandbox.stub(models.WalletBlock, 'fromBuffer').returns({
+        height: 8064
+      });
+      models.WalletBlock.fromBuffer.onSecondCall().returns({
+        height: 1000
+      });
+      var worker = new WriterWorker(options);
+      var txn = {
+        abort: sinon.stub(),
+        commit: sinon.stub()
+      };
+      worker.db = {
+        env: {
+          beginTxn: sinon.stub().returns(txn),
+          sync: sinon.stub().callsArg(0)
+        }
+      };
+      worker._pruneWalletBlocks(function(err) {
+        if (err) {
+          return done(err);
+        }
+        cursor.del.callCount.should.equal(1);
+        cursor.goToPrev.callCount.should.equal(2);
+        cursor.close.callCount.should.equal(1);
+        txn.abort.callCount.should.equal(0);
+        txn.commit.callCount.should.equal(1);
+        done();
+      });
+    });
+    it('will prune multiple blocks', function(done) {
+      var key = new Buffer([]);
+      var value = new Buffer([]);
+      var cursor = {
+        del: sinon.stub(),
+        goToPrev: sinon.stub().returns('somekey2'),
+        goToKey: sinon.stub().returns(null),
+        goToLast: sinon.stub().returns('somekey1'),
+        close: sinon.stub(),
+        getCurrentBinary: sinon.stub().callsArgWith(0, key, value)
+      };
+      cursor.goToPrev.onSecondCall().returns('somekey3');
+      cursor.goToPrev.onThirdCall().returns(null);
+      sandbox.stub(console, 'info');
+      sandbox.stub(lmdb, 'Cursor').returns(cursor);
+      sandbox.stub(models.WalletBlock, 'fromBuffer').returns({
+        height: 8064
+      });
+      models.WalletBlock.fromBuffer.onSecondCall().returns({
+        height: 1000
+      });
+      models.WalletBlock.fromBuffer.onThirdCall().returns({
+        height: 999
+      });
+      var worker = new WriterWorker(options);
+      var txn = {
+        abort: sinon.stub(),
+        commit: sinon.stub()
+      };
+      worker.db = {
+        env: {
+          beginTxn: sinon.stub().returns(txn),
+          sync: sinon.stub().callsArg(0)
+        }
+      };
+      worker._pruneWalletBlocks(function(err) {
+        if (err) {
+          return done(err);
+        }
+        cursor.del.callCount.should.equal(2);
+        cursor.goToPrev.callCount.should.equal(3);
+        cursor.close.callCount.should.equal(1);
+        txn.abort.callCount.should.equal(0);
+        txn.commit.callCount.should.equal(1);
+        done();
+      });
+    });
+    it('will not prune multiple blocks if block height is greater than prune height', function(done) {
+      var key = new Buffer([]);
+      var value = new Buffer([]);
+      var cursor = {
+        del: sinon.stub(),
+        goToPrev: sinon.stub().returns('somekey2'),
+        goToKey: sinon.stub().returns(null),
+        goToLast: sinon.stub().returns('somekey1'),
+        close: sinon.stub(),
+        getCurrentBinary: sinon.stub().callsArgWith(0, key, value)
+      };
+      cursor.goToPrev.onSecondCall().returns('somekey3');
+      cursor.goToPrev.onThirdCall().returns(null);
+      sandbox.stub(console, 'info');
+      sandbox.stub(lmdb, 'Cursor').returns(cursor);
+      sandbox.stub(models.WalletBlock, 'fromBuffer').returns({
+        height: 8064
+      });
+      models.WalletBlock.fromBuffer.onSecondCall().returns({
+        height: 1000
+      });
+      models.WalletBlock.fromBuffer.onThirdCall().returns({
+        height: 9999999
+      });
+      var worker = new WriterWorker(options);
+      var txn = {
+        abort: sinon.stub(),
+        commit: sinon.stub()
+      };
+      worker.db = {
+        env: {
+          beginTxn: sinon.stub().returns(txn),
+          sync: sinon.stub().callsArg(0)
+        }
+      };
+      worker._pruneWalletBlocks(function(err) {
+        if (err) {
+          return done(err);
+        }
+        cursor.del.callCount.should.equal(1);
+        cursor.goToPrev.callCount.should.equal(2);
+        cursor.close.callCount.should.equal(1);
+        txn.abort.callCount.should.equal(0);
+        txn.commit.callCount.should.equal(1);
+        done();
+      });
+    });
+  });
   describe('#_connectBlockCommit', function() {
     var sandbox = sinon.sandbox.create();
     afterEach(function() {
@@ -1075,6 +1360,7 @@ describe('Wallet Writer Worker', function() {
       var spentOutputs = {};
 
       var worker = new WriterWorker(options);
+      worker._pruneWalletBlocks = sinon.stub().callsArg(0);
       var clone = sinon.stub().returns(walletBlock);
       worker.walletBlock = {
         clone: clone
