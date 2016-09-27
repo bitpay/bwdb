@@ -325,7 +325,7 @@ describe('Wallet Writer Worker', function() {
       server.once('error', function() {
         setImmediate(function() {
           console.error.callCount.should.equal(1);
-          console.error.args[0][0].should.equal(error);
+          console.error.args[0][0].should.contain(error);
           done();
         });
       });
