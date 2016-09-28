@@ -207,32 +207,50 @@ config.setup(function(err) {
 
   program
     .command('getTransactionsCSV <walletName> <start> <end>')
-    .description('View transaction CSV history within block height range')
+    .description('View transaction CSV history within time range, later to earlier, e.g. 2016-10-01 2016-09-01')
     .action(config.unlockClientThrough(function(client, walletName, start, end) {
       var walletId = utils.getWalletIdFromName(walletName);
       var options = {
-        height: start,
-        index: 0,
-        limit: 10,
-        end: end
+        startdate: start,
+        enddate: end
       };
-      var stream = client.getTransactionsCSVStream(walletId, options);
-      stream.pipe(process.stdout);
+      client.getHeightsFromTimestamps(options, function(err, res, body) {
+        if (err) {
+          throw err;
+        }
+        options = {
+          height: body.result.end.height,
+          index: 0,
+          limit: 50,
+          end: body.result.height
+        };
+        var stream = client.getTransactionsCSVStream(walletId, options);
+        stream.pipe(process.stdout);
+      });
     }));
 
   program
     .command('getTransactionsList <walletName> <start> <end>')
-    .description('View transaction list history within block height range')
+    .description('View transaction list history within time range, later to earlier, e.g. 2016-10-01 2016-09-01')
     .action(config.unlockClientThrough(function(client, walletName, start, end) {
       var walletId = utils.getWalletIdFromName(walletName);
       var options = {
-        height: start,
-        index: 0,
-        limit: 10,
-        end: end
+        startdate: start,
+        enddate: end
       };
-      var stream = client.getTransactionsListStream(walletId, options);
-      stream.pipe(process.stdout);
+      client.getHeightsFromTimestamps(options, function(err, res, body) {
+        if (err) {
+          throw err;
+        }
+        options = {
+          height: body.result.end.height,
+          index: 0,
+          limit: 50,
+          end: body.result.height
+        };
+        var stream = client.getTransactionsListStream(walletId, options);
+        stream.pipe(process.stdout);
+      });
     }));
 
   program

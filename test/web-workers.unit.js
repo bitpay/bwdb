@@ -1339,6 +1339,130 @@ describe('Wallet Web Worker', function() {
       utils.sendError.args[0][1].should.equal(res);
     });
   });
+  describe('#_endpointGetHeightsFromTimestamps', function() {
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
+    });
+
+    it('will get block heights from timestamps', function(done) {
+      var worker = new WebWorker(options);
+      worker._convertDateToHeight = sinon.stub().callsArgWith(2, null, [1000, 0]);
+      var endpoint = worker._endpointGetHeightsFromTimestamps();
+      var req = {
+        query: {
+          startdate: '2016-09-30',
+          enddate: '2016-09-01'
+        }
+      };
+      var res = {
+        jsonp: sinon.stub(),
+      };
+      endpoint(req, res);
+      worker._convertDateToHeight.callCount.should.equal(1);
+      res.jsonp.callCount.should.equal(1);
+      res.jsonp.args[0][0].should.deep.equal({
+        result: {
+          height: 1000,
+          index: MAX_INT,
+          limit: 10,
+          end: {
+            height: 0,
+            index: 0
+          }
+        }
+      });
+      done();
+    });
+    it('will generate an error if no blocks found for a given timestamp range', function(done) {
+      var worker = new WebWorker(options);
+      worker._convertDateToHeight = sinon.stub().callsArgWith(2, {
+        code: 999,
+        message: 'some err'
+      });
+      var endpoint = worker._endpointGetHeightsFromTimestamps();
+      var req = {
+        originalUrl: 'https://example.com',
+        query: {
+          startdate: '2016-09-30',
+          enddate: '2016-09-01'
+        }
+      };
+      var jsonp = sinon.stub();
+      var res = {
+        status: sinon.stub().returns({jsonp: jsonp}),
+        jsonp: jsonp
+      };
+      endpoint(req, res);
+      worker._convertDateToHeight.callCount.should.equal(1);
+      res.jsonp.callCount.should.equal(1);
+      res.jsonp.args[0][0].should.deep.equal({
+        error: 'some err',
+        status: 999,
+        url: 'https://example.com'
+      });
+      done();
+    });
+    it('should error if dates sent in are improperly formatted', function(done) {
+      var worker = new WebWorker(options);
+      var endpoint = worker._endpointGetHeightsFromTimestamps();
+      var req = {
+        query: {
+          startdate: 'xxxxxxx'
+        }
+      };
+      var res = { status: sinon.stub() };
+      sandbox.spy(worker, '_convertDateToHeight');
+      sandbox.stub(utils, 'sendError');
+      endpoint(req, res);
+      worker._convertDateToHeight.notCalled;
+      utils.sendError.callCount.should.equal(1);
+      utils.sendError.args[0][0].should.deep.equal({
+        message: 'improper date format',
+        statusCode: 400
+      });
+      utils.sendError.args[0][1].should.deep.equal(res);
+      done();
+    });
+  });
+  describe('#_convertDateToHeight', function() {
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
+    });
+    it('should return 404 for no results found', function(done) {
+      var worker = new WebWorker(options);
+      sandbox.stub(worker.clients, 'getBlockHashes').callsArgWith(3, null, []);
+      worker._convertDateToHeight('2016-09-30', '2016-09-01', function(err) {
+        err.message.should.equal('no results found');
+        done();
+      });
+    });
+    it('should return heights', function(done) {
+      var worker = new WebWorker(options);
+      sandbox.stub(worker.clients, 'getBlockHashes').callsArgWith(3, null, {
+        result: ['a', 'b']
+      });
+      sandbox.stub(worker, '_getBlockHeights').callsArgWith(1, null, [1000, 0]);
+      worker._convertDateToHeight('2016-09-30', '2016-09-01', function(err, heights) {
+        if(err) {
+          return done(err);
+        }
+        heights.should.deep.equal([1000, 0]);
+        done();
+      });
+    });
+    it('should return error if getBlockHashes errors', function(done) {
+      var worker = new WebWorker(options);
+      sandbox.stub(worker.clients, 'getBlockHashes').callsArgWith(3, 'some err');
+      sandbox.spy(utils, 'wrapRPCError');
+      worker._convertDateToHeight('2016-09-30', '2016-09-01', function(err) {
+        utils.wrapRPCError.calledOnce;
+        utils.wrapRPCError.args[0][0].should.equal('some err');
+        done();
+      });
+    });
+  });
   describe('#_startListener', function() {
     it('will create express application, setup and start listening on port', function() {
       var listen = sinon.stub();
@@ -1545,7 +1669,7 @@ describe('Wallet Web Worker', function() {
       app.put.callCount.should.equal(2);
       app.post.callCount.should.equal(1);
       app.use.callCount.should.equal(1);
-      app.get.callCount.should.equal(6);
+      app.get.callCount.should.equal(7);
 
       app.get.args[0][0].should.equal('/info');
       app.get.args[0][1].should.equal(endpointGetInfo);
