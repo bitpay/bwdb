@@ -27,6 +27,10 @@ var test4WIF = 'cRfdMLrk8BL3dKmJTUtJQMRuE4rTmqe8nDpgAzPV6GNZhP6gkqdi';
 var test4Key = bitcore.PrivateKey(test4WIF);
 var test4Address = test4Key.toAddress('regtest').toString();
 
+var test5WIF = 'cSfjiNsHgQ85oXJvquEyvQtHuhY7w4YViqqWc4988eHSWvEtGXey';
+var test5Key = bitcore.PrivateKey(test5WIF);
+var test5Address = test5Key.toAddress('regtest').toString();
+
 var bitcoinClient;
 var server;
 var client;
@@ -200,14 +204,18 @@ describe('Wallet Server & Client', function() {
     });
   }
 
-  function broadcastAndGenerate(tx, done) {
+  function broadcastAndGenerate(tx, numBlocks, done) {
+    if (typeof numBlocks === 'function') {
+      done = numBlocks;
+      numBlocks = 1;
+    }
     var data = {};
     bitcoinClient.sendRawTransaction(tx.serialize(), function(err, response) {
       if (err) {
         return done(err);
       }
       data.txid = response.result;
-      bitcoinClient.generate(1, function(err, response) {
+      bitcoinClient.generate(numBlocks, function(err, response) {
         if (err) {
           return done(err);
         }
@@ -416,7 +424,7 @@ describe('Wallet Server & Client', function() {
       });
     });
   });
-  describe('reorg the chain', function() {
+  describe('reorg the chain (undo add utxo)', function() {
     this.timeout(10000);
     var starting;
     before(function(done) {
@@ -532,6 +540,111 @@ describe('Wallet Server & Client', function() {
           allTxids = allTxids.concat(body2.txids);
           allTxids.sort().should.deep.equal(expectedTxids.sort());
           done();
+        });
+      });
+    });
+  });
+  describe('reorg the chain (undo remove utxo)', function() {
+    this.timeout(20000);
+    var tx;
+    var invalidBlockHash;
+    var starting;
+    var middle;
+    var utxo = {};
+    before(function(done) {
+      async.series([
+        function(next) {
+          getOverview(walletId, function(err, overview) {
+            if (err) {
+              return next(err);
+            }
+            starting = overview;
+            next();
+          });
+        },
+        function(next) {
+          bitcoinClient.sendToAddress(testAddress, 10, function(err, response) {
+            if (err) {
+              return next(err);
+            }
+            utxo.txid = response.result;
+            bitcoinClient.generate(1, function(err) {
+              if (err) {
+                return next(err);
+              }
+              setTimeout(function() {
+                next();
+              }, 2000);
+            });
+          });
+        },
+        function(next) {
+          getOverview(walletId, function(err, overview) {
+            if (err) {
+              return next(err);
+            }
+            middle = overview;
+            overview.utxos.length.should.equal(1);
+            next();
+          });
+        },
+        function(next) {
+          tx = bitcore.Transaction();
+          var utxo = middle.utxos[0];
+          tx.from({
+            address: utxo.address,
+            satoshis: utxo.satoshis,
+            txid: utxo.txid,
+            outputIndex: utxo.index,
+            script: bitcore.Script.fromAddress(utxo.address)
+          });
+          tx.enableRBF();
+          tx.to(test4Address, 5 * 1e8);
+          tx.change(test4Address);
+          tx.sign(testKey);
+          broadcastAndGenerate(tx, function(err, data) {
+            if (err) {
+              return next(err);
+            }
+            invalidBlockHash = data.blockHash;
+            next();
+          });
+        },
+        function(next) {
+          getOverview(walletId, function(err, overview) {
+            if (err) {
+              return next(err);
+            }
+            overview.utxos.length.should.equal(0);
+            next();
+          });
+        },
+        function(next) {
+          next();
+        }
+      ], done);
+    });
+    it('will undo removing utxo, and remove it again', function(done) {
+      bitcoinClient.invalidateBlock(invalidBlockHash, function(err, response) {
+        if (err) {
+          return done(err);
+        }
+        tx.outputs = [];
+        tx.to(test5Address, 5 * 1e8);
+        tx.fee(100000);
+        tx.change(test5Address);
+        tx.sign(testKey);
+        broadcastAndGenerate(tx, 2, function(err, data) {
+          if (err) {
+            return done(err);
+          }
+          getOverview(walletId, function(err, overview) {
+            if (err) {
+              return done(err);
+            }
+            overview.utxos.length.should.equal(0);
+            done();
+          });
         });
       });
     });
