@@ -727,7 +727,13 @@ describe('Wallet Writer Worker', function() {
         prevout: 100
       };
       var spentOutputs = {
-        utxokey: 'undo information is not available to restore utxo'
+        utxokey: {
+          satoshis: 1000000,
+          height: 10,
+          txid: '90e262c7baaf4a5a8eb910d075e945d5a27f856f71a06ff8681128115a07441a',
+          index: 10,
+          address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'
+        }
       };
       var txn = {
         putBinary: sinon.stub()
@@ -753,8 +759,6 @@ describe('Wallet Writer Worker', function() {
         getKey: sinon.stub().returns('utxostubreturn'),
         toObject: sinon.stub().returns(utxoData)
       };
-      sandbox.stub(models, 'WalletUTXO').returns(utxo);
-
       sandbox.stub(models.WalletUTXO, 'create').returns(utxo);
       sandbox.stub(models.WalletUTXOBySatoshis, 'create').returns(utxo);
       sandbox.stub(models.WalletUTXOByHeight, 'create').returns(utxo);
@@ -768,8 +772,15 @@ describe('Wallet Writer Worker', function() {
       models.WalletUTXO.getKey.args[0][1].should.equal(delta.prevtxid);
       models.WalletUTXO.getKey.args[0][2].should.equal(delta.prevout);
 
-      models.WalletUTXO.callCount.should.equal(1);
-      models.WalletUTXO.args[0][0].should.equal('undo information is not available to restore utxo');
+      models.WalletUTXO.create.callCount.should.equal(1);
+      models.WalletUTXO.create.args[0][0].should.equal(walletId);
+      models.WalletUTXO.create.args[0][1].should.deep.equal({
+        satoshis: 1000000,
+        height: 10,
+        txid: '90e262c7baaf4a5a8eb910d075e945d5a27f856f71a06ff8681128115a07441a',
+        index: 10,
+        address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'
+      });
 
       txn.putBinary.callCount.should.equal(4);
       txn.putBinary.args[0][0].should.equal(utxos);
