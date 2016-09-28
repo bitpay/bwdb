@@ -8,7 +8,6 @@
     "bwdb-cli": "./bin/bwdb-cli"
   },
   "scripts": {
-    "start": "./bin/bwdb",
     "test": "mocha -R spec --recursive",
     "integration": "mocha -R spec --recursive integration",
     "jshint": "jshint --reporter=node_modules/jshint-stylish ./lib",
