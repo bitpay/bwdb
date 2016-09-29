@@ -1,7 +1,7 @@
 {
   "name": "bwdb",
-  "version": "1.0.0",
-  "description": "A database server for bitcoin wallets",
+  "version": "1.0.0-beta",
+  "description": "A bitcoin wallet database for wallets with millions of addresses and transactions",
   "main": "lib/index.js",
   "bin": {
     "bwdb": "./bin/bwdb",
