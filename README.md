@@ -149,6 +149,10 @@ There are three groups of processes that are started from the `bwdb` master proc
 
 - **Why use multiple processes and Node.js?** It's to glue together consensus critical functionality of bitcoind, written in C/C++, with wallet functionality written in JavaScript for browser based wallet applications written with Cordova, Electron, NW.js and Node.js. There are several reader workers for improved concurrency that is common when handling multiple wallets.
 
+- **What address types are supported?** All address types are supported including pay-to-public-key-hash and pay-to-script-hash, there is room for growth to include other address types that may be added including native segwit transactions. These indexes would need to be added to the [fork of Bitcoin Core with additional address indexes](https://github.com/bitpay/bitcoin/tree/0.12.1-bitcore). Some coinbase outputs are actually pay-to-public-key instead of pay-to-public-key-hash, and thus there isn't an associated address, these types of transactions will not be tracked.
+
+- **What bitcoin networks are supported?** All three networks of bitcoind are supported: livenet, testnet and regtest. You can use the same configuration directory for all three of these networks, and each network will have a different database.
+
 ## Wallet API
 
 ### Create Wallets
