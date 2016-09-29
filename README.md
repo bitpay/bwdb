@@ -4,7 +4,7 @@
 
 [![Build Status](https://travis-ci.org/bitpay/bwdb.svg?branch=master)](https://travis-ci.org/bitpay/bwdb)
 
-A database for high and low volume bitcoin wallets
+A bitcoin wallet database for multiple wallets with millions of addresses and transactions.
 
 ## Development and Testing
 
@@ -134,6 +134,20 @@ There are three groups of processes that are started from the `bwdb` master proc
 - Bitcoin block chain process, `bitcoind`, is accessible via ZMQ and JSON-RPC for requesting block and address deltas.
 - Wallet writer process, `bwdb-writer` opens a unix socket for other processes to add to the writer queue. The writer is the only process that can open a write database transaction.
 - Wallet reader processes, `bwdb-web-master` with several `bwdb-web` processes that listen at a port for the wallet API, described below. Only read-only database transactions can be opened in these processes.
+
+## Questions
+
+- **Why use LMDB?** It's atomic so that blocks can be applied and unapplied with confidence that it will not be left in an incomplete state. It's a B+ tree database which is great for iterating across key-values in sequence, a common use case. It's also possible to read from the database from multiple processes which is great for Node.js clustering.
+
+- **How does wallet synchronization work?** There are two modes of synchronization, there is the "active" mode and the "historical" mode. When an address is added to a wallet, there is the "historical" sync that will scan the block chain for relevant transactions and make adjustments to the wallet. This is using a fork of Bitcoin Core with additional address indexes to make these queries. Once the address has been added, it will then stay synced in "active" mode. When a new block arrives, only the wallets changed by the wallet will be updated. This optimization makes it possible to optimize queries in advance per wallet by knowing which addresses belong together, and thus a wallet can have millions of addresses and transactions.
+
+- **What influenced the design of the data structures?** There were several criteria that guided the structure. There needed to be support for multiple wallets, and thus there needed to be a way to query by a wallet identifier. Furthermore, there are several wallet queries that need to be made including: transactions, txids, balances, and utxos. The main entry point for transaction history is the txids database that organizes txids in block order. A query to get full transaction details is a query to the txids at a block height and index, followed by queries for the details of each of those transactions. A query for utxos is a bit different because it's typically requested by satoshis amount. For this reason there are three databases for utxos and each with a separate key, with each optimized for querying by either wallet id and satoshis or by wallet id and height. The last utxo database is for internal utxo book keeping. There is also a block database, and this keeps track of the current block chain state of the wallets. Every time there is a new block that has been applied to the wallets, a new block is added. A query to determine the current block chain height is a query to the last entry in blocks, with the largest block height.
+
+- **Why does the block database keep additional block data?** This is because we need to store undo information for each block that is applied to the database, so that in the event of a reorganization, we can atomically unapply those changes. As time goes on this database could grow in size, and as such it's possible to prune out old data once there is sufficient confidence that there will not be a block reorganization more than "n" blocks deep.
+
+- **What influenced the format of the transaction JSON format?** The transaction that is returned for a wallet query is different than the serialization format of a typical bitcoin transaction. It includes some meta information about which block it was included, the total input and output satoshi amount and fees that would otherwise need to be several queries. The address of the input and outputs are included, rather than simply a "pointer" to the output that would have this information. There is also a field "wallet" that is a boolean to determine if this output or input is part of the wallet, without needing to manually scan through the transaction. You will also notice that all of the data is cachable, "confirmations" is not included so that any future queries can more quickly read the data without it being necessary to make possibly several thousand random reads, and computation time to assemble the data.
+
+- **Why use multiple processes and Node.js?** It's to glue together consensus critical functionality of bitcoind, written in C/C++, with wallet functionality written in JavaScript for browser based wallet applications written with Cordova, Electron, NW.js and Node.js. There are several reader workers for improved concurrency that is common when handling multiple wallets.
 
 ## Wallet API
 
