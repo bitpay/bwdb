@@ -54,6 +54,14 @@ describe('Wallet Writer Worker', function() {
     afterEach(function() {
       sandbox.restore();
     });
+    it('will call try all clients (without options)', function(done) {
+      var worker = new WriterWorker(options);
+      sandbox.stub(utils, 'tryAllClients').callsArg(3);
+      var func = function() {};
+      worker._tryAllClients(func, function() {
+        done();
+      });
+    });
     it('will retry for each node client', function(done) {
       var clients = [
         {
@@ -419,6 +427,26 @@ describe('Wallet Writer Worker', function() {
       }));
       socket.write.callCount.should.equal(1);
       socket.write.args[0][0].should.equal('encoded message');
+    });
+    it('will log error if there isn\'t a socket', function() {
+      sandbox.stub(console, 'error');
+      var worker = new WriterWorker(options);
+      var error = new Error('test');
+      var result = {};
+      var id = 'someid'
+      worker._sendResponse(null, id, error, result);
+      console.error.callCount.should.equal(1);
+      console.error.args[0][0].should.match(/Write task error/);
+    });
+    it('will log id if there isn\'t a socket or error', function() {
+      sandbox.stub(console, 'info');
+      var worker = new WriterWorker(options);
+      var error = null;
+      var result = {};
+      var id = 'someid'
+      worker._sendResponse(null, id, error, result);
+      console.info.callCount.should.equal(1);
+      console.info.args[0][0].should.match(/Completed write task\: someid/);
     });
   });
   describe('#_queueWorkerIterator', function() {
@@ -1447,6 +1475,53 @@ describe('Wallet Writer Worker', function() {
         done();
       });
     });
+    it('it will log error from prune wallet blocks', function(done) {
+      var walletBlock = {
+        blockHash: '0000000000253b76babed6f36b68b79a0c232f89e6756bd7a848c63b83ca53a4',
+        getKey: sinon.stub().returns('test key'),
+        getValue: sinon.stub().returns('test value'),
+        addressFilter: BloomFilter.create(100, 0.01)
+      };
+      var block = {
+        hash: '0000000000253b76babed6f36b68b79a0c232f89e6756bd7a848c63b83ca53a4'
+      };
+      var txn = {
+        putBinary: sinon.stub(),
+        commit: sinon.stub()
+      };
+      var spentOutputs = {};
+
+      var worker = new WriterWorker(options);
+      worker._pruneWalletBlocks = sinon.stub().callsArgWith(0, new Error('test'));
+      var clone = sinon.stub().returns(walletBlock);
+      worker.walletBlock = {
+        clone: clone
+      };
+      var wallet = {
+        getKey: sinon.stub().returns('wallet getKey'),
+        getValue: sinon.stub().returns('wallet getValue')
+      };
+      var wallets = {
+        walletkey: wallet
+      };
+      worker.db = {
+        env: {
+          sync: sinon.stub().callsArg(0)
+        },
+        blocks: {},
+        wallets: {}
+      };
+      sandbox.stub(console, 'info');
+      sandbox.stub(console, 'error');
+      worker._connectBlockCommit(txn, wallets, block, spentOutputs, function(err) {
+        if (err) {
+          return done(err);
+        }
+        console.error.callCount.should.equal(1);
+        console.error.args[0][0].should.match(/test/)
+        done();
+      });
+    });
   });
   describe('#_connectBlock', function() {
     var sandbox = sinon.sandbox.create();
@@ -1517,7 +1592,7 @@ describe('Wallet Writer Worker', function() {
     afterEach(function() {
       sandbox.restore();
     });
-    it('connect transaction from list of inputs and outputs', function(done) {
+    it('disconnect transaction from list of inputs and outputs', function(done) {
       var worker = new WriterWorker(options);
       var walletId = new Buffer('7e5a548623edccd9e18c4e515ba5e7380307f28463b4b90ea863aa34efa22a6d', 'hex');
       var binaryBuf = new Buffer('some value' , 'hex');
@@ -1525,6 +1600,7 @@ describe('Wallet Writer Worker', function() {
         getBinary: sinon.stub().returns(binaryBuf),
         del: sinon.stub()
       };
+      txn.del.onThirdCall().throws(new Error('MDB_NOTFOUND'));
       var transaction = {
         inputs: [
           {
@@ -1533,6 +1609,111 @@ describe('Wallet Writer Worker', function() {
             address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'
           }
         ],
+        outputs: [
+          {
+            satoshis: 100000000,
+            index: 10,
+            address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'
+          },
+          {
+            satoshis: 100000000,
+            index: 11,
+            address: '16VZnHwRhwrExfeHFHGjwrgEMq8VcYPs9r'
+          }
+        ],
+        index: 100,
+        txid: '90e262c7baaf4a5a8eb910d075e945d5a27f856f71a06ff8681128115a07441a'
+      };
+      var txid = {
+        getKey: sinon.stub().returns('90e262c7baaf4a5a8eb910d075e945d5a27f856f71a06ff8681128115a07441a'),
+        getValue: sinon.stub().returns('some value')
+      };
+      var height = 10;
+      var spentOutputs = {};
+      var wallets = {};
+      var wallet = {
+        addBalance: sinon.stub()
+      };
+      sandbox.stub(models.WalletAddressMap, 'getKey').returns('address map key');
+      sandbox.stub(utils, 'splitBuffer').returns([walletId]);
+      sandbox.stub(models.WalletTxid, 'create').returns(txid);
+      sandbox.stub(models.Wallet, 'fromBuffer').returns(wallet);
+      worker.db = {
+        addressesMap: {},
+        wallets: {},
+        txids: {}
+      };
+      worker._disconnectUTXO = sinon.stub();
+
+      worker._disconnectTransaction(txn, wallets, height, transaction, spentOutputs, function() {
+
+        models.WalletAddressMap.getKey.callCount.should.equal(3);
+        models.WalletAddressMap.getKey.args[0][0].should.equal(transaction.inputs[0].address);
+        models.WalletAddressMap.getKey.args[0][1].name.should.equal(options.network);
+
+        models.WalletAddressMap.getKey.args[1][0].should.equal(transaction.outputs[0].address);
+        models.WalletAddressMap.getKey.args[1][1].name.should.equal(options.network);
+
+        txn.getBinary.callCount.should.equal(4);
+        txn.getBinary.args[0][0].should.deep.equal(worker.db.addressesMap);
+        txn.getBinary.args[0][1].should.equal('address map key');
+
+        txn.getBinary.args[1][0].should.deep.equal(worker.db.wallets);
+        txn.getBinary.args[1][1].should.equal(walletId);
+
+        txn.getBinary.args[2][0].should.deep.equal(worker.db.addressesMap);
+        txn.getBinary.args[2][1].should.equal('address map key');
+
+        models.WalletTxid.create.callCount.should.equal(3);
+        models.WalletTxid.create.args[0][0].should.equal(walletId);
+        models.WalletTxid.create.args[0][1].should.equal(height);
+        models.WalletTxid.create.args[0][2].should.equal(transaction.index);
+        models.WalletTxid.create.args[0][3].should.equal(transaction.txid);
+
+        models.WalletTxid.create.args[1][0].should.equal(walletId);
+        models.WalletTxid.create.args[1][1].should.equal(height);
+        models.WalletTxid.create.args[1][2].should.equal(transaction.index);
+        models.WalletTxid.create.args[1][3].should.equal(transaction.txid);
+
+        txn.del.callCount.should.equal(3);
+        txn.del.args[0][0].should.equal(worker.db.txids);
+        txn.del.args[0][1].should.equal('90e262c7baaf4a5a8eb910d075e945d5a27f856f71a06ff8681128115a07441a');
+
+        worker._disconnectUTXO.callCount.should.equal(3);
+        worker._disconnectUTXO.args[0][0].should.equal(txn);
+        worker._disconnectUTXO.args[0][1].should.equal(walletId);
+        worker._disconnectUTXO.args[0][2].should.equal(height);
+        worker._disconnectUTXO.args[0][3].should.equal(transaction);
+        worker._disconnectUTXO.args[0][4].should.equal(transaction.inputs[0]);
+        worker._disconnectUTXO.args[0][5].should.equal(spentOutputs);
+
+        worker._disconnectUTXO.args[1][0].should.equal(txn);
+        worker._disconnectUTXO.args[1][1].should.equal(walletId);
+        worker._disconnectUTXO.args[1][2].should.equal(height);
+        worker._disconnectUTXO.args[1][3].should.equal(transaction);
+        worker._disconnectUTXO.args[1][4].should.equal(transaction.outputs[0]);
+        worker._disconnectUTXO.args[1][5].should.equal(spentOutputs);
+
+        models.Wallet.fromBuffer.callCount.should.equal(1);
+        models.Wallet.fromBuffer.args[0][0].should.equal(walletId);
+        models.Wallet.fromBuffer.args[0][1].should.equal(binaryBuf);
+
+        wallet.addBalance.callCount.should.equal(3);
+        wallet.addBalance.args[0][0].should.equal(100000000);
+        wallet.addBalance.args[1][0].should.equal(-100000000);
+        done();
+      });
+    });
+    it('will give error from del', function() {
+      var worker = new WriterWorker(options);
+      var walletId = new Buffer('7e5a548623edccd9e18c4e515ba5e7380307f28463b4b90ea863aa34efa22a6d', 'hex');
+      var binaryBuf = new Buffer('some value' , 'hex');
+      var txn = {
+        getBinary: sinon.stub().returns(binaryBuf),
+        del: sinon.stub().throws(new Error('test'))
+      };
+      var transaction = {
+        inputs: [],
         outputs: [
           {
             satoshis: 100000000,
@@ -1563,65 +1744,9 @@ describe('Wallet Writer Worker', function() {
         txids: {}
       };
       worker._disconnectUTXO = sinon.stub();
-
-      worker._disconnectTransaction(txn, wallets, height, transaction, spentOutputs, function() {
-
-        models.WalletAddressMap.getKey.callCount.should.equal(2);
-        models.WalletAddressMap.getKey.args[0][0].should.equal(transaction.inputs[0].address);
-        models.WalletAddressMap.getKey.args[0][1].name.should.equal(options.network);
-
-        models.WalletAddressMap.getKey.args[1][0].should.equal(transaction.outputs[0].address);
-        models.WalletAddressMap.getKey.args[1][1].name.should.equal(options.network);
-
-        txn.getBinary.callCount.should.equal(3);
-        txn.getBinary.args[0][0].should.deep.equal(worker.db.addressesMap);
-        txn.getBinary.args[0][1].should.equal('address map key');
-
-        txn.getBinary.args[1][0].should.deep.equal(worker.db.wallets);
-        txn.getBinary.args[1][1].should.equal(walletId);
-
-        txn.getBinary.args[2][0].should.deep.equal(worker.db.addressesMap);
-        txn.getBinary.args[2][1].should.equal('address map key');
-
-        models.WalletTxid.create.callCount.should.equal(2);
-        models.WalletTxid.create.args[0][0].should.equal(walletId);
-        models.WalletTxid.create.args[0][1].should.equal(height);
-        models.WalletTxid.create.args[0][2].should.equal(transaction.index);
-        models.WalletTxid.create.args[0][3].should.equal(transaction.txid);
-
-        models.WalletTxid.create.args[1][0].should.equal(walletId);
-        models.WalletTxid.create.args[1][1].should.equal(height);
-        models.WalletTxid.create.args[1][2].should.equal(transaction.index);
-        models.WalletTxid.create.args[1][3].should.equal(transaction.txid);
-
-        txn.del.callCount.should.equal(2);
-        txn.del.args[0][0].should.equal(worker.db.txids);
-        txn.del.args[0][1].should.equal('90e262c7baaf4a5a8eb910d075e945d5a27f856f71a06ff8681128115a07441a');
-
-        worker._disconnectUTXO.callCount.should.equal(2);
-        worker._disconnectUTXO.args[0][0].should.equal(txn);
-        worker._disconnectUTXO.args[0][1].should.equal(walletId);
-        worker._disconnectUTXO.args[0][2].should.equal(height);
-        worker._disconnectUTXO.args[0][3].should.equal(transaction);
-        worker._disconnectUTXO.args[0][4].should.equal(transaction.inputs[0]);
-        worker._disconnectUTXO.args[0][5].should.equal(spentOutputs);
-
-        worker._disconnectUTXO.args[1][0].should.equal(txn);
-        worker._disconnectUTXO.args[1][1].should.equal(walletId);
-        worker._disconnectUTXO.args[1][2].should.equal(height);
-        worker._disconnectUTXO.args[1][3].should.equal(transaction);
-        worker._disconnectUTXO.args[1][4].should.equal(transaction.outputs[0]);
-        worker._disconnectUTXO.args[1][5].should.equal(spentOutputs);
-
-        models.Wallet.fromBuffer.callCount.should.equal(1);
-        models.Wallet.fromBuffer.args[0][0].should.equal(walletId);
-        models.Wallet.fromBuffer.args[0][1].should.equal(binaryBuf);
-
-        wallet.addBalance.callCount.should.equal(2);
-        wallet.addBalance.args[0][0].should.equal(100000000);
-        wallet.addBalance.args[1][0].should.equal(-100000000);
-        done();
-      });
+      (function() {
+        worker._disconnectTransaction(txn, wallets, height, transaction, spentOutputs);
+      }).should.throw('test');
     });
     it('will check against false postitives', function(done) {
       var worker = new WriterWorker(options);
@@ -2054,6 +2179,45 @@ describe('Wallet Writer Worker', function() {
         console.warn.callCount.should.equal(1);
         done();
       });
+    });
+  });
+  describe('#_addAddressesToWalletTxid', function() {
+    var sandbox = sinon.sandbox.create();
+    afterEach(function() {
+      sandbox.restore();
+    });
+    it('will put the txid and delete any cached transactions for the wallet', function() {
+      var worker = new WriterWorker(options);
+      worker.db = {
+        txids: {},
+        txs: {}
+      };
+      var txn = {
+        putBinary: sinon.stub(),
+        del: sinon.stub()
+      };
+      var walletId = new Buffer('cd1eb05aa8e5780af0f435cb3692084ee55e91e2646fa663259ee7e338ef84b4', 'hex');
+      var delta = {
+        height: 100,
+        blockindex: 1000,
+        txid: '0c8ff41b75246858cbd6c5852373779402181beba64bce21a9d00a11fbaa2790'
+      };
+      var key = new Buffer('somekey');
+      var value = new Buffer('somevalue');
+      sandbox.stub(models.WalletTxid, 'create').returns({
+        getKey: sinon.stub().returns(key),
+        getValue: sinon.stub().returns(value)
+      });
+      var txKey = new Buffer('sometxkey');
+      sandbox.stub(models.WalletTransaction, 'getKey').returns(txKey);
+      worker._addAddressesToWalletTxid(txn, walletId, delta);
+      txn.putBinary.callCount.should.equal(1);
+      txn.putBinary.args[0][0].should.equal(worker.db.txids);
+      txn.putBinary.args[0][1].should.equal(key);
+      txn.putBinary.args[0][2].should.equal(value);
+      txn.del.callCount.should.equal(1);
+      txn.del.args[0][0].should.equal(worker.db.txs);
+      txn.del.args[0][1].should.equal(txKey);
     });
   });
   describe('#_addAddressesToWallet', function() {
