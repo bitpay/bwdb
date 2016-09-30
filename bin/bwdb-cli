@@ -243,10 +243,10 @@ config.setup(function(err) {
           throw err;
         }
         options = {
-          height: body.result.end.height,
+          height: body.result[0],
           index: 0,
-          limit: 50,
-          end: body.result.height
+          limit: 10,
+          end: body.result[1]
         };
         var stream = client.getTransactionsListStream(walletId, options);
         stream.pipe(process.stdout);

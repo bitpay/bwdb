@@ -25,8 +25,6 @@ describe('Wallet Client Transaction List Stream', function() {
       });
       should.equal(stream._bitcoinHeight, null);
       should.equal(stream._dataEnded, false);
-      should.equal(stream._arrayStarted, false);
-      should.equal(stream._arrayEnded, false);
     }
     it('will create an instance', function() {
       var stream = new ListStream(walletId, {

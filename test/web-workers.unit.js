@@ -1361,17 +1361,7 @@ describe('Wallet Web Worker', function() {
       endpoint(req, res);
       worker._convertDateToHeight.callCount.should.equal(1);
       res.jsonp.callCount.should.equal(1);
-      res.jsonp.args[0][0].should.deep.equal({
-        result: {
-          height: 1000,
-          index: MAX_INT,
-          limit: 10,
-          end: {
-            height: 0,
-            index: 0
-          }
-        }
-      });
+      res.jsonp.args[0][0].should.deep.equal({ result: [1000,0] });
       done();
     });
     it('will generate an error if no blocks found for a given timestamp range', function(done) {

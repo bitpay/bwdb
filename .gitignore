@@ -24,3 +24,4 @@ coverage/*
 regtest/data/*.lmdb
 .DS_Store
 .tern-port
+*.out
