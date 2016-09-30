@@ -216,13 +216,14 @@ config.setup(function(err) {
       };
       client.getHeightsFromTimestamps(options, function(err, res, body) {
         if (err) {
-          throw err;
+          console.log("Could not find transactions/blocks for the provided date range.");
+          return;
         }
         options = {
-          height: body.result.end.height,
+          height: body.result[0],
           index: 0,
-          limit: 50,
-          end: body.result.height
+          limit: 10,
+          end: body.result[1]
         };
         var stream = client.getTransactionsCSVStream(walletId, options);
         stream.pipe(process.stdout);
@@ -240,7 +241,8 @@ config.setup(function(err) {
       };
       client.getHeightsFromTimestamps(options, function(err, res, body) {
         if (err) {
-          throw err;
+          console.log("Could not find transactions/blocks for the provided date range.");
+          return;
         }
         options = {
           height: body.result[0],
