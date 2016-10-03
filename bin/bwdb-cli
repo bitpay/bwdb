@@ -215,9 +215,11 @@ config.setup(function(err) {
         enddate: end
       };
       client.getHeightsFromTimestamps(options, function(err, res, body) {
-        if (err) {
+        if (err && err.statusCode === 404) {
           console.log("Could not find transactions/blocks for the provided date range.");
           return;
+        } else if (err) {
+          throw err;
         }
         options = {
           height: body.result[0],
@@ -240,9 +242,11 @@ config.setup(function(err) {
         enddate: end
       };
       client.getHeightsFromTimestamps(options, function(err, res, body) {
-        if (err) {
+        if (err && err.statusCode === 404) {
           console.log("Could not find transactions/blocks for the provided date range.");
           return;
+        } else if (err) {
+          throw err;
         }
         options = {
           height: body.result[0],
