@@ -868,7 +868,7 @@ describe('Wallet Web Worker', function() {
       close.callCount.should.equal(1);
       txn.abort.callCount.should.equal(1);
     });
-    it('will log error if there is not a tip', function() {
+    it('will log info if there is not a tip', function() {
       var worker = new WebWorker(options);
       worker.db = {};
       worker.db.env = {};
@@ -882,12 +882,12 @@ describe('Wallet Web Worker', function() {
         close: close,
         goToLast: goToLast
       });
-      sandbox.stub(console, 'error');
+      sandbox.stub(console, 'info');
       worker._updateLatestTip();
       goToLast.callCount.should.equal(1);
       close.callCount.should.equal(1);
       txn.abort.callCount.should.equal(1);
-      console.error.callCount.should.equal(1);
+      console.info.callCount.should.equal(1);
     });
   });
   describe('#_endpointBalance', function() {
