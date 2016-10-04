@@ -645,13 +645,13 @@ describe('Wallet Web Worker', function() {
         close: sinon.stub()
       };
       var height = 400;
-      var index = 0;
+      var index = 9;
       sandbox.stub(models.WalletTxid, 'parseKey', function() {
         var result = {
           height: height,
           index: index
         };
-        index++;
+        index--;
         return result;
       });
       sandbox.stub(lmdb, 'Cursor').returns(cursor);
@@ -665,21 +665,21 @@ describe('Wallet Web Worker', function() {
           return done(err);
         }
         result.txids.should.deep.equal([
-          [400, 0, 'value'],
-          [400, 1, 'value'],
-          [400, 2, 'value'],
-          [400, 3, 'value'],
-          [400, 4, 'value'],
-          [400, 5, 'value'],
-          [400, 6, 'value'],
-          [400, 7, 'value'],
+          [400, 9, 'value'],
           [400, 8, 'value'],
-          [400, 9, 'value']
+          [400, 7, 'value'],
+          [400, 6, 'value'],
+          [400, 5, 'value'],
+          [400, 4, 'value'],
+          [400, 3, 'value'],
+          [400, 2, 'value'],
+          [400, 1, 'value'],
+          [400, 0, 'value']
         ]);
         result.start.height.should.equal(400);
         result.start.index.should.equal(MAX_INT);
-        result.end.height.should.equal(400);
-        result.end.index.should.equal(8);
+        result.end.height.should.equal(399);
+        result.end.index.should.equal(4294967295);
         cursor.close.callCount.should.equal(1);
         done();
       });
@@ -706,13 +706,13 @@ describe('Wallet Web Worker', function() {
         close: sinon.stub()
       };
       var height = 400;
-      var index = 0;
+      var index = 6;
       sandbox.stub(models.WalletTxid, 'parseKey', function() {
         var result = {
           height: height,
           index: index
         };
-        index++;
+        index--;
         return result;
       });
       sandbox.stub(lmdb, 'Cursor').returns(cursor);
@@ -726,13 +726,13 @@ describe('Wallet Web Worker', function() {
           return done(err);
         }
         result.txids.should.deep.equal([
-          [400, 0, 'value'],
-          [400, 1, 'value'],
-          [400, 2, 'value'],
-          [400, 3, 'value'],
-          [400, 4, 'value'],
+          [400, 6, 'value'],
           [400, 5, 'value'],
-          [400, 6, 'value']
+          [400, 4, 'value'],
+          [400, 3, 'value'],
+          [400, 2, 'value'],
+          [400, 1, 'value'],
+          [400, 0, 'value']
         ]);
         result.start.height.should.equal(400);
         result.start.index.should.equal(MAX_INT);
