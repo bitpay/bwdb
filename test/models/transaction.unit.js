@@ -64,9 +64,9 @@ describe('Wallet Transaction Model', function() {
       var tx = new WalletTransaction(walletId.toString('hex'), detailedData);
       should.exist(tx);
       checkTransaction(tx);
-    });		
+    });
     it('will construct class', function() {
-      var tx = WalletTransaction(walletId, detailedData);
+      var tx = new WalletTransaction(walletId, detailedData);
       should.exist(tx);
       checkTransaction(tx);
     });
@@ -101,7 +101,7 @@ describe('Wallet Transaction Model', function() {
         inputs: [{wallet: true, satoshis: 150}, {wallet: false, satoshis: 200}, {wallet: true, satoshis: 100}],
         outputs: []
       };
-      WalletTransaction.getInputSatoshis(tx).should.equal(250);
+      WalletTransaction.getInputSatoshis(tx).inputSatoshis.should.equal(250);
     });
     it('will not return an amount if transaction is coinbase', function() {
       var tx = {
@@ -109,7 +109,7 @@ describe('Wallet Transaction Model', function() {
         inputs: [],
         outputs: [{wallet: true, satoshis: 1250000000}]
       };
-      WalletTransaction.getInputSatoshis(tx).should.equal(0);
+      WalletTransaction.getInputSatoshis(tx).inputSatoshis.should.equal(0);
     });
   });
   describe('@getOutputSatoshis', function() {
@@ -123,56 +123,53 @@ describe('Wallet Transaction Model', function() {
   });
   describe('@classify', function() {
     it('it will return "send"', function() {
-      var tx = {
-        inputs: [{wallet: true}, {wallet: true}]
-      };
-      var delta = -100000;
-      WalletTransaction.classify(tx, delta).should.equal('send');
+      var res = WalletTransaction.classify({
+        type: 'send',
+        inputSatoshis: 1000,
+        outputSatoshis: 0
+      }).type;
+      res.should.equal('send');
     });
     it('it will return "join"', function() {
-      var tx = {
-        inputs: [{wallet: true}, {wallet: false}]
-      };
-      var delta = -100000;
-      WalletTransaction.classify(tx, delta).should.equal('join');
-    });
-    describe('@isJoin', function() {
-      it('will return "false"', function() {
-	WalletTransaction.isJoin({coinbase: true}, 10).should.equal(false);
-      });
+      var res = WalletTransaction.classify({
+        type: 'join',
+        inputSatoshis: 1000,
+        outputSatoshis: 0
+      }).type;
+      res.should.equal('join');
     });
     it('it will return "receive"', function() {
-      var tx = {
-        inputs: [{wallet: false}, {wallet: false}],
-        outputs: [{wallet: true}, {wallet: false}]
-      };
-      var delta = 100000;
-      WalletTransaction.classify(tx, delta).should.equal('receive');
+      var res = WalletTransaction.classify({
+        type: 'send',
+        inputSatoshis: 0,
+        outputSatoshis: 1000
+      }).type;
+      res.should.equal('receive');
     });
     it('it will return "coinbase"', function() {
-      var tx = {
-        coinbase: true,
-        inputs: [],
-        outputs: [{wallet: true}]
-      };
-      var delta = 100000;
-      WalletTransaction.classify(tx, delta).should.equal('coinbase');
+      var res = WalletTransaction.classify({
+        type: 'coinbase',
+        outputSatoshis: 1000
+      }).type;
+      res.should.equal('coinbase');
     });
     it('it will return "move"', function() {
-      var tx = {
-        inputs: [{wallet: true}],
-        outputs: [{wallet: true}]
-      };
-      var delta = 0;
-      WalletTransaction.classify(tx, delta).should.equal('move');
+      var res = WalletTransaction.classify({
+        type: 'send',
+        inputSatoshis: 1000,
+        outputSatoshis: 1000,
+        fee: 0
+      }).type;
+      res.should.equal('move');
     });
   });
   describe('#getKey', function() {
     it('will get the key', function() {
       var tx = new WalletTransaction(walletId, detailedData);
       var bufferKey = tx.getKey();
-      var hex = 'b4f97411dadf3882296997ade99f4a0891b07e768a76898b837ac41d2c2622e7477a1b4a632187319bfdf78675555ef18af554d2d7caa86b27a3a5230f7c6e98';
-      bufferKey.toString('hex').should.equal(hex);
+      var hex1 = 'b4f97411dadf3882296997ade99f4a0891b07e768a76898b837ac41d2c2622';
+      var hex2 = 'e7477a1b4a632187319bfdf78675555ef18af554d2d7caa86b27a3a5230f7c6e98';
+      bufferKey.toString('hex').should.equal(hex1 + hex2);
       var expectedKey = walletId.toString('hex') + tx.value.hash;
       bufferKey.toString('hex').should.equal(expectedKey);
     });

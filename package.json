@@ -11,7 +11,7 @@
     "test": "mocha -R spec --recursive",
     "integration": "mocha -R spec --recursive integration",
     "jshint": "jshint --reporter=node_modules/jshint-stylish ./lib",
-    "regtest": "mocha -R spec ./regtest/index.js",
+    "regtest": "mocha -R spec ./regtest",
     "coverage": "istanbul cover _mocha -- --recursive"
   },
   "repository": {

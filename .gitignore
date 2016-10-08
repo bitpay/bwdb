@@ -25,3 +25,9 @@ regtest/data/*.lmdb
 .DS_Store
 .tern-port
 *.out
+regtest/data/bitcoin/.lock
+regtest/data/bitcoin/blocks/
+regtest/data/bitcoin/chainstate/
+regtest/data/bitcoin/fee_estimates.dat
+regtest/data/bitcoin/peers.dat
+regtest/data/bitcoin/wallet.dat

@@ -2,7 +2,6 @@
 
 var chai = require('chai');
 var should = chai.should();
-var sinon = require('sinon');
 var _ = require('lodash');
 
 var ListStream = require('../../../lib/client/streams/list');
@@ -37,7 +36,7 @@ describe('Wallet Client Transaction List Stream', function() {
       checkProperties(stream, false);
     });
     it('will create an instance (without new)', function() {
-      var stream = ListStream(walletId, {
+      var stream = new ListStream(walletId, {
         client: client,
         limit: 100,
         height: 1000,
