@@ -36,7 +36,7 @@ describe('Wallet Client Transaction List Stream', function() {
       checkProperties(stream, false);
     });
     it('will create an instance (without new)', function() {
-      var stream = new ListStream(walletId, {
+      var stream = ListStream(walletId, {
         client: client,
         limit: 100,
         height: 1000,
@@ -77,7 +77,6 @@ describe('Wallet Client Transaction List Stream', function() {
         result.should.deep.equal(data.list);
       });
     });
-
   });
   describe('#_startArray', function() {
   });

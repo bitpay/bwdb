@@ -165,15 +165,6 @@
         "outputIndex": 1,
         "confirmations": 6,
         "satoshis": 1886999000
-      },
-      {
-        "blockHash": "000000000000265dad8db0728e318aabd0098e69a82984f8c1c5b9d55de5fd9a",
-        "blockTime": 1296211474,
-        "category": "fee",
-        "confirmations": 6,
-        "height": 105001,
-        "satoshis": -1000000,
-        "txid": "5aa8e36f9423ee5fcf17c1d0d45d6988b8a5773eae8ad25d945bf34352040009"
       }
     ]
   },

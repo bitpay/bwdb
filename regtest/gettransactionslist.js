@@ -172,12 +172,10 @@ describe('Get Transactions List', function() {
       stream.on('end', function() {
         txlist = JSON.parse('[' + txlist.replace(/\n/g, ',') + ']');
         should.not.exist(error);
-        txlist.length.should.equal(2);
+        txlist.length.should.equal(1);
         txlist[0].address.should.equal(walletDatAddresses[0]);
         txlist[0].category.should.equal('receive');
         txlist[0].satoshis.should.equal(50 * 1E8 - 6000);
-        txlist[1].category.should.equal('fee');
-        txlist[1].satoshis.should.equal(-1 * 6000);
         done();
       });
     });
@@ -205,7 +203,7 @@ describe('Get Transactions List', function() {
       stream.on('end', function() {
         txlist = JSON.parse('[' + txlist.replace(/\n/g, ',') + ']');
         should.not.exist(error);
-        txlist.length.should.equal(5);
+        txlist.length.should.equal(4);
         txlist[0].address.should.equal(walletDatAddresses[0]);
         txlist[0].category.should.equal('send');
         txlist[0].satoshis.should.equal((50 * 1E8 - 6000) * -1);
@@ -241,7 +239,7 @@ describe('Get Transactions List', function() {
       stream.on('end', function() {
         txlist = JSON.parse('[' + txlist.replace(/\n/g, ',') + ']');
         should.not.exist(error);
-        txlist.length.should.equal(6);
+        txlist.length.should.equal(5);
         txlist[0].category.should.equal('shared-receive');
         txlist[0].satoshis.should.equal(4999986000);
         done();
@@ -273,7 +271,7 @@ describe('Get Transactions List', function() {
       stream.on('end', function() {
         txlist = JSON.parse('[' + txlist.replace(/\n/g, ',') + ']');
         should.not.exist(error);
-        txlist.length.should.equal(7);
+        txlist.length.should.equal(6);
         txlist[0].category.should.equal('shared-send');
         txlist[0].satoshis.should.equal(-9999973000);
         done();

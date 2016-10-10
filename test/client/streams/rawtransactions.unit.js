@@ -29,7 +29,7 @@ describe('Wallet Client RawTransactions Stream', function() {
       checkProperties(stream);
     });
     it('will create instance (without new)', function() {
-      var stream = new RawTransactionsStream(walletId, options);
+      var stream = RawTransactionsStream(walletId, options);
       checkProperties(stream);
     });
   });

@@ -24,7 +24,7 @@ describe('Wallet Address Map Model', function() {
       checkMap(map);
     });
     it('will instantiate without new', function() {
-      var map = new WalletAddressMap(address, walletIds, bitcore.Networks.testnet);
+      var map = WalletAddressMap(address, walletIds, bitcore.Networks.testnet);
       should.exist(map);
       checkMap(map);
     });
