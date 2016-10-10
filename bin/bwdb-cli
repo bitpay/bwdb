@@ -207,56 +207,32 @@ config.setup(function(err) {
 
   program
     .command('getTransactionsCSV <walletName> <start> <end>')
-    .description('View transaction CSV history within time range, later to earlier, e.g. 2016-10-01 2016-09-01')
+    .description('View transaction CSV history for block range, e.g. 1000 0')
     .action(config.unlockClientThrough(function(client, walletName, start, end) {
       var walletId = utils.getWalletIdFromName(walletName);
       var options = {
-        startdate: start,
-        enddate: end
+        height: start,
+        index: 0,
+        limit: 10,
+        end: end
       };
-      client.getHeightsFromTimestamps(options, function(err, res, body) {
-        if (err && err.statusCode === 404) {
-          console.log("Could not find transactions/blocks for the provided date range.");
-          return;
-        } else if (err) {
-          throw err;
-        }
-        options = {
-          height: body.result[0],
-          index: 0,
-          limit: 10,
-          end: body.result[1]
-        };
-        var stream = client.getTransactionsCSVStream(walletId, options);
-        stream.pipe(process.stdout);
-      });
+      var stream = client.getTransactionsCSVStream(walletId, options);
+      stream.pipe(process.stdout);
     }));
 
   program
     .command('getTransactionsList <walletName> <start> <end>')
-    .description('View transaction list history within time range, later to earlier, e.g. 2016-10-01 2016-09-01')
+    .description('View transaction list history for block range, e.g. 1000 0')
     .action(config.unlockClientThrough(function(client, walletName, start, end) {
       var walletId = utils.getWalletIdFromName(walletName);
       var options = {
-        startdate: start,
-        enddate: end
-      };
-      client.getHeightsFromTimestamps(options, function(err, res, body) {
-        if (err && err.statusCode === 404) {
-          console.log("Could not find transactions/blocks for the provided date range.");
-          return;
-        } else if (err) {
-          throw err;
-        }
-        options = {
-          height: body.result[0],
+          height: start,
           index: 0,
           limit: 10,
-          end: body.result[1]
+          end: end
         };
         var stream = client.getTransactionsListStream(walletId, options);
         stream.pipe(process.stdout);
-      });
     }));
 
   program
