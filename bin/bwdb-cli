@@ -7,6 +7,7 @@ process.env.BWDB_CLI = true;
 
 var crypto = require('crypto');
 
+var assert = require('assert');
 var async = require('async');
 var bitcore = require('bitcore-lib');
 var program = require('commander');
@@ -15,6 +16,7 @@ var ProgressBar = require('progress');
 var version = require('../package.json').version;
 var ClientConfig  = require('../lib/client/config');
 var utils = require('../lib/utils');
+var validators = require('../lib/validators');
 
 program
   .version(version)
@@ -222,17 +224,42 @@ config.setup(function(err) {
 
   program
     .command('getTransactionsList <walletName> <start> <end>')
-    .description('View transaction list history for block range, e.g. 1000 0')
+    .description('View transaction list history for time range, e.g. 2016-01-01 2015-01-01. ' +
+    'Date order is not important. The lastest date is exclusive and the earliest date is inclusive.')
+    .action(validators.checkDateFunction(function(err) {
+      if(err) {
+        for (var i = 0; i < err.length; i++) {
+          console.log(err[i]);
+        }
+        throw 'Errors reported';
+      }
+    }))
     .action(config.unlockClientThrough(function(client, walletName, start, end) {
-      var walletId = utils.getWalletIdFromName(walletName);
       var options = {
-          height: start,
+        startdate: start,
+        index: 0,
+        limit: 10,
+        enddate: end
+      };
+      client.getHeightsFromTimestamps(options, function(err, response, body) {
+        if(err) {
+          throw err;
+        }
+        var startHeight = body.result[0];
+        var endHeight = body.result[1];
+        assert(startHeight < endHeight, 'Starting block height must be less than ending ' +
+          'block height. The dates provided translated to block heights that appear to be incorrect. ' + 
+          'Please ensure \'timestampindex\' is enabled in bitcoin.conf.');
+        var walletId = utils.getWalletIdFromName(walletName);
+        options = {
+          height: startHeight,
           index: 0,
           limit: 10,
-          end: end
+          end: endHeight 
         };
         var stream = client.getTransactionsListStream(walletId, options);
         stream.pipe(process.stdout);
+      });
     }));
 
   program

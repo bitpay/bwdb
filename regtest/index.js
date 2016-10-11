@@ -10,6 +10,7 @@ var should = chai.should();
 var index = require('..');
 var Server = index.Server;
 var ClientConfig = index.ClientConfig;
+var testUtils = require('./utils');
 
 var testWIF = 'cSdkPxkAjA4HDr5VHgsebAPDEh9Gyub4HK8UJr2DFGGqKKy4K5sG';
 var testKey = bitcore.PrivateKey(testWIF);
@@ -282,20 +283,46 @@ describe('Wallet Server & Client', function() {
           rejectUnauthorized: false
         });
 
+        bitcoinClient.generate(150, function(err) {
+          if (err) {
+            throw err;
+          }
+        });
+
         var syncedHandler = function(height) {
           // check that the block chain is generated
           if (height >= 150) {
+            // our node has told us that it is synced and has generated 150
+            // blocks, but we don't know if bwdb has received and processed those
+            // blocks yet.
             server.node.services.bitcoind.removeListener('synced', syncedHandler);
 
             // check that client can connect
+            // and that bwdb is reporting 150 blocks
+            // but to do this, we need to have at least one wallet created
+            var imported;
             async.retry({times: 5, interval: 2000}, function(next) {
-              client.getInfo(next);
+              client.getInfo(function(err, response) {
+                if (parseInt(response.headers['x-bitcoin-height']) >= 150) {
+                  return next(null, response);
+                }
+                if (!imported) {
+                  imported = true;
+                  testUtils.createWallet({ client: client }, function() {
+                    next('try again');
+                  });
+                } else {
+                  next('try again');
+                }
+              });
             }, done);
           }
         };
-
         server.node.services.bitcoind.on('synced', syncedHandler);
-        bitcoinClient.generate(150, function(err) {
+
+        async.retry({times: 5, interval: 2000}, function(next) {
+          client.getInfo(next);
+        }, function(err) {
           if (err) {
             throw err;
           }
@@ -317,7 +344,7 @@ describe('Wallet Server & Client', function() {
 
   var walletId = 'f4c4dd2e316dd51f962dba79816f4f36e1b371f81e9c33be456ed091c4107d3a';
   it('will create a wallet', function(done) {
-    client.createWallet(walletId, function(err, res, result) {
+    client.createWallet(walletId, function(err) {
       if (err) {
         return done(err);
       }
@@ -409,7 +436,7 @@ describe('Wallet Server & Client', function() {
         tx.sign(testKey);
         tx.outputs.length.should.equal(1);
 
-        broadcastAndGenerate(tx, function(err, data) {
+        broadcastAndGenerate(tx, function(err) {
           if (err) {
             return done(err);
           }
@@ -458,7 +485,7 @@ describe('Wallet Server & Client', function() {
               return next(err);
             }
             overview.txids.length.should.equal(3);
-            overview.txids[0].should.equal(replaceableTxid);
+            overview.txids[2].should.equal(replaceableTxid);
             overview.balance.should.equal(1000000000);
             overview.utxos.length.should.equal(1);
             next();
@@ -625,7 +652,7 @@ describe('Wallet Server & Client', function() {
       ], done);
     });
     it('will undo removing utxo, and remove it again', function(done) {
-      bitcoinClient.invalidateBlock(invalidBlockHash, function(err, response) {
+      bitcoinClient.invalidateBlock(invalidBlockHash, function(err) {
         if (err) {
           return done(err);
         }
@@ -634,7 +661,7 @@ describe('Wallet Server & Client', function() {
         tx.fee(100000);
         tx.change(test5Address);
         tx.sign(testKey);
-        broadcastAndGenerate(tx, 2, function(err, data) {
+        broadcastAndGenerate(tx, 2, function(err) {
           if (err) {
             return done(err);
           }

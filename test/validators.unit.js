@@ -8,16 +8,16 @@ var sinon = require('sinon');
 var validators = require('../lib/validators');
 var utils = require('../lib/utils');
 
-describe('Wallet Validators', function() {
+var MAX_INT = 0xffffffff; // Math.pow(2, 32) - 1
 
-  var MAX_INT = Math.pow(2, 32) - 1;
+describe('Wallet Validators', function() {
 
   describe('@sanitizeRangeOptions', function() {
     function testDefaultOptions(options) {
-      var query = validators.sanitizeRangeOptions(options, 100);
+      var query = validators.sanitizeRangeOptions(options);
       query.limit.should.equal(10);
-      query.height.should.equal(100);
-      query.index.should.equal(MAX_INT);
+      query.height.should.equal(0);
+      query.index.should.equal(0);
     }
     it('will set default options', function() {
       testDefaultOptions(null);
@@ -26,7 +26,7 @@ describe('Wallet Validators', function() {
       testDefaultOptions({});
     });
     it('will set default options if missing "height"', function() {
-      testDefaultOptions({height: 100});
+      testDefaultOptions({height: 0});
     });
     it('will set default options if missing "index"', function() {
       testDefaultOptions({index: 0});
@@ -49,7 +49,7 @@ describe('Wallet Validators', function() {
     });
     it('will send error from sanitizer', function() {
       var req = {
-        query: {},
+        query: { height: 10 },
         bitcoinHeight: 400000
       };
       var res = {};
@@ -63,22 +63,27 @@ describe('Wallet Validators', function() {
       });
     });
     it('will set the range after passing validation', function() {
+      var bitcoinHeight = 400000;
       var req = {
         query: {
-          height: 400000,
+          height: 40,
           index: 12,
           limit: 50
         },
-        bitcoinHeight: 400000
+        bitcoinHeight: bitcoinHeight
       };
       var res = {};
       sandbox.stub(utils, 'sendError');
       validators.checkRangeParams(req, res, function() {
         utils.sendError.callCount.should.equal(0);
         req.range.should.deep.equal({
-          height: 400000,
+          height: 40,
           index: 12,
-          limit: 50
+          limit: 50,
+          end: {
+            height: bitcoinHeight,
+            index: MAX_INT
+          }
         });
       });
     });

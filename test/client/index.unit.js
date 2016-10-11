@@ -301,6 +301,31 @@ describe('Wallet Client', function() {
       });
     });
   });
+  describe('#getHeightsFromTimestamps', function() {
+    it('will get block heights from timestamps', function(done) {
+      var client = new Client({
+        network: 'testnet',
+        url: 'somenet'
+      });
+      var expectedRes = {};
+      var expectedBody = {result: [1,0]};
+      client._get = sinon.stub().callsArgWith(2, null, expectedRes, expectedBody);
+      client.getHeightsFromTimestamps({
+        startdate: '2016-09-01',
+        enddate: '2016-08-01'
+      }, function(err, res, body) {
+        if (err) {
+          return done(err);
+        }
+        client._get.callCount.should.equal(1);
+        var expectedUrl = '/info/timestamps';
+        client._get.args[0][0].should.equal(expectedUrl);
+        res.should.equal(expectedRes);
+        body.should.equal(expectedBody);
+        done();
+      });
+    });
+  });
   describe('#createWallet', function() {
     it('will call put to wallets endpoint', function(done) {
       var client = new Client({

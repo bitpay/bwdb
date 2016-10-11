@@ -1,5 +1,6 @@
 'use strict';
 
+var assert = require('assert');
 var async = require('async');
 var chai = require('chai');
 var bitcore = require('bitcore-lib');
@@ -24,16 +25,18 @@ var startingNumOfBlocks = 105;
 var walletDatAddresses;
 var walletInfo;
 var options = {
-  height: startingNumOfBlocks + 20,
+  height: 0,
   index: 0,
   limit: 10,
-  end: 0
+  end: startingNumOfBlocks + 20
 };
 
 describe('Get Transactions List', function() {
   var regtest;
 
   before(function(done) {
+    console.log('This test suite is designed to run as a unit!' +
+      ' Individual tests will not run successfully in isolation.');
     this.timeout(60000);
 
     configPath = __dirname + '/data';
@@ -88,28 +91,44 @@ describe('Get Transactions List', function() {
           rejectUnauthorized: false
         });
 
+        bitcoinClient.generate(startingNumOfBlocks, function(err) {
+          if (err) {
+            throw err;
+          }
+        });
+
         var syncedHandler = function(height) {
           if (height >= startingNumOfBlocks) {
             server.node.services.bitcoind.removeListener('synced', syncedHandler);
+            var imported;
             async.retry({times: 5, interval: 2000}, function(next) {
-              client.getInfo(next);
-            }, function() {
-              testUtils.importWalletDat({
-                client: client,
-                config: config,
-                path: configPath + '/bitcoin/regtest/wallet.dat'
-              }, function(err, response) {
-                if (err) {
-                  throw err;
+              client.getInfo(function(err, response) {
+                if (parseInt(response.headers['x-bitcoin-height']) >= startingNumOfBlocks) {
+                  return next(null, response);
                 }
-                walletDatAddresses = response.addresses;
-                walletInfo = {
-                  name: response.walletName,
-                  id: response.walletId
-                };
-                done();
+                //do this only once!
+                if (!imported) {
+                  imported = true;
+                  testUtils.importWalletDat({
+                    client: client,
+                    config: config,
+                    path: configPath + '/bitcoin/regtest/wallet.dat'
+                  }, function(err, response) {
+                    if (err) {
+                      throw err;
+                    }
+                    walletDatAddresses = response.addresses;
+                    walletInfo = {
+                      name: response.walletName,
+                      id: response.walletId
+                    };
+                    next('try again');
+                  });
+                } else {
+                  next('try again');
+                }
               });
-            });
+            }, done);
           }
         };
 
@@ -134,10 +153,10 @@ describe('Get Transactions List', function() {
   });
 
   it('should not get a tx history report because none of the wallet addresses should have txs', function(done) {
-    this.timeout(20000);
+    this.timeout(3000);
     var txlist = '';
-    var stream = client.getTransactionsListStream(walletInfo.id, options);
     var error;
+    var stream = client.getTransactionsListStream(walletInfo.id, options);
     stream.on('data', function(data) {
       txlist += data;
     });
@@ -145,7 +164,9 @@ describe('Get Transactions List', function() {
       error = data;
     });
     stream.on('end', function() {
+      txlist = JSON.parse(txlist);
       should.not.exist(error);
+      txlist.message = 'no results found';
       done();
     });
   });
@@ -204,13 +225,16 @@ describe('Get Transactions List', function() {
         txlist = JSON.parse('[' + txlist.replace(/\n/g, ',') + ']');
         should.not.exist(error);
         txlist.length.should.equal(4);
+        //receive, then receive, then send, then fee
+        txlist[0].category.should.equal('receive');
+        txlist[0].satoshis.should.equal(50 * 1E8 - 6000);
         txlist[0].address.should.equal(walletDatAddresses[0]);
-        txlist[0].category.should.equal('send');
-        txlist[0].satoshis.should.equal((50 * 1E8 - 6000) * -1);
         txlist[1].category.should.equal('receive');
-        txlist[1].satoshis.should.equal(50 * 1E8 - 7000 - 6000);
-        txlist[2].satoshis.should.equal(-7000);
-        txlist[2].category.should.equal('fee');
+        txlist[1].satoshis.should.equal(50 * 1E8 - 6000);
+        txlist[2].category.should.equal('send');
+        txlist[2].satoshis.should.equal((50 * 1E8 - 6000) * -1);
+        txlist[3].satoshis.should.equal(-7000);
+        txlist[3].category.should.equal('fee');
         done();
       });
     });
@@ -240,8 +264,8 @@ describe('Get Transactions List', function() {
         txlist = JSON.parse('[' + txlist.replace(/\n/g, ',') + ']');
         should.not.exist(error);
         txlist.length.should.equal(5);
-        txlist[0].category.should.equal('shared-receive');
-        txlist[0].satoshis.should.equal(4999986000);
+        txlist[4].category.should.equal('shared-receive');
+        txlist[4].satoshis.should.equal(4999986000);
         done();
       });
     });
@@ -272,13 +296,69 @@ describe('Get Transactions List', function() {
         txlist = JSON.parse('[' + txlist.replace(/\n/g, ',') + ']');
         should.not.exist(error);
         txlist.length.should.equal(6);
-        txlist[0].category.should.equal('shared-send');
-        txlist[0].satoshis.should.equal(-9999973000);
+        txlist[5].category.should.equal('shared-send');
+        txlist[5].satoshis.should.equal(-9999973000);
         done();
       });
     });
   });
+  it('should properly translate block timestamps to block heights', function(done) {
+    this.timeout(20000);
+    var start = Math.floor(new Date().getTime() + 86400000 * 30);
+    var end = Math.floor(new Date().getTime() - 86400000 * 30);
+    console.log(end);
+    var options = {
+      startdate: start,
+      enddate: end
+    };
+    client.getHeightsFromTimestamps(options, function(err, response, body) {
+      if (err) {
+        done(err);
+      }
+      body.result[0].should.equal(1);
+      assert(body.result[1] >= 114);
+      done();
+    });
+  });
+  it('should properly translate block timestamps to block heights by providing dates in any order', function(done) {
+    this.timeout(20000);
+    var end = Math.floor(new Date().getTime() + 86400000 * 30);
+    var start = Math.floor(new Date().getTime() - 86400000 * 30);
+    var options = {
+      startdate: start,
+      enddate: end
+    };
+    client.getHeightsFromTimestamps(options, function(err, response, body) {
+      if (err) {
+        done(err);
+      }
+      body.result[0].should.equal(1);
+      assert(body.result[1] >= 114);
+      done();
+    });
+  });
+  it('should return an error if a date provided does not make sense as a date', function(done) {
+    this.timeout(20000);
+    var options = {
+      startdate: 'alpaca socks',
+      enddate: '2016-11-01'
+    };
+    client.getHeightsFromTimestamps(options, function(err) {
+      err.message.should.equal('400 Bad Request: improper date format');
+      done();
+    });
+  });
+  it('should not return block heights created today if the end date is today', function(done) {
+    this.timeout(20000);
+    var start = Math.floor(new Date().getTime() - 86400000 * 30);
+    var end = new Date().getTime();
+    var options = {
+      startdate: start,
+      enddate: end
+    };
+    client.getHeightsFromTimestamps(options, function(err) {
+      err.message.should.be.equal('404 Not Found');
+      done();
+    });
+  });
 });
-
-
-

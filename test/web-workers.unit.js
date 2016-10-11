@@ -1,5 +1,6 @@
 'use strict';
 
+var assert = require('assert');
 var net = require('net');
 var EventEmitter = require('events').EventEmitter;
 
@@ -565,11 +566,11 @@ describe('Wallet Web Worker', function() {
       sandbox.restore();
     });
     it('will end at the correct endpoint', function(done) {
-      sandbox.stub(utils, 'isRangeLessThan').returns(true);
+      sandbox.stub(utils, 'isRangeMoreThan').returns(true);
       sandbox.stub(models.WalletTxid, 'parseKey').returns({height: 399999, index: 0});
       var cursor = {
         goToKey: sinon.stub(),
-        goToPrev: sinon.stub(),
+        goToRange: sinon.stub(),
         close: sinon.stub(),
         getCurrentBinary: sinon.stub().callsArgWith(0, 'key', 'value')
       };
@@ -581,10 +582,10 @@ describe('Wallet Web Worker', function() {
       var worker = new WebWorkerStubbed(options);
       worker.db = {};
       worker._getLatestTxids({}, walletId, {
-        height: 401000,
+        height: 399998,
         index: MAX_INT,
         end: {
-          height: 400000,
+          height: 399997,
           index: 18
         }
       }, function(err, data) {
@@ -592,7 +593,7 @@ describe('Wallet Web Worker', function() {
           return done(err);
         }
         data.txids.should.deep.equal([]);
-        data.start.should.deep.equal({height: 401000, index: MAX_INT});
+        data.start.should.deep.equal({height: 399998, index: MAX_INT});
         done();
       });
     });
@@ -614,11 +615,11 @@ describe('Wallet Web Worker', function() {
       };
       var cursor = {
         goToKey: sinon.stub().returns(null),
-        goToPrev: sinon.stub().returns(null),
+        goToRange: sinon.stub().returns(null),
         close: sinon.stub()
       };
       sandbox.stub(lmdb, 'Cursor').returns(cursor);
-      var opts = {height: 400, index: 20};
+      var opts = {height: 400, index: 20, end: { height: 200, index: 32}};
       var txn = {};
       worker._getLatestTxids(txn, walletId, opts, function(err, result) {
         if (err) {
@@ -639,25 +640,29 @@ describe('Wallet Web Worker', function() {
       var key = 'key';
       var value = 'value';
       var cursor = {
-        goToKey: sinon.stub().returns(new Buffer(new Array(0))),
-        goToPrev: sinon.stub().returns(new Buffer(new Array(0))),
+        goToRange: sinon.stub().returns(new Buffer(new Array(0))),
+        goToNext: sinon.stub().returns(new Buffer(new Array(0))),
         getCurrentBinary: sinon.stub().callsArgWith(0, key, value),
         close: sinon.stub()
       };
-      var height = 400;
-      var index = 9;
+      var height = 10;
+      var index = 0;
       sandbox.stub(models.WalletTxid, 'parseKey', function() {
         var result = {
           height: height,
           index: index
         };
-        index--;
+        index++;
         return result;
       });
       sandbox.stub(lmdb, 'Cursor').returns(cursor);
       var opts = {
-        height: 400,
-        index: 0
+        height: 0,
+        index: 0,
+        end: {
+          height: 400,
+          index: 0
+        }
       };
       var txn = {};
       worker._getLatestTxids(txn, walletId, opts, function(err, result) {
@@ -665,21 +670,21 @@ describe('Wallet Web Worker', function() {
           return done(err);
         }
         result.txids.should.deep.equal([
-          [400, 9, 'value'],
-          [400, 8, 'value'],
-          [400, 7, 'value'],
-          [400, 6, 'value'],
-          [400, 5, 'value'],
-          [400, 4, 'value'],
-          [400, 3, 'value'],
-          [400, 2, 'value'],
-          [400, 1, 'value'],
-          [400, 0, 'value']
+          [10, 0, 'value'],
+          [10, 1, 'value'],
+          [10, 2, 'value'],
+          [10, 3, 'value'],
+          [10, 4, 'value'],
+          [10, 5, 'value'],
+          [10, 6, 'value'],
+          [10, 7, 'value'],
+          [10, 8, 'value'],
+          [10, 9, 'value']
         ]);
-        result.start.height.should.equal(400);
-        result.start.index.should.equal(MAX_INT);
-        result.end.height.should.equal(399);
-        result.end.index.should.equal(4294967295);
+        result.start.height.should.equal(0);
+        result.start.index.should.equal(0);
+        result.end.height.should.equal(10);
+        result.end.index.should.equal(10);
         cursor.close.callCount.should.equal(1);
         done();
       });
@@ -691,12 +696,12 @@ describe('Wallet Web Worker', function() {
       };
       var key = 'key';
       var value = 'value';
-      var c = 0;
+      var c = 1;
       var cursor = {
-        goToKey: sinon.stub().returns(new Buffer(new Array(0))),
-        goToPrev: function() {
+        goToRange: sinon.stub().returns(new Buffer(new Array(0))),
+        goToNext: function() {
           var result = null;
-          if (c < 6) {
+          if (c < 7) {
             result = new Buffer(new Array(0));
           }
           c++;
@@ -705,20 +710,24 @@ describe('Wallet Web Worker', function() {
         getCurrentBinary: sinon.stub().callsArgWith(0, key, value),
         close: sinon.stub()
       };
-      var height = 400;
-      var index = 6;
+      var height = 0;
+      var index = 0;
       sandbox.stub(models.WalletTxid, 'parseKey', function() {
         var result = {
           height: height,
           index: index
         };
-        index--;
+        index++;
         return result;
       });
       sandbox.stub(lmdb, 'Cursor').returns(cursor);
       var opts = {
-        height: 400,
-        index: 0
+        height: 0,
+        index: 6,
+        end: {
+          height: 200,
+          index: 0
+        }
       };
       var txn = {};
       worker._getLatestTxids(txn, walletId, opts, function(err, result) {
@@ -726,16 +735,16 @@ describe('Wallet Web Worker', function() {
           return done(err);
         }
         result.txids.should.deep.equal([
-          [400, 6, 'value'],
-          [400, 5, 'value'],
-          [400, 4, 'value'],
-          [400, 3, 'value'],
-          [400, 2, 'value'],
-          [400, 1, 'value'],
-          [400, 0, 'value']
+          [0, 0, 'value'],
+          [0, 1, 'value'],
+          [0, 2, 'value'],
+          [0, 3, 'value'],
+          [0, 4, 'value'],
+          [0, 5, 'value'],
+          [0, 6, 'value']
         ]);
-        result.start.height.should.equal(400);
-        result.start.index.should.equal(MAX_INT);
+        result.start.height.should.equal(0);
+        result.start.index.should.equal(6);
         should.not.exist(result.end);
         cursor.close.callCount.should.equal(1);
         done();
@@ -1344,10 +1353,27 @@ describe('Wallet Web Worker', function() {
     afterEach(function() {
       sandbox.restore();
     });
-
+    it('dates ranges can be passed in any order', function(done) {
+      var worker = new WebWorker(options);
+      worker._convertDateToHeight = sinon.stub();
+      var endpoint = worker._endpointGetHeightsFromTimestamps();
+      var start = '2016-09-30';
+      var end = '2016-09-01';
+      var req = {
+        query: {
+          startdate: end,
+          enddate: start
+        }
+      };
+      var res = {};
+      endpoint(req, res);
+      worker._convertDateToHeight.args[0][0].should.deep.equal([new Date(end),
+        new Date(start)]);
+      done();
+    });
     it('will get block heights from timestamps', function(done) {
       var worker = new WebWorker(options);
-      worker._convertDateToHeight = sinon.stub().callsArgWith(2, null, [1000, 0]);
+      worker._convertDateToHeight = sinon.stub().callsArgWith(1, null, [1000, 0]);
       var endpoint = worker._endpointGetHeightsFromTimestamps();
       var req = {
         query: {
@@ -1366,7 +1392,7 @@ describe('Wallet Web Worker', function() {
     });
     it('will generate an error if no blocks found for a given timestamp range', function(done) {
       var worker = new WebWorker(options);
-      worker._convertDateToHeight = sinon.stub().callsArgWith(2, {
+      worker._convertDateToHeight = sinon.stub().callsArgWith(1, {
         code: 999,
         message: 'some err'
       });
@@ -1387,8 +1413,11 @@ describe('Wallet Web Worker', function() {
       worker._convertDateToHeight.callCount.should.equal(1);
       res.jsonp.callCount.should.equal(1);
       res.jsonp.args[0][0].should.deep.equal({
-        error: 'some err',
-        status: 999,
+        error: {
+          code: 999,
+          message: 'some err'
+        },
+        status: 400,
         url: 'https://example.com'
       });
       done();
@@ -1405,7 +1434,7 @@ describe('Wallet Web Worker', function() {
       sandbox.spy(worker, '_convertDateToHeight');
       sandbox.stub(utils, 'sendError');
       endpoint(req, res);
-      worker._convertDateToHeight.notCalled;
+      assert(worker._convertDateToHeight.callCount === 0);
       utils.sendError.callCount.should.equal(1);
       utils.sendError.args[0][0].should.deep.equal({
         message: 'improper date format',
@@ -1423,7 +1452,7 @@ describe('Wallet Web Worker', function() {
     it('should return 404 for no results found', function(done) {
       var worker = new WebWorker(options);
       sandbox.stub(worker.clients, 'getBlockHashes').callsArgWith(3, null, []);
-      worker._convertDateToHeight('2016-09-30', '2016-09-01', function(err) {
+      worker._convertDateToHeight([new Date('2016-09-30'), new Date('2016-09-01')], function(err) {
         err.message.should.equal('no results found');
         done();
       });
@@ -1434,7 +1463,7 @@ describe('Wallet Web Worker', function() {
         result: ['a', 'b']
       });
       sandbox.stub(worker, '_getBlockHeights').callsArgWith(1, null, [1000, 0]);
-      worker._convertDateToHeight('2016-09-30', '2016-09-01', function(err, heights) {
+      worker._convertDateToHeight([new Date('2016-09-30'), new Date('2016-09-01')], function(err, heights) {
         if(err) {
           return done(err);
         }
@@ -1446,8 +1475,7 @@ describe('Wallet Web Worker', function() {
       var worker = new WebWorker(options);
       sandbox.stub(worker.clients, 'getBlockHashes').callsArgWith(3, 'some err');
       sandbox.spy(utils, 'wrapRPCError');
-      worker._convertDateToHeight('2016-09-30', '2016-09-01', function(err) {
-        utils.wrapRPCError.calledOnce;
+      worker._convertDateToHeight([new Date('2016-09-30'), new Date('2016-09-01')], function() {
         utils.wrapRPCError.args[0][0].should.equal('some err');
         done();
       });

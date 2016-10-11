@@ -787,31 +787,31 @@ describe('Wallet Utils', function() {
       });
     });
   });
-  describe('#isRangeLessThan', function() {
-    it('should return less than if height is less than', function() {
-      var a = { height: 1, index: 0 };
-      var b = { height: 2, index: 1 };
-      utils.isRangeLessThan(a, b).should.equal(true);
+  describe('#isRangeMoreThan', function() {
+    it('should return more than if height is more than', function() {
+      var b = { height: 1, index: 0 };
+      var a = { height: 2, index: 1 };
+      utils.isRangeMoreThan(a, b).should.equal(true);
     });
-    it('should return less than if index is less than', function() {
-      var a = { height: 1, index: 0 };
-      var b = { height: 1, index: 1 };
-      utils.isRangeLessThan(a, b).should.equal(true);
+    it('should return more than if index is more than', function() {
+      var b = { height: 1, index: 0 };
+      var a = { height: 1, index: 1 };
+      utils.isRangeMoreThan(a, b).should.equal(true);
     });
     it('should return false if equal', function() {
-      var a = { height: 1, index: 1 };
       var b = { height: 1, index: 1 };
-      utils.isRangeLessThan(a, b).should.equal(false);
+      var a = { height: 1, index: 1 };
+      utils.isRangeMoreThan(a, b).should.equal(false);
     });
     it('should return false if height is greater than', function() {
-      var a = { height: 2, index: 1 };
-      var b = { height: 1, index: 1 };
-      utils.isRangeLessThan(a, b).should.equal(false);
+      var b = { height: 2, index: 1 };
+      var a = { height: 1, index: 1 };
+      utils.isRangeMoreThan(a, b).should.equal(false);
     });
     it('should return false if index is greater than', function() {
-      var a = { height: 1, index: 2 };
-      var b = { height: 1, index: 1 };
-      utils.isRangeLessThan(a, b).should.equal(false);
+      var b = { height: 1, index: 2 };
+      var a = { height: 1, index: 1 };
+      utils.isRangeMoreThan(a, b).should.equal(false);
     });
   });
 });
