@@ -303,6 +303,9 @@ describe('Wallet Server & Client', function() {
             var imported;
             async.retry({times: 5, interval: 2000}, function(next) {
               client.getInfo(function(err, response) {
+                if (err){
+                  return next(err);
+                }
                 if (parseInt(response.headers['x-bitcoin-height']) >= 150) {
                   return next(null, response);
                 }
