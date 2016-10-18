@@ -223,7 +223,7 @@ config.setup(function(err) {
     }));
 
   program
-    .command('getTransactionsList <walletName> <start> <end>')
+    .command('getTransactionsList <walletName> <startDate> <endDate>')
     .description('View transaction list history for time range, e.g. 2016-01-01 2015-01-01. ' +
     'Date order is not important. The lastest date is exclusive and the earliest date is inclusive.')
     .action(validators.checkDateFunction(function(err) {
