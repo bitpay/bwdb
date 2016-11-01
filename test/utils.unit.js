@@ -2,6 +2,7 @@
 
 var crypto = require('crypto');
 
+var bitcore  = require('bitcore-lib');
 var chai = require('chai');
 var should = chai.should();
 var sinon = require('sinon');
@@ -17,7 +18,7 @@ describe('Wallet Utils', function() {
       utils.isInteger(0.1).should.equal(false);
     });
     it('will return false for "0.1"', function() {
-      utils.isInteger("0.1").should.equal(false);
+      utils.isInteger('0.1').should.equal(false);
     });
     it('will return false for NaN', function() {
       utils.isInteger(NaN).should.equal(false);
@@ -672,7 +673,39 @@ describe('Wallet Utils', function() {
         if (err) {
           return done(err);
         }
-        res.should.equal('079a0bbe107462f5dc8761126cc968e6aa489d2dafce16d93a174b7e21e0e77ce1bdd38e6d6f6654f7acd9f4a7470a11');
+        res.should.equal('c942834238b0638087436746319eb87e423eed7da099e10e72c7be23a635479b7a5bd013ce38da40cb8bf29016d995fc');
+        done();
+      });
+    });
+  });
+  describe('#decryptPrivateKey', function() {
+    it('will decrypt a private key using from a passphrase and appropriate cipher text', function(done) {
+      var passphrase = 'test';
+      var salt = new Buffer('0be3fb75ec805abd', 'hex');
+      var pubkey = '03FFFF40B2CC0D3A29FCDA41EAB53E130070EF18D87B69807951FBE0132AFFE15B';
+      var mkCipherText = '32e2d576aa78b6b91b8247b46b883d21f768e52e67f78d999f90cef63460fe75e56e6c6cb0ea7171cfffdbd535510505';
+      var pkCipherText = '7C285461A401612241E46FC1CF5269D316B9636EFF0CA146D3E9607FC50900897E8C706A441ECF5E737729055926FBE4'
+      var derivationOptions = {
+        rounds: 162511,
+        method: 0
+      };
+      utils.decryptPrivateKey({
+        cipherText: mkCipherText,
+        pkCipherText: pkCipherText,
+        pubkey: pubkey,
+        passphrase: passphrase,
+        salt: salt,
+        derivationOptions: derivationOptions
+      }, function(err, res) {
+        if (err) {
+          return done(err);
+        }
+        var privKey = res.toString('hex');
+        var addressFromCompressedPubKey = new bitcore.PublicKey(pubkey, {network: 'testnet'}).toAddress().toString();
+        var addressFromRawPrivateKey = new bitcore.PrivateKey(privKey, 'testnet').toAddress().toString();
+        var actual = '4a9f87c9384a60d1fe95f5cc6c94e54d76457798b687639fb83f2d0cf365ad7b';
+        privKey.should.equal(actual);
+        addressFromCompressedPubKey.should.equal(addressFromRawPrivateKey);
         done();
       });
     });
@@ -681,7 +714,7 @@ describe('Wallet Utils', function() {
     it('will decrypt a hashed passphrase', function(done) {
       var passphrase = 'abc123';
       var salt = 'NaCl';
-      var cipherText = '079a0bbe107462f5dc8761126cc968e6aa489d2dafce16d93a174b7e21e0e77ce1bdd38e6d6f6654f7acd9f4a7470a11';
+      var cipherText = 'c942834238b0638087436746319eb87e423eed7da099e10e72c7be23a635479b7a5bd013ce38da40cb8bf29016d995fc';
       utils.decryptSecret({
         cipherText: cipherText,
         passphrase: passphrase,
@@ -690,7 +723,7 @@ describe('Wallet Utils', function() {
         if (err) {
           return done(err);
         }
-        res.toString('hex').should.equal('bf0ecd712189f385a846c333c1985b18f140046dec9246869ca9404f1c8cfe62');
+        res.toString('hex').should.equal('f1d08f2d9ff9489dd0edb604595cbf9a11d4f1e03bacfec5e6c8b0bb2ed517a9');
         done();
       });
     });
@@ -701,9 +734,58 @@ describe('Wallet Utils', function() {
         cipherText: cipherText,
         passphrase: '',
         salt: salt,
-      }, function(err, res) {
+      }, function(err) {
         err.should.be.instanceOf(Error);
-        err.message.should.match(/^Secret to be xor\'ed/);
+        done();
+      });
+    });
+  });
+  describe('#encyptPrivateKeys', function() {
+    it('it will encrypt a object with keys', function(done) {
+      var masterKey = new Buffer('557bf6b8505ed552b4b10b90a206ead9db42df598627cf22e93339302ffb0707', 'hex');
+      var keys = [
+        {
+          type: 'unencrypted private key',
+          privKey: 'cVm2Y3oMLf3rBnHkitn3yi9KavmNMzx9mg5M2t9f1fjb73pSUMzM',
+          pubKey: '02755c2529b56d5bbd0dbdbd97760537e9544f26331bef601df3eb6bbf98562022',
+          checkHash: ''
+        },
+        {
+          type: 'unencrypted private key',
+          privKey: 'cNB7dnizFdVRjEBPwUnXY7sGdLy8z8wyZyg8WcbohcMJ93GJU1ZW',
+          pubKey: '03a9d328003d8dc12215740f70af80dd45705609e2585195003f64e4f966afb408',
+          checkHash: ''
+        },
+        {
+          type: 'unencrypted private key',
+          privKey: 'cNiBV3Phs7CjpxUZ42b9yRpmPKQidWX8qVmHyXshmrNGm3tqZMLn',
+          pubKey: '02e5e150f06365164634e0c9c4bfa46ca4371275478a5e140ce4b7f46f7179b9ab',
+          checkHash: ''
+        }
+      ];
+      utils.encryptPrivateKeys({masterKey: masterKey, keys: keys}, function(err, results) {
+        if(err) {
+          return done(err);
+        }
+        results.length.should.equal(3);
+        results.should.deep.equal([{
+          cipherText: 'b44a88a2f2b713feda634f3284f85c06376187fd0958013faac198e83d0a4e46ea930ba9976cb77763a264f79f8ae0dae6132c3b8b806d7843e9e959c03bfc4a',
+          checkHash: '285dc70377b07cf1d86fb7a209694b5fd439f8495f7d3a7f4ab2addb11b86253',
+          type: 'encrypted private key',
+          pubKey: '02755c2529b56d5bbd0dbdbd97760537e9544f26331bef601df3eb6bbf98562022'
+        },
+        {
+          cipherText: '4eac2f530103d3982631c14d7193c299f009c7d115d8bc738197d3227f7e6a2feff9b2613f25908ef2a095e7e3c65dd6cbae788b5b867cdc4fc2440a5e8a8aca',
+          checkHash: '581c44231632d8d208c576c5e4d815fcc4c961c6a3c4feacb14ce0263ec57ef7',
+          type: 'encrypted private key',
+          pubKey: '03a9d328003d8dc12215740f70af80dd45705609e2585195003f64e4f966afb408'
+        },
+        {
+          cipherText: '3ee46f81737b75fd8385c87a085cc64cb98db9822b3b950bc4f266fec40132a674691af43687c978dc109f7ab6e6af06fdef29518bbcb39b303fd566474f4de1',
+          checkHash: 'f5a6d15091df8842a229c20fe8acb64d25a2d2179f6a7b21b9b62d7f3a70b04b',
+          type: 'encrypted private key',
+          pubKey: '02e5e150f06365164634e0c9c4bfa46ca4371275478a5e140ce4b7f46f7179b9ab'
+        }]);
         done();
       });
     });
