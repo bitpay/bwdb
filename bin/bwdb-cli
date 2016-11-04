@@ -141,7 +141,7 @@ config.setup(function(err) {
           total: total
         });
 
-        var chunkSize = 2000;
+        var chunkSize = 100;
         var chunks = utils.splitArray(addresses, chunkSize);
         async.eachSeries(chunks, function(chunk, next) {
           client.importAddresses(walletId, chunk, function(err) {
