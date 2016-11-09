@@ -114,6 +114,7 @@ describe('Web Workers Cluster', function() {
         should.exist(info);
         expect(JSON.parse(info.body)).to.deep.equal({version: version});
         child.kill('SIGINT');
+        done();
       });
     }, 2000);
 
