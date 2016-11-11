@@ -31,3 +31,4 @@ regtest/data/bitcoin/chainstate/
 regtest/data/bitcoin/fee_estimates.dat
 regtest/data/bitcoin/peers.dat
 regtest/data/bitcoin/wallet.dat
+scripts/files
