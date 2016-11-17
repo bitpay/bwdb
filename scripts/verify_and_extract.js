@@ -12,7 +12,6 @@ var masterKey = getMasterKey(keyEntries);
 var derivationMethods = { 'SHA512': 0 };
 
 unlockMasterKey(function(err, secret) {
-  var self = this;
   if(err) {
     throw err;
   }
@@ -24,7 +23,7 @@ unlockMasterKey(function(err, secret) {
         cipherText: record.cipherText
       }, function(err, privKey) {
         if(err) {
-          return callback(err);
+          return next(err);
         }
         var privateKey = bitcore.PrivateKey.fromObject({
           bn: privKey,
@@ -33,7 +32,7 @@ unlockMasterKey(function(err, secret) {
         });
         var pubKey = privateKey.toPublicKey();
         if (record.pubKey !== pubKey.toString('hex')) {
-          return callback(new Error('public key: ' + record.pubKey + ' in json export did not match: ' + pubKey));
+          return next(new Error('public key: ' + record.pubKey + ' in json export did not match: ' + pubKey));
         }
         next(null, pubKey.toAddress().toString());
       });
@@ -107,7 +106,7 @@ function unlockMasterKey(callback) {
 
 function getPassphrase(callback) {
   ttyread('Enter passphrase: ', {silent: true}, callback);
-};
+}
 
 function sha512KDF(passphrase, salt, derivationOptions, callback) {
   if (!derivationOptions || derivationOptions.method !== 0 || !derivationOptions.rounds) {
@@ -124,33 +123,17 @@ function sha512KDF(passphrase, salt, derivationOptions, callback) {
     derivation = crypto.createHash('sha512').update(derivation).digest();
   }
   callback(null, derivation);
-};
-
-function scryptKDF(passphrase, salt, derivationOptions, callback) {
-  var opts = _.assign({ N: Math.pow(2, 14), r: 8, p: 8 }, derivationOptions);
-  scrypt.hash(passphrase, opts, 48, salt, function(err, res) {
-    if (err) {
-      return callback(err);
-    }
-    callback(null, res);
-  });
-};
-
-function hashPassphrase(opts) {
-  return opts && opts.method === 0 ?
-    sha512KDF : scryptKDF;
-};
+}
 
 function decryptSecret(opts, callback) {
-  var hashFunc = hashPassphrase(opts.derivationOptions);
-  hashFunc(opts.passphrase, opts.salt, opts.derivationOptions, function(err, hashedPassphrase) {
+  sha512KDF(opts.passphrase, opts.salt, opts.derivationOptions, function(err, hashedPassphrase) {
     if (err) {
       return callback(err);
     }
     opts.key = hashedPassphrase;
     decrypt(opts, callback);
   });
-};
+}
 
 function decrypt(opts, callback) {
   if (!Buffer.isBuffer(opts.key)) {
@@ -172,11 +155,11 @@ function decrypt(opts, callback) {
     return callback(e);
   }
   callback(null, plainText);
-};
+}
 
 function getMasterKey(json) {
   for(var i = json.length - 1; i >= 0; i--) {
-    if (json[i]['type'] === 'master') {
+    if (json[i].type === 'master') {
       return json[i];
     }
   }
