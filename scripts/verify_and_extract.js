@@ -3,19 +3,19 @@ var crypto = require('crypto');
 var bitcore = require('bitcore-lib');
 var ttyread = require('ttyread');
 var async = require('async');
-var  _  = require('lodash');
 
 var jsonFile = process.argv[2];
 var keyEntries = require(jsonFile);
 var livenet = bitcore.Networks.livenet;
 var masterKey = getMasterKey(keyEntries);
 var derivationMethods = { 'SHA512': 0 };
+var concurrency = 4;
 
 unlockMasterKey(function(err, secret) {
   if(err) {
     throw err;
   }
-  async.map(keyEntries, function(record, next) {
+  async.eachLimit(keyEntries, concurrency, function(record, next) {
     if (record.type === 'encrypted private key') {
       decrypt({
         key: secret,
@@ -25,25 +25,33 @@ unlockMasterKey(function(err, secret) {
         if(err) {
           return next(err);
         }
+        var recordPubkey;
+        try {
+          recordPubkey = new bitcore.PublicKey(record.pubKey);
+        } catch(e) {
+          console.log('ERROR: invalid public key in json export: ' + record.pubKey);
+          return next();
+        }
         var privateKey = bitcore.PrivateKey.fromObject({
           bn: privKey,
-          compressed: true,
+          compressed: recordPubkey.compressed,
           network: livenet
         });
         var pubKey = privateKey.toPublicKey();
-        if (record.pubKey !== pubKey.toString('hex')) {
-          return next(new Error('public key: ' + record.pubKey + ' in json export did not match: ' + pubKey));
+        if (recordPubkey.toString('hex') !== pubKey.toString('hex')) {
+          console.log('public key: ' + record.pubKey + ' in json export did not match: ' + pubKey);
+          next();
         }
-        next(null, pubKey.toAddress().toString());
+        console.log(pubKey.toAddress().toString());
+        next(null);
       });
     } else {
       next(null);
     }
-  }, function(err, results) {
+  }, function(err) {
     if(err) {
       throw(err);
     }
-    console.log(JSON.stringify(_.compact(results)));
   });
 });
 
