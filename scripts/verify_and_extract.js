@@ -10,12 +10,15 @@ var livenet = bitcore.Networks.livenet;
 var masterKey = getMasterKey(keyEntries);
 var derivationMethods = { 'SHA512': 0 };
 var concurrency = 4;
+var closureCount = 0;
 
 unlockMasterKey(function(err, secret) {
   if(err) {
     throw err;
   }
+
   async.eachLimit(keyEntries, concurrency, function(record, next) {
+    closureCount++;
     if (record.type === 'encrypted private key') {
       decrypt({
         key: secret,
@@ -23,14 +26,18 @@ unlockMasterKey(function(err, secret) {
         cipherText: record.cipherText
       }, function(err, privKey) {
         if(err) {
-          return next(err);
+          setImmediate(function() {
+            next(err);
+          });
         }
         var recordPubkey;
         try {
           recordPubkey = new bitcore.PublicKey(record.pubKey);
         } catch(e) {
-          console.log('ERROR: invalid public key in json export: ' + record.pubKey);
-          return next();
+          process.stdout.write('ERROR: invalid public key in json export: ' + record.pubKey + '\n');
+          setImmediate(function() {
+            next();
+          });
         }
         var privateKey = bitcore.PrivateKey.fromObject({
           bn: privKey,
@@ -39,14 +46,14 @@ unlockMasterKey(function(err, secret) {
         });
         var pubKey = privateKey.toPublicKey();
         if (recordPubkey.toString('hex') !== pubKey.toString('hex')) {
-          console.log('public key: ' + record.pubKey + ' in json export did not match: ' + pubKey);
+          process.stdout.write('public key: ' + record.pubKey + ' in json export did not match: ' + pubKey + '\n');
           next();
         }
-        console.log(pubKey.toAddress().toString());
-        next(null);
+        process.stdout.write(pubKey.toAddress().toString() + '\n');
+        setImmediate(next);
       });
     } else {
-      next(null);
+      setImmediate(next);
     }
   }, function(err) {
     if(err) {
