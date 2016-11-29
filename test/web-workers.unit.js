@@ -1459,7 +1459,7 @@ describe('Wallet Web Worker', function() {
     });
     it('should return heights', function(done) {
       var worker = new WebWorker(options);
-      sandbox.stub(worker.clients, 'getBlockHashes').callsArgWith(3, null, {
+      var stub = sandbox.stub(worker.clients, 'getBlockHashes').callsArgWith(3, null, {
         result: ['a', 'b']
       });
       sandbox.stub(worker, '_getBlockHeights').callsArgWith(1, null, [1000, 0]);
@@ -1467,6 +1467,7 @@ describe('Wallet Web Worker', function() {
         if(err) {
           return done(err);
         }
+        sinon.assert.calledWith(stub, 1475193600, 1472688000, { noOrphans: true });
         heights.should.deep.equal([1000, 0]);
         done();
       });
