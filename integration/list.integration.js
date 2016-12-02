@@ -1,0 +1,122 @@
+'use strict';
+
+var fs = require('fs');
+var net = require('net');
+var path = require('path');
+var crypto = require('crypto');
+var spawn = require('child_process').spawn;
+var mkdirp = require('mkdirp');
+var rimraf = require('rimraf');
+var chai = require('chai');
+var should = chai.should();
+var expect = chai.expect;
+var request = require('request');
+
+var db = require('../lib/db');
+var version = require('../package.json').version;
+
+var webServer;
+
+function mockWebWorker(done) {
+  webServer = net.createServer(function() {
+  });
+  webServer.on('error', function(err) {
+    throw err;
+  });
+  webServer.listen(function() {
+    done();
+  });
+}
+
+describe('Web Workers Cluster', function() {
+  var child;
+  var port = 19921;
+  var tmpDirectory = '/tmp/bwdb-' + crypto.randomBytes(4).toString('hex');
+  var dbPath = tmpDirectory + '/testnet3.lmdb';
+  var configPath = tmpDirectory + '/server.json';
+  var writerPath = tmpDirectory + '/writer.sock';
+
+  var config = {
+    bitcoind: {
+      spawn: {
+        datadir: tmpDirectory,
+        exec: path.resolve(__dirname, '../node_modules/.bin/bitcoind')
+      }
+    },
+    wallet: {
+      port: port
+    }
+  };
+
+  before(function(done) {
+    // Create the directory
+    mkdirp(dbPath, function(err) {
+      if (err) {
+        return done(err);
+      }
+      // Create the database
+      db.open(dbPath, false);
+
+      // Write a config
+      fs.writeFile(configPath, JSON.stringify(config, false, 2), function(err) {
+        if (err) {
+          return done(err);
+        }
+        // Open writer socket
+        mockWebWorker(done);
+      });
+
+
+    });
+  });
+  after(function(done) {
+    if (child) {
+      child.kill('SIGINT');
+    }
+    rimraf(tmpDirectory, done);
+  });
+  it('will start and stop cluster', function(done) {
+    this.timeout(5000);
+    var exec = path.resolve(__dirname, '../lib/web-workers.js');
+    var options = JSON.stringify({
+      numWorkers: 2,
+      network: 'testnet',
+      bitcoinHeight: 10000,
+      bitcoinHash: '0000000000f4446ad3056a6f8770381172b60ec6168e2260a06cf5f81f2caca7',
+      clientsConfig: [{
+        rpcprotocol: 'http',
+        rpchost: 'localhost',
+        rpcport: 109821,
+        rpcuser: 'user',
+        rpcpassword: 'password',
+        rpcstrict: false
+      }],
+      port: port,
+      writerSocketPath: writerPath,
+      configPath: tmpDirectory
+    });
+    child = spawn('node', [exec, options]);
+
+    child.stdout.pipe(process.stdout);
+    child.stderr.pipe(process.stderr);
+
+    child.on('exit', function(code) {
+      should.equal(code, 0);
+      done();
+    });
+
+    setTimeout(function() {
+      request('http://localhost:' + port + '/info', function(err, info) {
+        if (err) {
+          return done(err);
+        }
+        should.exist(info);
+        expect(JSON.parse(info.body)).to.deep.equal({version: version});
+        child.kill('SIGINT');
+        done();
+      });
+    }, 2000);
+
+  });
+
+});

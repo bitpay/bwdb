@@ -724,6 +724,7 @@ describe('Wallet Web Worker', function() {
       var opts = {
         height: 0,
         index: 6,
+        limit: 7,
         end: {
           height: 200,
           index: 0
@@ -745,7 +746,6 @@ describe('Wallet Web Worker', function() {
         ]);
         result.start.height.should.equal(0);
         result.start.index.should.equal(6);
-        should.not.exist(result.end);
         cursor.close.callCount.should.equal(1);
         done();
       });

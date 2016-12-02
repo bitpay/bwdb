@@ -23,7 +23,6 @@ describe('Wallet Client Transaction List Stream', function() {
         index: 12
       });
       should.equal(stream._bitcoinHeight, null);
-      should.equal(stream._dataEnded, false);
     }
     it('will create an instance', function() {
       var stream = new ListStream(walletId, {
@@ -66,15 +65,14 @@ describe('Wallet Client Transaction List Stream', function() {
           client: client,
           limit: 100,
           height: 1000,
-          index: 12
+          index: 12,
+          end: 1000
         };
         _.extend(options, data.options);
         var stream = new ListStream(walletId, options);
         stream._bitcoinHeight = 105006;
-        var list = [];
-        stream._transactionToList(data.transaction, list);
-        var result = JSON.parse('[' + list.join(',') + ']');
-        result.should.deep.equal(data.list);
+        var list = stream._transactionToList(data.transaction);
+        list.should.deep.equal(data.list);
       });
     });
   });
