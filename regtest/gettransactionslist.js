@@ -1,12 +1,13 @@
 'use strict';
 
-var assert = require('assert');
+var AssertionError = require('assert').AssertionError;
 var async = require('async');
 var chai = require('chai');
 var bitcore = require('bitcore-lib');
 var BitcoinRPC = require('bitcoind-rpc');
 var rimraf = require('rimraf');
 var should = chai.should();
+var expect = chai.expect;
 var index = require('..');
 var testUtils = require('./utils');
 var Server = index.Server;
@@ -32,7 +33,6 @@ var options = {
 };
 
 describe('Get Transactions List', function() {
-  var regtest;
 
   before(function(done) {
     console.log('This test suite is designed to run as a unit!' +
@@ -40,7 +40,8 @@ describe('Get Transactions List', function() {
     this.timeout(60000);
 
     configPath = __dirname + '/data';
-    config = new ClientConfig({path: configPath});
+    //configPath = '/home/bwdb/.bwdb';
+    config = new ClientConfig({path: configPath, network: 'regtest'});
 
     async.series([
       function(next) {
@@ -70,9 +71,6 @@ describe('Get Transactions List', function() {
 
       server = new Server({network: 'regtest', configPath: configPath});
 
-      regtest = bitcore.Networks.get('regtest');
-      should.exist(regtest);
-
       server.on('error', function(err) {
         console.error(err);
       });
@@ -91,18 +89,15 @@ describe('Get Transactions List', function() {
           rejectUnauthorized: false
         });
 
-        bitcoinClient.generate(startingNumOfBlocks, function(err) {
-          if (err) {
-            throw err;
-          }
-        });
-
         var syncedHandler = function(height) {
           if (height >= startingNumOfBlocks) {
             server.node.services.bitcoind.removeListener('synced', syncedHandler);
             var imported;
             async.retry({times: 5, interval: 2000}, function(next) {
               client.getInfo(function(err, response) {
+                if(err) {
+                  return next('try again');
+                }
                 if (parseInt(response.headers['x-bitcoin-height']) >= startingNumOfBlocks) {
                   return next(null, response);
                 }
@@ -171,7 +166,7 @@ describe('Get Transactions List', function() {
     });
   });
 
-  it('should get a tx history report with one output and one fee', function(done) {
+  it('should get a tx history report with one output, receive type', function(done) {
     this.timeout(20000);
     testUtils.spendCoinbaseTo({
       address: walletDatAddresses[0],
@@ -191,16 +186,16 @@ describe('Get Transactions List', function() {
         error = data;
       });
       stream.on('end', function() {
-        txlist = JSON.parse('[' + txlist.replace(/\n/g, ',') + ']');
+        txlist = JSON.parse(txlist);
         should.not.exist(error);
-        txlist.length.should.equal(1);
-        txlist[0].address.should.equal(walletDatAddresses[0]);
-        txlist[0].category.should.equal('receive');
-        txlist[0].satoshis.should.equal(50 * 1E8 - 6000);
+        txlist.address.should.equal(walletDatAddresses[0]);
+        txlist.category.should.equal('receive');
+        txlist.satoshis.should.equal(50 * 1E8 - 6000);
         done();
       });
     });
   });
+
   it('should get a move type tx history report', function(done) {
     this.timeout(6000);
     testUtils.sendFromUtxo({
@@ -222,7 +217,7 @@ describe('Get Transactions List', function() {
         error = data;
       });
       stream.on('end', function() {
-        txlist = JSON.parse('[' + txlist.replace(/\n/g, ',') + ']');
+        txlist = JSON.parse('[' + txlist.replace(/\n/g, ',').slice(0, -1) + ']');
         should.not.exist(error);
         txlist.length.should.equal(4);
         //receive, then receive, then send, then fee
@@ -239,6 +234,7 @@ describe('Get Transactions List', function() {
       });
     });
   });
+
   it('should get a join receive type tx history report', function(done) {
     this.timeout(20000);
     testUtils.sendJoinTypeTx({
@@ -261,7 +257,7 @@ describe('Get Transactions List', function() {
         error = data;
       });
       stream.on('end', function() {
-        txlist = JSON.parse('[' + txlist.replace(/\n/g, ',') + ']');
+        txlist = JSON.parse('[' + txlist.replace(/\n/g, ',').slice(0, -1) + ']');
         should.not.exist(error);
         txlist.length.should.equal(5);
         txlist[4].category.should.equal('shared-receive');
@@ -270,6 +266,7 @@ describe('Get Transactions List', function() {
       });
     });
   });
+
   it('should get a join send type tx history report', function(done) {
     this.timeout(20000);
     testUtils.sendJoinTypeTx({
@@ -293,7 +290,7 @@ describe('Get Transactions List', function() {
         error = data;
       });
       stream.on('end', function() {
-        txlist = JSON.parse('[' + txlist.replace(/\n/g, ',') + ']');
+        txlist = JSON.parse('[' + txlist.replace(/\n/g, ',').slice(0, -1) + ']');
         should.not.exist(error);
         txlist.length.should.equal(6);
         txlist[5].category.should.equal('shared-send');
@@ -302,11 +299,11 @@ describe('Get Transactions List', function() {
       });
     });
   });
+
   it('should properly translate block timestamps to block heights', function(done) {
     this.timeout(20000);
     var start = Math.floor(new Date().getTime() + 86400000 * 30);
     var end = Math.floor(new Date().getTime() - 86400000 * 30);
-    console.log(end);
     var options = {
       startdate: start,
       enddate: end
@@ -316,10 +313,11 @@ describe('Get Transactions List', function() {
         done(err);
       }
       body.result[0].should.equal(1);
-      assert(body.result[1] >= 114);
+      body.result[1].should.equal(109);
       done();
     });
   });
+
   it('should properly translate block timestamps to block heights by providing dates in any order', function(done) {
     this.timeout(20000);
     var end = Math.floor(new Date().getTime() + 86400000 * 30);
@@ -333,10 +331,11 @@ describe('Get Transactions List', function() {
         done(err);
       }
       body.result[0].should.equal(1);
-      assert(body.result[1] >= 114);
+      body.result[1].should.equal(109);
       done();
     });
   });
+
   it('should return an error if a date provided does not make sense as a date', function(done) {
     this.timeout(20000);
     var options = {
@@ -348,6 +347,7 @@ describe('Get Transactions List', function() {
       done();
     });
   });
+
   it('should not return block heights created today if the end date is today', function(done) {
     this.timeout(20000);
     var start = Math.floor(new Date().getTime() - 86400000 * 30);
@@ -361,4 +361,137 @@ describe('Get Transactions List', function() {
       done();
     });
   });
+
+  it('should not include any extraneous newlines; the stream should be proper jsonl format', function(done) {
+    this.timeout(20000);
+    var txlist = '';
+    var error;
+    var stream = client.getTransactionsListStream(walletInfo.id, options);
+    stream.on('data', function(data) {
+      txlist += data;
+    });
+    stream.on('error', function(data) {
+      error = data;
+    });
+    stream.on('end', function() {
+      //this is a list of records separated by newlinee, so there ought to be N + 1
+      //items in the array where N is the nummber of json objects
+      var list = txlist.split('\n');
+      list.length.should.equal(7);
+      expect(error).to.be.an('undefined');
+      done();
+    });
+  });
+
+  it('should pass with differing limits, e.g. limit=1', function(done) {
+    this.timeout(20000);
+    var txlist = '';
+    var error;
+    var oldOptionsLimit = options.limit;
+    options.limit = 1;
+    var stream = client.getTransactionsListStream(walletInfo.id, options);
+    stream.on('data', function(data) {
+      txlist += data;
+    });
+    stream.on('error', function(data) {
+      error = data;
+    });
+    stream.on('end', function() {
+      var list = txlist.split('\n');
+      list.length.should.equal(7);
+      expect(error).to.be.an('undefined');
+      options.limit = oldOptionsLimit;
+      done();
+    });
+  });
+
+  it('should fail if an invalid limit is used', function(done) {
+    this.timeout(10000);
+    var oldOptionsLimit = options.limit;
+    options.limit = 0;
+    var fired = false;
+    try {
+      client.getTransactionsListStream(walletInfo.id, options);
+    } catch(e) {
+      expect(e).to.be.instanceof(AssertionError);
+      fired = true;
+    }
+    options.limit = oldOptionsLimit;
+    expect(fired).to.be.true;
+    done();
+  });
+
+  it('should fail if an invalid end is used', function(done) {
+    this.timeout(10000);
+    var oldOptionsEnd = options.end;
+    options.end = -1;
+    var fired = false;
+    try {
+      client.getTransactionsListStream(walletInfo.id, options);
+    } catch(e) {
+      expect(e).to.be.instanceof(AssertionError);
+      options.end = oldOptionsEnd;
+      fired = true;
+    }
+    expect(fired).to.be.true;
+    done();
+  });
+
+  it('should fail if an invalid height is used', function(done) {
+    this.timeout(10000);
+    var oldOptionsHeight = options.height;
+    options.height = -1;
+    var fired = false;
+    try {
+      client.getTransactionsListStream(walletInfo.id, options);
+    } catch(e) {
+      expect(e).to.be.instanceof(AssertionError);
+      options.end = oldOptionsHeight;
+      fired = true;
+    }
+    expect(fired).to.be.true;
+    done();
+  });
+
+  it('should fail if an invalid index is used', function(done) {
+    this.timeout(10000);
+    var oldOptionsIndex = options.index;
+    options.index = -1;
+    var fired = false;
+    try {
+      client.getTransactionsListStream(walletInfo.id, options);
+    } catch(e) {
+      expect(e).to.be.instanceof(AssertionError);
+      options.end = oldOptionsIndex;
+      fired = true;
+    }
+    expect(fired).to.be.true;
+    done();
+  });
+
+  it('should not return results outside the range given.', function(done) {
+    this.timeout(10000);
+    var options = {
+      height: 107,
+      index: 0,
+      limit: 10,
+      end: 107
+    };
+    var txlist = '';
+    var error;
+    var stream = client.getTransactionsListStream(walletInfo.id, options);
+    stream.on('data', function(data) {
+      txlist += data;
+    });
+    stream.on('error', function(data) {
+      error = data;
+    });
+    stream.on('end', function() {
+      var list = txlist.split('\n');
+      list.length.should.equal(4);
+      expect(error).to.be.an('undefined');
+      done();
+    });
+  });
+
 });

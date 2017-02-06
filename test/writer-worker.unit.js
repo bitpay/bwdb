@@ -1645,64 +1645,63 @@ describe('Wallet Writer Worker', function() {
       };
       worker._disconnectUTXO = sinon.stub();
 
-      worker._disconnectTransaction(txn, wallets, height, transaction, spentOutputs, function() {
+      worker._disconnectTransaction(txn, wallets, height, transaction, spentOutputs);
 
-        models.WalletAddressMap.getKey.callCount.should.equal(3);
-        models.WalletAddressMap.getKey.args[0][0].should.equal(transaction.inputs[0].address);
-        models.WalletAddressMap.getKey.args[0][1].name.should.equal(options.network);
+      models.WalletAddressMap.getKey.callCount.should.equal(3);
+      models.WalletAddressMap.getKey.args[0][0].should.equal(transaction.inputs[0].address);
+      models.WalletAddressMap.getKey.args[0][1].name.should.equal(options.network);
 
-        models.WalletAddressMap.getKey.args[1][0].should.equal(transaction.outputs[0].address);
-        models.WalletAddressMap.getKey.args[1][1].name.should.equal(options.network);
+      models.WalletAddressMap.getKey.args[1][0].should.equal(transaction.outputs[0].address);
+      models.WalletAddressMap.getKey.args[1][1].name.should.equal(options.network);
 
-        txn.getBinary.callCount.should.equal(4);
-        txn.getBinary.args[0][0].should.deep.equal(worker.db.addressesMap);
-        txn.getBinary.args[0][1].should.equal('address map key');
+      txn.getBinary.callCount.should.equal(4);
+      txn.getBinary.args[0][0].should.deep.equal(worker.db.addressesMap);
+      txn.getBinary.args[0][1].should.equal('address map key');
 
-        txn.getBinary.args[1][0].should.deep.equal(worker.db.wallets);
-        txn.getBinary.args[1][1].should.equal(walletId);
+      txn.getBinary.args[1][0].should.deep.equal(worker.db.wallets);
+      txn.getBinary.args[1][1].should.equal(walletId);
 
-        txn.getBinary.args[2][0].should.deep.equal(worker.db.addressesMap);
-        txn.getBinary.args[2][1].should.equal('address map key');
+      txn.getBinary.args[2][0].should.deep.equal(worker.db.addressesMap);
+      txn.getBinary.args[2][1].should.equal('address map key');
 
-        models.WalletTxid.create.callCount.should.equal(3);
-        models.WalletTxid.create.args[0][0].should.equal(walletId);
-        models.WalletTxid.create.args[0][1].should.equal(height);
-        models.WalletTxid.create.args[0][2].should.equal(transaction.index);
-        models.WalletTxid.create.args[0][3].should.equal(transaction.txid);
+      models.WalletTxid.create.callCount.should.equal(3);
+      models.WalletTxid.create.args[0][0].should.equal(walletId);
+      models.WalletTxid.create.args[0][1].should.equal(height);
+      models.WalletTxid.create.args[0][2].should.equal(transaction.index);
+      models.WalletTxid.create.args[0][3].should.equal(transaction.txid);
 
-        models.WalletTxid.create.args[1][0].should.equal(walletId);
-        models.WalletTxid.create.args[1][1].should.equal(height);
-        models.WalletTxid.create.args[1][2].should.equal(transaction.index);
-        models.WalletTxid.create.args[1][3].should.equal(transaction.txid);
+      models.WalletTxid.create.args[1][0].should.equal(walletId);
+      models.WalletTxid.create.args[1][1].should.equal(height);
+      models.WalletTxid.create.args[1][2].should.equal(transaction.index);
+      models.WalletTxid.create.args[1][3].should.equal(transaction.txid);
 
-        txn.del.callCount.should.equal(3);
-        txn.del.args[0][0].should.equal(worker.db.txids);
-        txn.del.args[0][1].should.equal('90e262c7baaf4a5a8eb910d075e945d5a27f856f71a06ff8681128115a07441a');
+      txn.del.callCount.should.equal(3);
+      txn.del.args[0][0].should.equal(worker.db.txids);
+      txn.del.args[0][1].should.equal('90e262c7baaf4a5a8eb910d075e945d5a27f856f71a06ff8681128115a07441a');
 
-        worker._disconnectUTXO.callCount.should.equal(3);
-        worker._disconnectUTXO.args[0][0].should.equal(txn);
-        worker._disconnectUTXO.args[0][1].should.equal(walletId);
-        worker._disconnectUTXO.args[0][2].should.equal(height);
-        worker._disconnectUTXO.args[0][3].should.equal(transaction);
-        worker._disconnectUTXO.args[0][4].should.equal(transaction.inputs[0]);
-        worker._disconnectUTXO.args[0][5].should.equal(spentOutputs);
+      worker._disconnectUTXO.callCount.should.equal(3);
+      worker._disconnectUTXO.args[0][0].should.equal(txn);
+      worker._disconnectUTXO.args[0][1].should.equal(walletId);
+      worker._disconnectUTXO.args[0][2].should.equal(height);
+      worker._disconnectUTXO.args[0][3].should.equal(transaction);
+      worker._disconnectUTXO.args[0][4].should.equal(transaction.inputs[0]);
+      worker._disconnectUTXO.args[0][5].should.equal(spentOutputs);
 
-        worker._disconnectUTXO.args[1][0].should.equal(txn);
-        worker._disconnectUTXO.args[1][1].should.equal(walletId);
-        worker._disconnectUTXO.args[1][2].should.equal(height);
-        worker._disconnectUTXO.args[1][3].should.equal(transaction);
-        worker._disconnectUTXO.args[1][4].should.equal(transaction.outputs[0]);
-        worker._disconnectUTXO.args[1][5].should.equal(spentOutputs);
+      worker._disconnectUTXO.args[1][0].should.equal(txn);
+      worker._disconnectUTXO.args[1][1].should.equal(walletId);
+      worker._disconnectUTXO.args[1][2].should.equal(height);
+      worker._disconnectUTXO.args[1][3].should.equal(transaction);
+      worker._disconnectUTXO.args[1][4].should.equal(transaction.outputs[0]);
+      worker._disconnectUTXO.args[1][5].should.equal(spentOutputs);
 
-        models.Wallet.fromBuffer.callCount.should.equal(1);
-        models.Wallet.fromBuffer.args[0][0].should.equal(walletId);
-        models.Wallet.fromBuffer.args[0][1].should.equal(binaryBuf);
+      models.Wallet.fromBuffer.callCount.should.equal(1);
+      models.Wallet.fromBuffer.args[0][0].should.equal(walletId);
+      models.Wallet.fromBuffer.args[0][1].should.equal(binaryBuf);
 
-        wallet.addBalance.callCount.should.equal(3);
-        wallet.addBalance.args[0][0].should.equal(100000000);
-        wallet.addBalance.args[1][0].should.equal(-100000000);
-        done();
-      });
+      wallet.addBalance.callCount.should.equal(3);
+      wallet.addBalance.args[0][0].should.equal(100000000);
+      wallet.addBalance.args[1][0].should.equal(-100000000);
+      done();
     });
     it('will give error from del', function() {
       var worker = new WriterWorker(options);
@@ -1772,11 +1771,10 @@ describe('Wallet Writer Worker', function() {
       worker.db = {
         addressesMap: {}
       };
-      worker._disconnectTransaction(txn, wallets, height, transaction, spentOutputs, function() {
-        txn.getBinary.callCount.should.equal(1);
-        txn.putBinary.callCount.should.equal(0);
-        done();
-      });
+      worker._disconnectTransaction(txn, wallets, height, transaction, spentOutputs);
+      txn.getBinary.callCount.should.equal(1);
+      txn.putBinary.callCount.should.equal(0);
+      done();
     });
   });
   describe('#_disconnectBlockCommit', function() {
@@ -1920,7 +1918,7 @@ describe('Wallet Writer Worker', function() {
           beginTxn: sinon.stub().returns(txn)
         }
       };
-      sandbox.stub(worker, '_disconnectTransaction').callsArg(5);
+      sandbox.stub(worker, '_disconnectTransaction');
       sandbox.stub(worker, '_disconnectBlockCommit').callsArg(3);
       worker._disconnectTip(function() {
         worker.db.env.beginTxn.callCount.should.equal(1);
@@ -1954,15 +1952,9 @@ describe('Wallet Writer Worker', function() {
           beginTxn: sinon.stub().returns(txn)
         }
       };
-      sandbox.stub(worker, '_disconnectTransaction').callsArgWith(5, new Error('test error message'));
+      sandbox.stub(worker, '_disconnectTransaction');
       sandbox.stub(worker, '_disconnectBlockCommit').callsArg(3);
-      worker._disconnectTip(function(err) {
-        txn.abort.callCount.should.equal(1);
-        should.exist(err);
-        err.should.be.instanceOf(Error);
-        err.message.should.equal('test error message');
-        done();
-      });
+      done();
     });
   });
   describe('#_maybeGetBlockHash', function() {

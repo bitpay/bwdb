@@ -566,7 +566,7 @@ describe('Wallet Client', function() {
         url: 'somenet'
       });
       var walletId = '2b5848038f5fac0b67badd525d43b62d848a0ee9afd27f9672e4dc3962370b6b';
-      var options = {};
+      var options = {limit: 1, height: 100, index: 0, end: 125};
       var stream = client.getTransactionsListStream(walletId, options);
       stream.should.be.instanceOf(Client.ListStream);
     });
